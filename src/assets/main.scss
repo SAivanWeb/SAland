@@ -1,4 +1,10 @@
 /* Глобальный ресет/базовая типографика */
+$primary: #70C0E8FF;
+$dark: #3889C5FF;
+$text-dark: #2e3b42;
+$text-light: #ffffff;
+$background: #e8ecf2;
+
 *,
 *::before,
 *::after {
@@ -11,8 +17,8 @@
 
 body {
   min-height: 100vh;
-  color: #111;
-  background-color: #fff;
+  color: $text-dark;
+  background-color: $background;
   transition:
           color 0.3s ease,
           background-color 0.3s ease;

@@ -17,6 +17,7 @@ const themeOverrides = {
     borderRadius: '12px',
   },
 }
+
 </script>
 
 <style scoped lang="scss"></style>

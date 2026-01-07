@@ -1,10 +1,3 @@
-/* Глобальный ресет/базовая типографика */
-$primary: #70C0E8FF;
-$dark: #3889C5FF;
-$text-dark: #2e3b42;
-$text-light: #ffffff;
-$background: #e8ecf2;
-
 *,
 *::before,
 *::after {
@@ -23,11 +16,12 @@ body {
           color 0.3s ease,
           background-color 0.3s ease;
   line-height: 1.2;
-
   font-size: 16px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  padding: 0;
 }
 
 * {
@@ -51,4 +45,13 @@ button {
   border: none;
   outline: none;
   cursor: pointer;
+}
+
+.n-icon{
+  color: $primary;
+  cursor: pointer;
+}
+
+.n-menu-item-content{
+  padding-left: 16px !important;
 }

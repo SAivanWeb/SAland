@@ -23,7 +23,6 @@ const isAuth = computed(() => {
 <style scoped lang="scss">
 .header {
   width: 100%;
-  border-bottom: 1px solid $border;
   height: $header-height;
   display: flex;
   align-items: center;

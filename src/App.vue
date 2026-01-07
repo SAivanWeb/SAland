@@ -26,6 +26,9 @@ const themeOverrides = {
   Divider: {
     color: '#dfdfe4',
   },
+  Button: {
+    fontSizeMedium: '16px',
+  },
 }
 </script>
 
@@ -33,7 +36,7 @@ const themeOverrides = {
 .main {
   width: 100%;
   padding: 0 $side-padding;
-  min-height: calc(100vh - $header-height);
+  min-height: calc(100vh - $header-height - $footer-height);
 }
 
 .scrollbar {

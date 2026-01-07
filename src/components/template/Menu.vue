@@ -1,7 +1,7 @@
 <template>
   <n-popover trigger="click" placement="bottom">
     <template #trigger>
-      <n-icon size="36">
+      <n-icon size="36" color="#3cade6">
         <Menu />
       </n-icon>
     </template>
@@ -18,10 +18,10 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore.ts'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 function renderIcon(icon: Component) {
-  return () => h(NIcon, { size: 24 }, { default: () => h(icon) })
+  return () => h(NIcon, { size: 24, color: '#3cade6' }, { default: () => h(icon) })
 }
 
 const menuOptions: MenuOption[] = [
@@ -61,7 +61,7 @@ const menuOptions: MenuOption[] = [
 ]
 
 function logout(key: string) {
-  if (key === 'logout') userStore.logout();
+  if (key === 'logout') userStore.logout()
 }
 </script>
 

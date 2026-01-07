@@ -8,6 +8,6 @@
 .footer {
   padding: 24px;
   background: $second-background;
-  border-top: 1px solid $border;
+  height: $footer-height;
 }
 </style>

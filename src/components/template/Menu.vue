@@ -1,5 +1,5 @@
 <template>
-  <n-popover trigger="click" placement="bottom">
+  <n-popover style="padding: 0" trigger="click" placement="bottom">
     <template #trigger>
       <n-icon size="36" color="#3cade6">
         <Menu />
@@ -64,5 +64,3 @@ function logout(key: string) {
   if (key === 'logout') userStore.logout()
 }
 </script>
-
-<style scoped></style>

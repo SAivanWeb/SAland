@@ -20,10 +20,11 @@ const isAuth = computed(() => {
 })
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .header {
   width: 100%;
   height: $header-height;
+  border-bottom: 1px solid $border;
   display: flex;
   align-items: center;
   padding: 0 $side-padding;
@@ -31,11 +32,15 @@ const isAuth = computed(() => {
 
   &__container {
     width: 100%;
-    max-width: 1440px;
+    max-width: 1080px;
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  & .n-popover {
+    padding: 0 !important;
   }
 }
 </style>

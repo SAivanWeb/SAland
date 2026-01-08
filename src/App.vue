@@ -19,9 +19,9 @@ const themeOverrides = {
   common: {
     fontSize: '16px',
     primaryColor: '#3cade6',
-  },
-  Popover: {
-    padding: '0px',
+    primaryColorHover: '#4098FCFF',
+    primaryColorPressed: '#1060C9FF',
+    primaryColorSuppl: '#4098FCFF',
   },
   Divider: {
     color: '#dfdfe4',
@@ -35,7 +35,6 @@ const themeOverrides = {
 <style lang="scss">
 .main {
   width: 100%;
-  padding: 0 $side-padding;
   min-height: calc(100vh - $header-height - $footer-height);
 }
 

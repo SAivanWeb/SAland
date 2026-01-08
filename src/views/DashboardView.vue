@@ -1,42 +1,64 @@
 <template>
-  <MainContainer>
-    <div class="games">
-      <div class="games__container">
-        <div class="games__content">
-          <h2 class="games__subtitle">Популярные игры</h2>
-          <div class="games__list">
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
-          </div>
+  <GameStart placement="games" />
+  <div class="games">
+    <div v-if="0" class="games__waiting">
+      <GameWaiting role="user" />
+    </div>
+    <div class="games__container">
+      <div class="games__content">
+        <h2 class="games__subtitle">Популярные игры</h2>
+        <MainInput name="search" placeholder="Поиск игры" v-model="search" size="large" />
+        <div class="games__list">
+          <PopularGameCard />
+          <PopularGameCard />
+          <PopularGameCard />
         </div>
-        <div class="games__divider"></div>
-        <div class="games__content">
-          <h2 class="games__subtitle">Ожидают игры</h2>
-          <div class="games__list">
-            <ActiveGameCard/>
-            <ActiveGameCard/>
-            <ActiveGameCard/>
-            <ActiveGameCard/>
-          </div>
+      </div>
+      <div class="games__divider"></div>
+      <div class="games__content">
+        <h2 class="games__subtitle">Ожидают игры</h2>
+        <div class="games__list">
+          <ActiveGameCard />
+          <ActiveGameCard />
+          <ActiveGameCard />
+          <ActiveGameCard />
         </div>
       </div>
     </div>
-  </MainContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import MainContainer from '@/components/template/MainContainer.vue'
 import PopularGameCard from '@/components/ui/card/PopularGameCard.vue'
 import ActiveGameCard from '@/components/ui/card/ActiveGameCard.vue'
+import MainInput from '@/components/ui/input/MainInput.vue'
+import { ref } from 'vue'
+import GameStart from '@/components/games/GameStart.vue'
+import GameWaiting from '@/components/games/GameWaiting.vue'
+
+const search = ref<string>('')
 </script>
 
 <style scoped lang="scss">
 .games {
+  padding: 48px $side-padding 64px $side-padding;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+
+  &__waiting {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
   &__container {
     display: grid;
-    grid-template-columns: 1fr 2px 1fr;
+    grid-template-columns: 1fr 1px 1fr;
     grid-gap: 24px;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
   }
 
   &__content {

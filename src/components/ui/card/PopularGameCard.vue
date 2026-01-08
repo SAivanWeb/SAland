@@ -63,8 +63,7 @@ import Dislike from '@/assets/icons/dislike.vue'
   &__body {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 24px;
   }
 
   &__item {

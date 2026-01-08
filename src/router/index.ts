@@ -9,14 +9,19 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     },
     {
+      path: '/auth',
+      name: 'Auth',
+      component: () => import('../views/AuthView.vue'),
+    },
+    {
       path: '/games',
       name: 'Games',
       component: () => import('../views/DashboardView.vue'),
     },
     {
-      path: '/room/:id',
-      name: 'room',
-      component: () => import('../views/RoomView.vue'),
+      path: '/game-create',
+      name: 'CreateGame',
+      component: () => import('../views/CreateGameView.vue'),
     },
     {
       path: '/game/:id',

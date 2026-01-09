@@ -36,6 +36,7 @@ const themeOverrides = {
 .main {
   width: 100%;
   min-height: calc(100vh - $header-height - $footer-height);
+  position: relative;
 }
 
 .scrollbar {

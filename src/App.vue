@@ -1,11 +1,11 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
-    <HeaderBar />
+    <HeaderBar v-if="!isGame" />
     <n-scrollbar class="scrollbar">
-      <div class="main">
+      <div class="main" :class="{'main_game' : isGame}">
         <router-view />
       </div>
-      <FooterBar />
+      <FooterBar v-if="!isGame" />
     </n-scrollbar>
   </n-config-provider>
 </template>
@@ -14,6 +14,8 @@
 import { NConfigProvider, NScrollbar } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 
 const themeOverrides = {
   common: {
@@ -30,6 +32,12 @@ const themeOverrides = {
     fontSizeMedium: '16px',
   },
 }
+
+const route = useRoute()
+
+const isGame = computed(() => {
+  return route.path.includes('/game/')
+})
 </script>
 
 <style lang="scss">
@@ -37,9 +45,17 @@ const themeOverrides = {
   width: 100%;
   min-height: calc(100vh - $header-height - $footer-height);
   position: relative;
+
+  &_game{
+    min-height: 100vh;
+  }
 }
 
 .scrollbar {
   max-height: calc(100vh - $header-height);
+
+  &:has(.main_game) {
+    max-height: 100vh;
+  }
 }
 </style>

@@ -42,11 +42,14 @@
         />
       </div>
     </div>
+
+    <Chat class="game__chat"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import Chat from '@/components/template/Chat.vue'
 
 interface Player {
   id: number
@@ -63,7 +66,7 @@ interface HexCell {
 }
 
 // Настройки
-const playerCount = ref(2) // количество игроков (2-4)
+const playerCount = ref(4) // количество игроков (2-4)
 
 // Конфигурация размера поля в зависимости от числа игроков
 // Используем полные симметричные гексагональные сетки
@@ -301,6 +304,13 @@ const onCellClick = (cell: HexCell) => {
     &-container {
       position: relative;
     }
+  }
+
+  &__chat{
+    position:  absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 

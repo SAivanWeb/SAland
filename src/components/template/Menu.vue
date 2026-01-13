@@ -1,7 +1,7 @@
 <template>
   <n-popover style="padding: 0" trigger="click" placement="bottom">
     <template #trigger>
-      <n-icon size="36" color="#3cade6">
+      <n-icon size="36" color="#3cade6" class="menu__button">
         <Menu />
       </n-icon>
     </template>
@@ -64,3 +64,9 @@ function logout(key: string) {
   if (key === 'logout') userStore.logout()
 }
 </script>
+
+<style scoped lang="scss">
+.menu__button{
+  cursor: pointer;
+}
+</style>

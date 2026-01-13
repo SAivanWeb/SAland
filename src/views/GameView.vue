@@ -308,7 +308,7 @@ const onCellClick = (cell: HexCell) => {
 
   &__chat{
     position:  absolute;
-    right: 0;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
   }

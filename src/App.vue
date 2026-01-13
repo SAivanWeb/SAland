@@ -2,7 +2,7 @@
   <n-config-provider :theme-overrides="themeOverrides">
     <HeaderBar v-if="!isGame" />
     <n-scrollbar class="scrollbar">
-      <div class="main" :class="{'main_game' : isGame}">
+      <div class="main" :class="{ main_game: isGame }">
         <router-view />
       </div>
       <FooterBar v-if="!isGame" />
@@ -31,6 +31,9 @@ const themeOverrides = {
   Button: {
     fontSizeMedium: '16px',
   },
+  Drawer: {
+    bodyPadding: '12px',
+  },
 }
 
 const route = useRoute()
@@ -46,7 +49,7 @@ const isGame = computed(() => {
   min-height: calc(100vh - $header-height - $footer-height);
   position: relative;
 
-  &_game{
+  &_game {
     min-height: 100vh;
   }
 }

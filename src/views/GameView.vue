@@ -43,13 +43,24 @@
       </div>
     </div>
 
-    <Chat class="game__chat"/>
+    <Chat class="game__chat" />
+
+    <GameModal
+      :is-open="showGameModal"
+      :seconds="30"
+      :question="currentQuestion"
+      :answers="currentAnswers"
+      :players="currentPlayers"
+      @answer-selected="onAnswerSelected"
+      @time-up="onQuestionTimeUp"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import Chat from '@/components/template/Chat.vue'
+import GameModal from '@/components/modals/GameModal.vue'
 
 interface Player {
   id: number
@@ -61,8 +72,30 @@ interface HexCell {
   id: number
   q: number // координата по оси q (колонка)
   r: number // координата по оси r (ряд)
-  owner: number | null // id игрока или null для свободной
-  isStart: boolean // стартовая территория
+  owner: number | null
+  isStart: boolean
+}
+
+const showGameModal = ref<boolean>(false)
+
+// Тестовые данные для вопроса
+const currentQuestion = ref('В каком году на Руси появилась картошка?')
+const currentAnswers = ref(['1698', '1750', '1812', '1920'])
+const currentPlayers = ref<Player[]>([
+  { id: 0, name: 'Игрок 1', color: '#4CAF50' },
+  { id: 1, name: 'Игрок 2', color: '#2196F3' },
+])
+
+// Обработка выбора ответа
+const onAnswerSelected = (answerIndex: number) => {
+  console.log('Выбран ответ:', answerIndex, currentAnswers.value[answerIndex])
+  // Здесь будет логика проверки правильности ответа
+}
+
+// Обработка окончания времени на вопрос
+const onQuestionTimeUp = () => {
+  console.log('Время на вопрос истекло!')
+  // Здесь будет логика при истечении времени
 }
 
 // Настройки
@@ -73,12 +106,12 @@ const playerCount = ref(4) // количество игроков (2-4)
 const boardConfig = computed(() => {
   switch (playerCount.value) {
     case 2:
-      return { radius: 1 } // 7 ячеек (1 центр + 6 вокруг)
+      return { radius: 1 }
     case 3:
-      return { radius: 2 } // 19 ячеек
+      return { radius: 2 }
     case 4:
     default:
-      return { radius: 2 } // 19 ячеек
+      return { radius: 2 }
   }
 })
 
@@ -232,7 +265,7 @@ const getPlayerTerritories = (playerId: number): number => {
 // Обработка клика по ячейке
 const onCellClick = (cell: HexCell) => {
   console.log('Clicked cell:', cell)
-  // Здесь будет логика захвата территории
+  showGameModal.value = true
 }
 </script>
 
@@ -306,8 +339,8 @@ const onCellClick = (cell: HexCell) => {
     }
   }
 
-  &__chat{
-    position:  absolute;
+  &__chat {
+    position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);

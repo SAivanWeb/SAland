@@ -1,17 +1,19 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
-    <HeaderBar v-if="!isGame" />
-    <n-scrollbar class="scrollbar">
-      <div class="main" :class="{ main_game: isGame }">
-        <router-view />
-      </div>
-      <FooterBar v-if="!isGame" />
-    </n-scrollbar>
+    <n-modal-provider>
+      <HeaderBar v-if="!isGame" />
+      <n-scrollbar class="scrollbar">
+        <div class="main" :class="{ main_game: isGame }">
+          <router-view />
+        </div>
+        <FooterBar v-if="!isGame" />
+      </n-scrollbar>
+    </n-modal-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NScrollbar } from 'naive-ui'
+import { NConfigProvider, NScrollbar, NModalProvider } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
 import { useRoute } from 'vue-router'

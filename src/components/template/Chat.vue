@@ -1,6 +1,6 @@
 <template>
   <div class="chat-wrapper">
-    <n-badge :value="unreadCount" :max="99" :show="unreadCount > 0">
+    <n-badge :value="unreadCount" :max="9" :show="unreadCount > 0">
       <n-button circle @click="isOpen = !isOpen">
         <template #icon>
           <n-icon size="24" :component="ChatbubbleEllipses" />

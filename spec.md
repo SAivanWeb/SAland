@@ -402,8 +402,11 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ### GET `themes/popular`
 
-> TODO: Добавить пагинацию через параметры (page, size, totalPage)
-> TODO: Добавить количество игроков
+> Популярные темы с пагинацией
+
+**Query params:**
+- `page` — номер страницы (по умолчанию 1)
+- `size` — количество элементов на странице (по умолчанию 10, максимум 50)
 
 **Response:**
 ```json
@@ -414,12 +417,19 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "theme_id": "string",
         "name": "string",
         "description": "string?",
+        "difficulty": "easy | medium | hard",
+        "players_count": "number",
         "likes": "number",
         "dislikes": "number",
-        "difficulty": "easy | medium | hard",
-        "categories": ["string"]
+        "times_played": "number"
       }
-    ]
+    ],
+    "pagination": {
+      "page": "number",
+      "size": "number",
+      "total_pages": "number",
+      "total_items": "number"
+    }
   }
 }
 ```
@@ -430,13 +440,11 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 > Поиск тем
 
-> TODO: Добавить пагинацию
-
 **Query params:**
 - `q` — строка поиска
-- `category` — фильтр по категории
 - `difficulty` — фильтр по сложности
-- `limit` — количество результатов
+- `page` — номер страницы (по умолчанию 1)
+- `size` — количество элементов на странице (по умолчанию 10, максимум 50)
 
 **Response:**
 ```json
@@ -448,9 +456,18 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "name": "string",
         "description": "string?",
         "difficulty": "easy | medium | hard",
-        "categories": ["string"]
+        "players_count": "number",
+        "likes": "number",
+        "dislikes": "number",
+        "times_played": "number"
       }
-    ]
+    ],
+    "pagination": {
+      "page": "number",
+      "size": "number",
+      "total_pages": "number",
+      "total_items": "number"
+    }
   }
 }
 ```
@@ -462,12 +479,11 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 > Оценка темы после игры
 
-> TODO: Добавить в оценку сложность
-
 **Body:**
 ```json
 {
-  "rating": "like | dislike"
+  "rating": "like | dislike",
+  "difficulty_rating": "easy | medium | hard"
 }
 ```
 
@@ -1190,7 +1206,479 @@ const socket = io('wss://server', {
 
 # База данных
 
-> TODO: Описать схему БД
+## Общие принципы
+
+- Чаты игр не сохраняются в БД (только в памяти во время игры)
+- Темы изначально создаются как временные; при получении первого лайка переносятся в постоянное хранилище
+- Все временные метки хранятся в формате Unix timestamp (миллисекунды)
+- UUID используется для всех идентификаторов
+
+---
+
+## Схема таблиц
+
+### `users`
+
+> Основная таблица пользователей
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `email` | VARCHAR(255) | Email (уникальный) |
+| `name` | VARCHAR(100) | Отображаемое имя |
+| `password_hash` | VARCHAR(255) | Хэш пароля (bcrypt) |
+| `created_at` | BIGINT | Дата регистрации |
+| `updated_at` | BIGINT | Дата последнего обновления |
+
+**Индексы:**
+- `UNIQUE(email)`
+- `INDEX(name)` — для поиска пользователей
+
+---
+
+### `refresh_tokens`
+
+> Refresh-токены для авторизации
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `user_id` | UUID | FK → users.id |
+| `token_hash` | VARCHAR(255) | Хэш токена |
+| `expires_at` | BIGINT | Время истечения |
+| `created_at` | BIGINT | Дата создания |
+
+**Индексы:**
+- `INDEX(user_id)`
+- `INDEX(token_hash)`
+- `INDEX(expires_at)` — для очистки истекших токенов
+
+---
+
+### `user_stats`
+
+> Статистика игроков
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `user_id` | UUID | PK, FK → users.id |
+| `games_played` | INT | Количество сыгранных игр |
+| `games_won` | INT | Количество побед |
+| `total_territories_captured` | INT | Всего захвачено территорий |
+| `total_questions_answered` | INT | Всего отвечено вопросов |
+| `total_correct_answers` | INT | Всего правильных ответов |
+
+**Вычисляемые поля (не хранятся):**
+- `win_rate` = games_won / games_played
+
+---
+
+### `friendships`
+
+> Связи дружбы между пользователями (двусторонние)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `user_id` | UUID | FK → users.id |
+| `friend_id` | UUID | FK → users.id |
+| `created_at` | BIGINT | Дата добавления |
+
+**Индексы:**
+- `PRIMARY KEY(user_id, friend_id)`
+- `INDEX(friend_id, user_id)` — для обратного поиска
+
+> При добавлении в друзья создаются две записи: (A, B) и (B, A)
+
+---
+
+### `friend_requests`
+
+> Заявки в друзья
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `from_user_id` | UUID | FK → users.id (отправитель) |
+| `to_user_id` | UUID | FK → users.id (получатель) |
+| `status` | ENUM | `pending`, `accepted`, `rejected` |
+| `created_at` | BIGINT | Дата отправки |
+| `updated_at` | BIGINT | Дата обновления статуса |
+
+**Индексы:**
+- `INDEX(to_user_id, status)` — для списка входящих заявок
+- `INDEX(from_user_id, to_user_id)` — для проверки существующей заявки
+
+---
+
+### `themes`
+
+> Постоянные (популярные) темы игр
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `name` | VARCHAR(255) | Название темы |
+| `description` | TEXT | Описание (опционально) |
+| `difficulty` | ENUM | `easy`, `medium`, `hard` |
+| `players_count` | INT | Количество игроков (2-4) |
+| `likes` | INT | Количество лайков |
+| `dislikes` | INT | Количество дизлайков |
+| `times_played` | INT | Сколько раз играли |
+| `created_at` | BIGINT | Дата создания |
+| `promoted_at` | BIGINT | Дата переноса из временных |
+
+**Индексы:**
+- `INDEX(likes DESC, created_at DESC)` — для списка популярных
+- `INDEX(name)` — для поиска
+
+---
+
+### `temp_themes`
+
+> Временные темы (до получения первого лайка)
+
+> Активная тема, сохранена только пока есть активная комната или игра, сохранится только если игра получит 1 лайк по окончанию игры
+> не входят в список популярных игр
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `name` | VARCHAR(255) | Название темы |
+| `description` | TEXT | Описание (опционально) |
+| `difficulty` | ENUM | `easy`, `medium`, `hard` |
+| `created_at` | BIGINT | Дата создания |
+| `expires_at` | BIGINT | Время удаления (TTL) |
+
+**Индексы:**
+- `INDEX(expires_at)` — для очистки устаревших
+
+> Темы удаляются автоматически через 24 часа, если не получили лайк
+
+---
+
+### `theme_ratings`
+
+> Оценки тем пользователями. Используется для защиты от накрутки и аналитики в админ-дашборде.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `theme_id` | UUID | FK → themes.id |
+| `user_id` | UUID | FK → users.id |
+| `rating` | ENUM | `like`, `dislike` |
+| `difficulty_rating` | ENUM | `easy`, `medium`, `hard` |
+| `game_id` | UUID | ID игры, после которой поставлена оценка |
+| `created_at` | BIGINT | Дата оценки |
+
+**Индексы:**
+- `UNIQUE(theme_id, user_id)` — один пользователь = одна оценка
+- `INDEX(theme_id)`
+
+---
+
+### `games`
+
+> Завершённые игры (история). Используется для статистики пользователей и аналитики в админ-дашборде.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `theme_id` | UUID | FK → themes.id (nullable) |
+| `theme_name` | VARCHAR(255) | Название темы (копия) |
+| `players_count` | INT | Количество игроков |
+| `time_per_question` | INT | Время на вопрос (сек) |
+| `winner_id` | UUID | FK → users.id (nullable при ничьей) |
+| `end_reason` | ENUM | `conquest`, `elimination`, `timeout`, `forfeit`, `disconnect` |
+| `started_at` | BIGINT | Время начала |
+| `ended_at` | BIGINT | Время окончания |
+
+**Индексы:**
+- `INDEX(winner_id)`
+- `INDEX(ended_at DESC)` — для истории
+
+---
+
+### `game_players`
+
+> Участники завершённых игр. Детальная статистика по каждому игроку для истории и аналитики.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | UUID | Первичный ключ |
+| `game_id` | UUID | FK → games.id |
+| `user_id` | UUID | FK → users.id |
+| `player_index` | INT | Индекс игрока в игре (0-3) |
+| `place` | INT | Занятое место (1-4) |
+| `final_territories` | INT | Территорий в конце |
+| `questions_answered` | INT | Отвечено вопросов |
+| `correct_answers` | INT | Правильных ответов |
+| `color` | VARCHAR(20) | Цвет игрока |
+
+**Индексы:**
+- `INDEX(game_id)`
+- `INDEX(user_id, game_id)` — для истории игрока
+
+---
+
+## Таблицы для активных игр (в памяти / Redis)
+
+> Следующие данные хранятся в Redis для быстрого доступа и автоматически удаляются после завершения игры.
+
+### `active_rooms:{room_id}` (Hash)
+
+```
+{
+  "id": "uuid",
+  "owner_id": "uuid",
+  "theme_id": "uuid?",
+  "theme_name": "string",
+  "players_count": 2,
+  "time_per_question": 20,
+  "is_private": false,
+  "invite_code": "ABC123",
+  "status": "waiting|ready",
+  "created_at": 1234567890
+}
+```
+
+### `room_players:{room_id}` (List/Set)
+
+```
+[
+  { "user_id": "uuid", "name": "string", "color": "#FF0000", "is_ready": true }
+]
+```
+
+### `active_games:{game_id}` (Hash)
+
+```
+{
+  "id": "uuid",
+  "room_id": "uuid",
+  "theme_id": "uuid?",
+  "theme_name": "string",
+  "time_per_question": 20,
+  "current_turn": 0,
+  "turn_deadline": 1234567890,
+  "status": "playing|question|finished",
+  "started_at": 1234567890
+}
+```
+
+### `game_cells:{game_id}` (Hash)
+
+```
+{
+  "0": { "q": 0, "r": 0, "owner": null, "is_start": false },
+  "1": { "q": 1, "r": 0, "owner": 0, "is_start": true },
+  ...
+}
+```
+
+### `game_players:{game_id}` (List)
+
+```
+[
+  { "id": 0, "user_id": "uuid", "name": "string", "color": "#FF0000", "territories": 1, "is_eliminated": false }
+]
+```
+
+### `user_session:{user_id}` (Hash)
+
+```
+{
+  "active_room_id": "uuid?",
+  "active_game_id": "uuid?",
+  "socket_id": "string",
+  "last_seen": 1234567890
+}
+```
+
+---
+
+## Индексы Redis
+
+| Ключ | Тип | Описание |
+|------|-----|----------|
+| `public_rooms` | Sorted Set | Публичные комнаты (score = created_at) |
+| `user:{user_id}:room` | String | ID комнаты пользователя |
+| `user:{user_id}:game` | String | ID игры пользователя |
+| `online_users` | Set | Онлайн пользователи |
+| `user:{user_id}:friends_online` | Set | Онлайн друзья |
+
+---
+
+## Жизненный цикл данных
+
+### Тема
+
+```
+1. Создаётся игра с новой темой → temp_themes
+2. Игра завершается, пользователь ставит лайк
+3. Тема переносится temp_themes → themes
+4. Счётчики likes/players_count инкрементируются
+```
+
+### Комната → Игра
+
+```
+1. Создаётся комната → active_rooms (Redis)
+2. Игроки присоединяются → room_players (Redis)
+3. Владелец запускает игру:
+   - active_rooms удаляется
+   - active_games создаётся
+   - game_cells, game_players создаются
+4. Игра завершается:
+   - Данные сохраняются в games, game_players (PostgreSQL)
+   - Статистика user_stats обновляется
+   - Redis-данные удаляются
+```
+
+---
+
+## TTL политики (Redis)
+
+| Ключ | TTL | Описание |
+|------|-----|----------|
+| `active_rooms:*` | 1 час | Неактивные комнаты удаляются |
+| `active_games:*` | 2 часа | Максимальная длительность игры |
+| `user_session:*` | 24 часа | Сессии пользователей |
+| `temp_themes:*` | 24 часа | Временные темы |
+
+---
+
+## Миграции
+
+### Начальная миграция
+
+```sql
+-- Users
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+);
+
+-- Refresh tokens
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at BIGINT NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+);
+CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
+CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
+
+-- User stats
+CREATE TABLE user_stats (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    games_played INT NOT NULL DEFAULT 0,
+    games_won INT NOT NULL DEFAULT 0,
+    total_territories_captured INT NOT NULL DEFAULT 0,
+    total_questions_answered INT NOT NULL DEFAULT 0,
+    total_correct_answers INT NOT NULL DEFAULT 0
+);
+
+-- Friendships
+CREATE TABLE friendships (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    PRIMARY KEY (user_id, friend_id)
+);
+CREATE INDEX idx_friendships_reverse ON friendships(friend_id, user_id);
+
+-- Friend requests
+CREATE TYPE friend_request_status AS ENUM ('pending', 'accepted', 'rejected');
+CREATE TABLE friend_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status friend_request_status NOT NULL DEFAULT 'pending',
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+);
+CREATE INDEX idx_friend_requests_to ON friend_requests(to_user_id, status);
+CREATE INDEX idx_friend_requests_pair ON friend_requests(from_user_id, to_user_id);
+
+-- Themes
+CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard');
+CREATE TABLE themes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    difficulty difficulty_level NOT NULL DEFAULT 'medium',
+    players_count INT NOT NULL DEFAULT 2,
+    likes INT NOT NULL DEFAULT 0,
+    dislikes INT NOT NULL DEFAULT 0,
+    times_played INT NOT NULL DEFAULT 0,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    promoted_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+);
+CREATE INDEX idx_themes_popular ON themes(likes DESC, created_at DESC);
+CREATE INDEX idx_themes_name ON themes(name);
+
+-- Temp themes
+CREATE TABLE temp_themes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    difficulty difficulty_level NOT NULL DEFAULT 'medium',
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    expires_at BIGINT NOT NULL
+);
+CREATE INDEX idx_temp_themes_expires ON temp_themes(expires_at);
+
+-- Theme ratings
+CREATE TYPE rating_type AS ENUM ('like', 'dislike');
+CREATE TABLE theme_ratings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating rating_type NOT NULL,
+    difficulty_rating difficulty_level NOT NULL,
+    game_id UUID NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    UNIQUE(theme_id, user_id)
+);
+CREATE INDEX idx_theme_ratings_theme ON theme_ratings(theme_id);
+
+-- Games history
+CREATE TYPE game_end_reason AS ENUM ('conquest', 'elimination', 'timeout', 'forfeit', 'disconnect');
+CREATE TABLE games (
+    id UUID PRIMARY KEY,
+    theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
+    theme_name VARCHAR(255) NOT NULL,
+    players_count INT NOT NULL,
+    time_per_question INT NOT NULL,
+    winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    end_reason game_end_reason NOT NULL,
+    started_at BIGINT NOT NULL,
+    ended_at BIGINT NOT NULL
+);
+CREATE INDEX idx_games_winner ON games(winner_id);
+CREATE INDEX idx_games_ended ON games(ended_at DESC);
+
+-- Game players
+CREATE TABLE game_players (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    player_index INT NOT NULL,
+    place INT NOT NULL,
+    final_territories INT NOT NULL,
+    questions_answered INT NOT NULL,
+    correct_answers INT NOT NULL,
+    color VARCHAR(20) NOT NULL
+);
+CREATE INDEX idx_game_players_game ON game_players(game_id);
+CREATE INDEX idx_game_players_user ON game_players(user_id, game_id);
+```
 
 ---
 
@@ -1199,6 +1687,3 @@ const socket = io('wss://server', {
 - При создании готовой комнаты (из списка «популярные») не происходит переход на страницу создания — сразу для админа создаётся блок комнаты на главной с кнопкой начала при наборе нужного кол-ва игроков
 - Сохранённой комнате нельзя изменить параметры (её может удалить или изменить только админ сайта)
 - Принятие приглашения в игру: пользователя переносит на главную страницу, в URL появляется параметр `room_id` активной комнаты, на странице появляется блок с комнатой
-
-
-> TODO: Убрать категории у тем

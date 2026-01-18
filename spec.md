@@ -47,8 +47,6 @@
 
 Минимальный пул: 50–70 вопросов на игру
 
-ИИ генерирует вопросы по мере необходимости, но с ограничением повторов.
-
 ---
 
 ## 4. Ход игры
@@ -90,7 +88,7 @@
 ### Захват территории другого игрока
 
 **Формат:**
-- ИИ задаёт один и тот же вопрос обоим игрокам
+- вопрос обоим игрокам
 - Побеждает игрок, который ответил правильно или, если оба ответили правильно, то тот кто ответил быстрее
 
 ## 9. Победа
@@ -235,8 +233,7 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
     "user": {
       "user_id": "string",
       "email": "string",
-      "name": "string",
-      "created_at": "string"
+      "name": "string"
     },
     "stats": {
       "games_played": "number",
@@ -247,16 +244,13 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
     "friends": [
       {
         "user_id": "string",
-        "name": "string",
-                "is_online": "boolean",
-        "active_game_id": "string?"
+        "name": "string"
       }
     ],
     "pending_friend_requests": [
       {
         "user_id": "string",
-        "name": "string",
-                "sent_at": "string"
+        "name": "string"
       }
     ]
   }
@@ -275,12 +269,6 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
   "data": {
     "user_id": "string",
     "name": "string",
-        "is_online": "boolean",
-    "stats": {
-      "games_played": "number",
-      "games_won": "number",
-      "win_rate": "number"
-    },
     "is_friend": "boolean",
     "friend_request_sent": "boolean",
     "friend_request_received": "boolean"
@@ -319,7 +307,6 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 **Query params:**
 - `q` — строка поиска (минимум 2 символа)
-- `limit` — максимум результатов (по умолчанию 20)
 
 **Response:**
 ```json
@@ -329,7 +316,6 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
       {
         "user_id": "string",
         "name": "string",
-                "is_online": "boolean",
         "is_friend": "boolean"
       }
     ]
@@ -416,10 +402,8 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ### GET `themes/popular`
 
-> Популярные темы игр
-
-**Query params:**
-- `limit` — количество (по умолчанию 10)
+> TODO: Добавить пагинацию через параметры (page, size, totalPage)
+> TODO: Добавить количество игроков
 
 **Response:**
 ```json
@@ -430,7 +414,6 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "theme_id": "string",
         "name": "string",
         "description": "string?",
-        "games_played": "number",
         "likes": "number",
         "dislikes": "number",
         "difficulty": "easy | medium | hard",
@@ -446,6 +429,8 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 ### GET `themes/search`
 
 > Поиск тем
+
+> TODO: Добавить пагинацию
 
 **Query params:**
 - `q` — строка поиска
@@ -472,107 +457,17 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ---
 
-### GET `themes/categories`
-
-> Список категорий тем
-
-**Response:**
-```json
-{
-  "data": {
-    "categories": [
-      {
-        "id": "string",
-        "name": "string",
-        "themes_count": "number"
-      }
-    ]
-  }
-}
-```
-
----
 
 ### POST `themes/:theme_id/rate`
 
 > Оценка темы после игры
 
+> TODO: Добавить в оценку сложность
+
 **Body:**
 ```json
 {
   "rating": "like | dislike"
-}
-```
-
----
-
-## История игр
-
-### GET `games/history`
-
-> История игр пользователя
-
-**Query params:**
-- `limit` — количество (по умолчанию 20)
-- `offset` — смещение для пагинации
-
-**Response:**
-```json
-{
-  "data": {
-    "games": [
-      {
-        "game_id": "string",
-        "theme_name": "string",
-        "played_at": "string",
-        "duration_seconds": "number",
-        "players": [
-          {
-            "user_id": "string",
-            "name": "string",
-            "place": "number",
-            "territories": "number"
-          }
-        ],
-        "user_place": "number",
-        "is_winner": "boolean"
-      }
-    ],
-    "total": "number"
-  }
-}
-```
-
----
-
-### GET `games/:game_id`
-
-> Детали конкретной игры
-
-**Response:**
-```json
-{
-  "data": {
-    "game_id": "string",
-    "theme_id": "string",
-    "theme_name": "string",
-    "started_at": "string",
-    "ended_at": "string",
-    "duration_seconds": "number",
-    "players": [
-      {
-        "user_id": "string",
-        "name": "string",
-        "color": "string",
-        "place": "number",
-        "final_territories": "number",
-        "questions_answered": "number",
-        "correct_answers": "number"
-      }
-    ],
-    "winner_id": "string",
-    "end_reason": "conquest | elimination | timeout | forfeit"
-  }
 }
 ```
 
@@ -1304,3 +1199,6 @@ const socket = io('wss://server', {
 - При создании готовой комнаты (из списка «популярные») не происходит переход на страницу создания — сразу для админа создаётся блок комнаты на главной с кнопкой начала при наборе нужного кол-ва игроков
 - Сохранённой комнате нельзя изменить параметры (её может удалить или изменить только админ сайта)
 - Принятие приглашения в игру: пользователя переносит на главную страницу, в URL появляется параметр `room_id` активной комнаты, на странице появляется блок с комнатой
+
+
+> TODO: Убрать категории у тем

@@ -11,7 +11,7 @@
 | Жанр | Стратегическая интеллектуальная игра |
 | Количество игроков | 2–4 |
 | Продолжительность партии | 20–40 минут |
-| Тип вопросов | Генерируются ИИ (разной сложности) |
+| Тип вопросов | Статические (создаются админом сайта) |
 | Цель игры | Захватить все территории ИЛИ остаться единственным игроком с территориями |
 
 ---
@@ -30,8 +30,25 @@
 ### 2.2 Старт
 
 - Каждый игрок в начале получает 1 стартовую территорию
-- Стартовые территории:
-  - Заданны точками
+- Стартовые позиции фиксированы для каждой конфигурации (axial coordinates q, r):
+
+**2 игрока (7 ячеек, радиус 1):**
+- Игрок 0: q=-1, r=0 (левый)
+- Игрок 1: q=1, r=0 (правый)
+- Исключённых ячеек нет
+
+**3 игрока (10 ячеек, радиус 2):**
+- Игрок 0: q=0, r=-2 (верхний)
+- Игрок 1: q=-2, r=2 (левый нижний)
+- Игрок 2: q=2, r=0 (правый)
+- Исключённые ячейки (9 шт): (-1,-1), (-2,0), (-2,1), (1,-2), (2,-2), (2,-1), (-1,2), (0,2), (1,1)
+
+**4 игрока (17 ячеек, радиус 2):**
+- Игрок 0: q=-2, r=0 (левый)
+- Игрок 1: q=2, r=0 (правый)
+- Игрок 2: q=-2, r=2 (левый нижний)
+- Игрок 3: q=2, r=-2 (правый верхний)
+- Исключённые ячейки (2 шт): (0,-2), (0,2)
 
 ---
 
@@ -45,7 +62,20 @@
 
 ### 3.2 Количество вопросов
 
-Минимальный пул: 50–70 вопросов на игру
+- Минимальный пул: 50–70 вопросов на тему
+- Вопросы создаются админом сайта и привязаны к теме
+- При создании игры вопросы выбираются случайным образом из пула темы
+
+### 3.3 Таймеры игры
+
+| Параметр | Значение по умолчанию | Диапазон |
+|----------|----------------------|----------|
+| Время на ход (выбор ячейки) | 30 сек | 15–60 сек |
+| Дополнительное время на ход | 15 сек | 10–30 сек |
+| Время на ответ | 20 сек | 10–45 сек |
+| Таймер игры | 30 мин | 10–60 мин (или без ограничения) |
+
+> Таймер игры останавливается на время ответа на вопрос
 
 ---
 
@@ -53,9 +83,19 @@
 
 Ходы идут по очереди по часовой стрелке.
 
-В свой ход игрок может:
-1. Попытаться захватить одну соседнюю территорию
-2. ИЛИ объявить поединок за спорную территорию
+### 4.1 Действия в ход
+
+В свой ход игрок **обязан** выбрать одну соседнюю территорию для захвата:
+- Свободную территорию (соло-захват)
+- Территорию другого игрока (атака/поединок)
+
+### 4.2 Таймаут хода
+
+1. Игроку даётся основное время на выбор ячейки
+2. Если время истекло — даётся дополнительное время (предупреждение)
+3. Если дополнительное время истекло — **игрок удаляется из игры**
+   - Все его территории становятся свободными
+   - Ход переходит к следующему игроку
 
 ---
 
@@ -64,40 +104,83 @@
 ### Условия
 
 Территория:
-- Свободна
-- Граничит с территорией игрока
-- На неё претендует только один игрок
+- Свободна (не принадлежит никому)
+- Граничит с территорией активного игрока
 
 ### Процесс
 
-- Ответ на 1 вопрос из пула
-- Время на ответ: задано в параметрах игры
-- Формат: один правильный ответ (выбор из 4 вариантов)
+1. Игрок выбирает свободную соседнюю ячейку
+2. Получает 1 вопрос из пула темы
+3. Время на ответ: задано в параметрах игры
+4. Формат: выбор из 4 вариантов ответа
 
 ### Результат
 
-- ✅ Правильно → территория переходит игроку
-- ❌ Неправильно → территория остаётся свободной до следующего хода
+| Действие игрока | Результат |
+|-----------------|-----------|
+| Ответил правильно | Территория переходит игроку |
+| Ответил неправильно | Территория остаётся свободной |
+| Не ответил (время истекло) | Территория остаётся свободной |
 
 ---
 
-## 6. Спорная территория (поединок)
+## 6. Атака на территорию противника (поединок)
 
-> Если двое или более игроков могут захватить одну и ту же свободную территорию.
+> Активный игрок может атаковать соседнюю территорию, принадлежащую другому игроку.
 
-### Захват территории другого игрока
+### Условия
 
-**Формат:**
-- вопрос обоим игрокам
-- Побеждает игрок, который ответил правильно или, если оба ответили правильно, то тот кто ответил быстрее
+- Атакуемая территория принадлежит другому игроку
+- Атакуемая территория граничит с территорией атакующего
+- Защитник не может отказаться от поединка
 
-## 9. Победа
+### Процесс
 
-Победа наступает, если:
-- Игрок контролирует все территории
-- Все остальные игроки потеряли свои территории
-- По таймеру: выигрывает игрок с наибольшим числом территорий
-- Остальные игроки вышли из игры
+1. Атакующий выбирает вражескую соседнюю ячейку
+2. Оба игрока (атакующий и защитник) получают **один и тот же вопрос**
+3. Оба отвечают одновременно (время ограничено)
+4. Учитывается правильность ответа и время ответа
+
+### Результат
+
+| Атакующий | Защитник | Результат |
+|-----------|----------|-----------|
+| Правильно + быстрее | Правильно | Территория переходит атакующему |
+| Правильно | Неправильно / не ответил | Территория переходит атакующему |
+| Правильно | Правильно + быстрее | Территория остаётся у защитника |
+| Неправильно / не ответил | Правильно | Территория остаётся у защитника |
+| Неправильно / не ответил | Неправильно / не ответил | Территория остаётся у защитника |
+
+> **Защитник сохраняет территорию** во всех случаях, кроме победы атакующего (правильный ответ + быстрее или единственный правильный ответ).
+
+---
+
+## 7. Победа
+
+### Условия победы (в порядке приоритета)
+
+| Условие | Описание |
+|---------|----------|
+| **Полный захват** | Игрок контролирует все территории на поле |
+| **Последний выживший** | Все остальные игроки удалены из игры (таймаут хода / выход) |
+| **Таймер игры** | Время игры истекло — побеждает игрок с наибольшим числом территорий |
+
+### При ничьей по территориям (таймер)
+
+Если у нескольких игроков одинаковое количество территорий при истечении таймера:
+1. Побеждает игрок с большим количеством правильных ответов
+2. Если и это равно — ничья (оба считаются победителями)
+
+### Удаление игрока из игры
+
+Игрок удаляется из игры, если:
+- Не выбрал ячейку за основное + дополнительное время хода
+- Отключился и не переподключился в течение reconnect deadline
+- Нажал кнопку "Сдаться"
+
+При удалении игрока:
+- Все его территории становятся **свободными**
+- Игрок больше не участвует в очереди ходов
 
 ---
 
@@ -418,10 +501,10 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "name": "string",
         "description": "string?",
         "difficulty": "easy | medium | hard",
-        "players_count": "number",
         "likes": "number",
         "dislikes": "number",
-        "times_played": "number"
+        "times_played": "number",
+        "questions_count": "number"
       }
     ],
     "pagination": {
@@ -456,10 +539,10 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "name": "string",
         "description": "string?",
         "difficulty": "easy | medium | hard",
-        "players_count": "number",
         "likes": "number",
         "dislikes": "number",
-        "times_played": "number"
+        "times_played": "number",
+        "questions_count": "number"
       }
     ],
     "pagination": {
@@ -526,13 +609,25 @@ const socket = io('wss://server', {
 
 ```json
 {
-  "theme_id": "string?",
-  "theme_name": "string",
+  "theme_id": "string",
   "players_count": 2,
   "time_per_question": 20,
+  "time_per_turn": 30,
+  "extra_time_per_turn": 15,
+  "game_timer": 1800,
   "is_private": false
 }
 ```
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `theme_id` | string | ID темы из списка тем |
+| `players_count` | number | Количество игроков (2-4) |
+| `time_per_question` | number | Секунды на ответ (10-45) |
+| `time_per_turn` | number | Секунды на выбор ячейки (15-60) |
+| `extra_time_per_turn` | number | Доп. секунды при таймауте (10-30) |
+| `game_timer` | number? | Таймер игры в секундах (null = без ограничения) |
+| `is_private` | boolean | Приватная комната |
 
 **Ответ:** `room:created` создателю, `rooms:list` всем в лобби
 
@@ -636,17 +731,20 @@ const socket = io('wss://server', {
   "room_id": "string",
   "status": "waiting | ready",
   "owner_id": "string",
-  "theme_id": "string?",
+  "theme_id": "string",
   "theme_name": "string",
   "players_count": "number",
   "time_per_question": "number",
+  "time_per_turn": "number",
+  "extra_time_per_turn": "number",
+  "game_timer": "number | null",
   "is_private": "boolean",
   "invite_code": "string",
   "players": [
     {
       "user_id": "string",
       "name": "string",
-            "color": "string",
+      "color": "string",
       "is_ready": "boolean"
     }
   ]
@@ -685,7 +783,7 @@ const socket = io('wss://server', {
 }
 ```
 
-> `new_owner_id` — если владелец вышел, права передаются другому игроку
+> `new_owner_id` — если владелец вышел, права передаются **случайному** игроку из оставшихся
 
 ---
 
@@ -796,6 +894,10 @@ const socket = io('wss://server', {
   "game_id": "string",
   "theme_name": "string",
   "time_per_question": "number",
+  "time_per_turn": "number",
+  "extra_time_per_turn": "number",
+  "game_timer": "number | null",
+  "game_end_time": "number | null",
   "cells": [
     {
       "id": "number",
@@ -810,14 +912,22 @@ const socket = io('wss://server', {
       "id": "number",
       "user_id": "string",
       "name": "string",
-            "color": "string",
+      "color": "string",
       "territories": "number"
     }
   ],
   "current_turn": "number",
-  "turn_deadline": "number"
+  "turn_deadline": "number",
+  "is_extra_time": "boolean"
 }
 ```
+
+| Поле | Описание |
+|------|----------|
+| `game_timer` | Таймер игры в секундах (null = без ограничения) |
+| `game_end_time` | Unix timestamp окончания игры по таймеру (null = без ограничения) |
+| `turn_deadline` | Unix timestamp окончания хода |
+| `is_extra_time` | Идёт ли сейчас дополнительное время хода |
 
 ---
 
@@ -837,13 +947,17 @@ const socket = io('wss://server', {
     {
       "id": "number",
       "territories": "number",
-      "is_eliminated": "boolean"
+      "is_active": "boolean"
     }
   ],
   "current_turn": "number",
-  "turn_deadline": "number"
+  "turn_deadline": "number",
+  "is_extra_time": "boolean",
+  "game_end_time": "number | null"
 }
 ```
+
+> `is_active: false` — игрок удалён из игры (таймаут/выход/сдался)
 
 ---
 
@@ -854,9 +968,12 @@ const socket = io('wss://server', {
 ```json
 {
   "available_cells": ["number"],
-  "turn_deadline": "number"
+  "turn_deadline": "number",
+  "is_extra_time": "boolean"
 }
 ```
+
+> `is_extra_time: true` — это предупреждение, основное время истекло
 
 ---
 
@@ -938,7 +1055,25 @@ const socket = io('wss://server', {
 ```json
 {
   "user_id": "string",
-  "player_id": "number"
+  "player_id": "number",
+  "freed_cells": ["number"]
+}
+```
+
+> `freed_cells` — ID ячеек, которые стали свободными
+
+---
+
+#### `game:player_removed`
+
+> Игрок удалён из игры (таймаут хода, disconnect timeout)
+
+```json
+{
+  "user_id": "string",
+  "player_id": "number",
+  "reason": "turn_timeout | disconnect_timeout",
+  "freed_cells": ["number"]
 }
 ```
 
@@ -946,7 +1081,7 @@ const socket = io('wss://server', {
 
 #### `game:player_disconnected`
 
-> Игрок отключился
+> Игрок отключился (ещё может переподключиться)
 
 ```json
 {
@@ -955,6 +1090,8 @@ const socket = io('wss://server', {
   "reconnect_deadline": "number"
 }
 ```
+
+> Reconnect deadline: 60 секунд. Если игрок не переподключился — `game:player_removed`.
 
 ---
 
@@ -978,7 +1115,8 @@ const socket = io('wss://server', {
 ```json
 {
   "winner_id": "string?",
-  "reason": "conquest | elimination | timeout | forfeit | disconnect",
+  "winner_ids": ["string"],
+  "reason": "conquest | last_standing | game_timer | forfeit",
   "final_scores": [
     {
       "user_id": "string",
@@ -989,17 +1127,33 @@ const socket = io('wss://server', {
       "correct_answers": "number"
     }
   ],
-  "theme_id": "string?"
+  "theme_id": "string"
 }
 ```
 
-> `theme_id` передаётся для возможности оценить тему
+| Поле | Описание |
+|------|----------|
+| `winner_id` | ID победителя (null при ничьей) |
+| `winner_ids` | Массив ID победителей (для ничьей) |
+| `reason` | Причина завершения |
+| `theme_id` | ID темы для возможности оценки |
+
+**Причины завершения:**
+- `conquest` — игрок захватил все территории
+- `last_standing` — остался один активный игрок
+- `game_timer` — время игры истекло
+- `forfeit` — все кроме одного сдались
 
 ---
 
 ## Чат (привязан к игре)
 
 > Каждая игра имеет свой чат. Чат доступен с момента создания комнаты и до конца игры.
+
+**Хранение:**
+- Сообщения хранятся в Redis пока комната/игра активна
+- При переподключении игрок получает историю через `chat:history`
+- После завершения игры чат удаляется
 
 ### Клиент → Сервер
 
@@ -1208,8 +1362,8 @@ const socket = io('wss://server', {
 
 ## Общие принципы
 
-- Чаты игр не сохраняются в БД (только в памяти во время игры)
-- Темы изначально создаются как временные; при получении первого лайка переносятся в постоянное хранилище
+- Чаты игр хранятся в Redis пока игра активна, после завершения удаляются
+- Темы и вопросы создаются админом сайта (статические)
 - Все временные метки хранятся в формате Unix timestamp (миллисекунды)
 - UUID используется для всех идентификаторов
 
@@ -1312,7 +1466,7 @@ const socket = io('wss://server', {
 
 ### `themes`
 
-> Постоянные (популярные) темы игр
+> Темы игр (создаются админом сайта)
 
 | Поле | Тип | Описание |
 |------|-----|----------|
@@ -1320,39 +1474,36 @@ const socket = io('wss://server', {
 | `name` | VARCHAR(255) | Название темы |
 | `description` | TEXT | Описание (опционально) |
 | `difficulty` | ENUM | `easy`, `medium`, `hard` |
-| `players_count` | INT | Количество игроков (2-4) |
 | `likes` | INT | Количество лайков |
 | `dislikes` | INT | Количество дизлайков |
 | `times_played` | INT | Сколько раз играли |
+| `is_active` | BOOLEAN | Активна ли тема (видна в списке) |
 | `created_at` | BIGINT | Дата создания |
-| `promoted_at` | BIGINT | Дата переноса из временных |
 
 **Индексы:**
 - `INDEX(likes DESC, created_at DESC)` — для списка популярных
 - `INDEX(name)` — для поиска
+- `INDEX(is_active)` — для фильтрации активных тем
 
 ---
 
-### `temp_themes`
+### `questions`
 
-> Временные темы (до получения первого лайка)
-
-> Активная тема, сохранена только пока есть активная комната или игра, сохранится только если игра получит 1 лайк по окончанию игры
-> не входят в список популярных игр
+> Вопросы к темам (создаются админом)
 
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `id` | UUID | Первичный ключ |
-| `name` | VARCHAR(255) | Название темы |
-| `description` | TEXT | Описание (опционально) |
-| `difficulty` | ENUM | `easy`, `medium`, `hard` |
+| `theme_id` | UUID | FK → themes.id |
+| `question` | TEXT | Текст вопроса |
+| `answers` | JSONB | Массив из 4 вариантов ответа |
+| `correct_answer` | INT | Индекс правильного ответа (0-3) |
 | `created_at` | BIGINT | Дата создания |
-| `expires_at` | BIGINT | Время удаления (TTL) |
 
 **Индексы:**
-- `INDEX(expires_at)` — для очистки устаревших
+- `INDEX(theme_id)` — для выборки вопросов по теме
 
-> Темы удаляются автоматически через 24 часа, если не получили лайк
+> Минимум 50 вопросов на тему для запуска игры
 
 ---
 
@@ -1387,8 +1538,10 @@ const socket = io('wss://server', {
 | `theme_name` | VARCHAR(255) | Название темы (копия) |
 | `players_count` | INT | Количество игроков |
 | `time_per_question` | INT | Время на вопрос (сек) |
+| `time_per_turn` | INT | Время на ход (сек) |
+| `game_timer` | INT | Таймер игры (сек, nullable) |
 | `winner_id` | UUID | FK → users.id (nullable при ничьей) |
-| `end_reason` | ENUM | `conquest`, `elimination`, `timeout`, `forfeit`, `disconnect` |
+| `end_reason` | ENUM | `conquest`, `last_standing`, `game_timer`, `forfeit` |
 | `started_at` | BIGINT | Время начала |
 | `ended_at` | BIGINT | Время окончания |
 
@@ -1426,14 +1579,17 @@ const socket = io('wss://server', {
 
 ### `active_rooms:{room_id}` (Hash)
 
-```
+```json
 {
   "id": "uuid",
   "owner_id": "uuid",
-  "theme_id": "uuid?",
+  "theme_id": "uuid",
   "theme_name": "string",
   "players_count": 2,
   "time_per_question": 20,
+  "time_per_turn": 30,
+  "extra_time_per_turn": 15,
+  "game_timer": 1800,
   "is_private": false,
   "invite_code": "ABC123",
   "status": "waiting|ready",
@@ -1441,9 +1597,11 @@ const socket = io('wss://server', {
 }
 ```
 
-### `room_players:{room_id}` (List/Set)
+### `room_players:{room_id}` (List)
 
-```
+> Список хранится как JSON-строки. Порядок = порядок присоединения.
+
+```json
 [
   { "user_id": "uuid", "name": "string", "color": "#FF0000", "is_ready": true }
 ]
@@ -1451,15 +1609,20 @@ const socket = io('wss://server', {
 
 ### `active_games:{game_id}` (Hash)
 
-```
+```json
 {
   "id": "uuid",
   "room_id": "uuid",
-  "theme_id": "uuid?",
+  "theme_id": "uuid",
   "theme_name": "string",
   "time_per_question": 20,
+  "time_per_turn": 30,
+  "extra_time_per_turn": 15,
+  "game_timer": 1800,
+  "game_end_time": 1234567890,
   "current_turn": 0,
   "turn_deadline": 1234567890,
+  "is_extra_time": false,
   "status": "playing|question|finished",
   "started_at": 1234567890
 }
@@ -1467,30 +1630,42 @@ const socket = io('wss://server', {
 
 ### `game_cells:{game_id}` (Hash)
 
-```
+```json
 {
   "0": { "q": 0, "r": 0, "owner": null, "is_start": false },
-  "1": { "q": 1, "r": 0, "owner": 0, "is_start": true },
-  ...
+  "1": { "q": 1, "r": 0, "owner": 0, "is_start": true }
 }
 ```
 
 ### `game_players:{game_id}` (List)
 
-```
+> JSON-строки. `is_active: false` = игрок удалён из игры.
+
+```json
 [
-  { "id": 0, "user_id": "uuid", "name": "string", "color": "#FF0000", "territories": 1, "is_eliminated": false }
+  { "id": 0, "user_id": "uuid", "name": "string", "color": "#FF0000", "territories": 1, "is_active": true, "correct_answers": 0, "questions_answered": 0 }
+]
+```
+
+### `game_chat:{game_id}` (List)
+
+> Сообщения чата. Удаляются вместе с игрой.
+
+```json
+[
+  { "id": "uuid", "user_id": "uuid", "user_name": "string", "message": "string", "timestamp": 1234567890, "type": "user|system" }
 ]
 ```
 
 ### `user_session:{user_id}` (Hash)
 
-```
+```json
 {
   "active_room_id": "uuid?",
   "active_game_id": "uuid?",
   "socket_id": "string",
-  "last_seen": 1234567890
+  "last_seen": 1234567890,
+  "reconnect_deadline": 1234567890
 }
 ```
 
@@ -1513,10 +1688,11 @@ const socket = io('wss://server', {
 ### Тема
 
 ```
-1. Создаётся игра с новой темой → temp_themes
-2. Игра завершается, пользователь ставит лайк
-3. Тема переносится temp_themes → themes
-4. Счётчики likes/players_count инкрементируются
+1. Админ создаёт тему в БД (themes)
+2. Админ добавляет вопросы к теме (questions, минимум 50)
+3. Тема становится активной (is_active = true)
+4. После игры счётчики likes/dislikes/times_played обновляются
+5. Админ может деактивировать тему (is_active = false)
 ```
 
 ### Комната → Игра
@@ -1524,14 +1700,35 @@ const socket = io('wss://server', {
 ```
 1. Создаётся комната → active_rooms (Redis)
 2. Игроки присоединяются → room_players (Redis)
-3. Владелец запускает игру:
+3. Создаётся чат комнаты → game_chat (Redis)
+4. Владелец запускает игру:
    - active_rooms удаляется
    - active_games создаётся
    - game_cells, game_players создаются
-4. Игра завершается:
+   - Случайные вопросы загружаются из questions
+5. Игра завершается:
    - Данные сохраняются в games, game_players (PostgreSQL)
    - Статистика user_stats обновляется
-   - Redis-данные удаляются
+   - Redis-данные удаляются (включая чат)
+```
+
+### Удаление игрока
+
+```
+1. Игрок не выбрал ячейку за основное время → is_extra_time = true
+2. Игрок не выбрал ячейку за доп. время → game:player_removed
+3. Все территории игрока становятся свободными (owner = null)
+4. Игрок удаляется из очереди ходов (is_active = false)
+5. Если остался 1 активный игрок → game:ended (last_standing)
+```
+
+### Отключение игрока
+
+```
+1. Игрок отключается → game:player_disconnected
+2. Устанавливается reconnect_deadline (60 сек)
+3. Если игрок переподключился → game:player_reconnected
+4. Если deadline истёк → game:player_removed
 ```
 
 ---
@@ -1542,8 +1739,8 @@ const socket = io('wss://server', {
 |------|-----|----------|
 | `active_rooms:*` | 1 час | Неактивные комнаты удаляются |
 | `active_games:*` | 2 часа | Максимальная длительность игры |
+| `game_chat:*` | 2 часа | Чат удаляется вместе с игрой |
 | `user_session:*` | 24 часа | Сессии пользователей |
-| `temp_themes:*` | 24 часа | Временные темы |
 
 ---
 
@@ -1613,26 +1810,26 @@ CREATE TABLE themes (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     difficulty difficulty_level NOT NULL DEFAULT 'medium',
-    players_count INT NOT NULL DEFAULT 2,
     likes INT NOT NULL DEFAULT 0,
     dislikes INT NOT NULL DEFAULT 0,
     times_played INT NOT NULL DEFAULT 0,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    promoted_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    is_active BOOLEAN NOT NULL DEFAULT false,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_themes_popular ON themes(likes DESC, created_at DESC);
 CREATE INDEX idx_themes_name ON themes(name);
+CREATE INDEX idx_themes_active ON themes(is_active);
 
--- Temp themes
-CREATE TABLE temp_themes (
+-- Questions
+CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    difficulty difficulty_level NOT NULL DEFAULT 'medium',
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    expires_at BIGINT NOT NULL
+    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    answers JSONB NOT NULL,
+    correct_answer INT NOT NULL CHECK (correct_answer >= 0 AND correct_answer <= 3),
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
-CREATE INDEX idx_temp_themes_expires ON temp_themes(expires_at);
+CREATE INDEX idx_questions_theme ON questions(theme_id);
 
 -- Theme ratings
 CREATE TYPE rating_type AS ENUM ('like', 'dislike');
@@ -1649,13 +1846,15 @@ CREATE TABLE theme_ratings (
 CREATE INDEX idx_theme_ratings_theme ON theme_ratings(theme_id);
 
 -- Games history
-CREATE TYPE game_end_reason AS ENUM ('conquest', 'elimination', 'timeout', 'forfeit', 'disconnect');
+CREATE TYPE game_end_reason AS ENUM ('conquest', 'last_standing', 'game_timer', 'forfeit');
 CREATE TABLE games (
     id UUID PRIMARY KEY,
     theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
     theme_name VARCHAR(255) NOT NULL,
     players_count INT NOT NULL,
     time_per_question INT NOT NULL,
+    time_per_turn INT NOT NULL,
+    game_timer INT,
     winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
     end_reason game_end_reason NOT NULL,
     started_at BIGINT NOT NULL,

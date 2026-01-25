@@ -5,10 +5,10 @@
       на тему&nbsp;<span class="typewriter"></span>
     </h1>
     <MainButton title="Создать игру" size="large" @click="goTo" />
-    <div class="promo__circle large light"></div>
-    <div class="promo__circle medium dark"></div>
-    <div class="promo__circle large light reverse"></div>
-    <div class="promo__circle medium dark reverse"></div>
+    <div class="promo__hexagon large light"></div>
+    <div class="promo__hexagon medium dark"></div>
+    <div class="promo__hexagon large light reverse"></div>
+    <div class="promo__hexagon medium dark reverse"></div>
   </div>
 </template>
 
@@ -45,13 +45,14 @@ const goTo = () => {
   &__title {
     font-size: 48px;
     padding-top: 48px;
+    line-height: 1;
     text-align: center;
   }
 
-  &__circle {
+  &__hexagon {
     position: absolute;
-    aspect-ratio: 1/1;
-    border-radius: 50%;
+    aspect-ratio: 1 / 1;
+    clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
 
     &.large {
       bottom: -25vw;

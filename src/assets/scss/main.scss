@@ -42,21 +42,45 @@ body {
           sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+h1 {
+  font-size: 32px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 32px;
+  letter-spacing: 0.5px;
 }
 
 h2 {
   font-size: 28px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 36px;
+  letter-spacing: 0.5px;
+  overflow: hidden;
 }
 
 h3 {
   font-size: 24px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 32px;
+  letter-spacing: 0.5px;
 }
 
 h4 {
-  font-weight: 400;
-  font-size: 18px;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 24px;
+  letter-spacing: 0.5px;
+}
+
+h5 {
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 24px;
+  letter-spacing: 0.5px;
 }
 
 button {

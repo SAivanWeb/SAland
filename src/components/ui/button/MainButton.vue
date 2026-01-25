@@ -1,5 +1,13 @@
 <template>
-  <n-button type="info" :size="size" @click="onClick">{{ title }}</n-button>
+  <n-button
+    type="info"
+    :size="size"
+    :disabled="disabled"
+    :attr-type="attrType"
+    @click="onClick"
+  >
+    {{ title }}
+  </n-button>
 </template>
 
 <script setup lang="ts">
@@ -12,8 +20,13 @@ const emit = defineEmits<{
 interface Props {
   title: string
   size: 'small' | 'medium' | 'large'
+  disabled?: boolean
+  attrType?: 'button' | 'submit' | 'reset'
 }
-const props = defineProps<Props>()
+
+withDefaults(defineProps<Props>(), {
+  attrType: 'button',
+})
 
 const onClick = () => {
   emit('click')

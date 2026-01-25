@@ -32,11 +32,35 @@
 import PopularGameCard from '@/components/ui/card/PopularGameCard.vue'
 import ActiveGameCard from '@/components/ui/card/ActiveGameCard.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import GameStart from '@/components/games/GameStart.vue'
 import GameWaiting from '@/components/games/GameWaiting.vue'
+import { api, type Theme } from '@/api'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
+const processingStore = useProcessingStore()
 const search = ref<string>('')
+
+
+
+const popularGames = ref<Theme[]>([])
+
+async function fetchPopularGames() {
+  try {
+    processingStore.startLoading()
+    const res = await api.themes.popular()
+    popularGames.value = res.data.themes;
+
+  } catch (error) {
+    console.log(error)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+onMounted(() => {
+  fetchPopularGames()
+})
 </script>
 
 <style scoped lang="scss">

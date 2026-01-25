@@ -8,6 +8,7 @@
         </div>
         <FooterBar v-if="!isGame" />
       </n-scrollbar>
+      <Preloader v-show="showPreloader" class="preloader" />
     </n-modal-provider>
   </n-config-provider>
 </template>
@@ -18,6 +19,8 @@ import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
+import Preloader from '@/components/template/Preloader.vue'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
 const themeOverrides = {
   common: {
@@ -39,9 +42,14 @@ const themeOverrides = {
 }
 
 const route = useRoute()
+const processingStore = useProcessingStore()
 
 const isGame = computed(() => {
   return route.path.includes('/game/')
+})
+
+const showPreloader = computed(() => {
+  return processingStore.loading
 })
 </script>
 
@@ -62,5 +70,13 @@ const isGame = computed(() => {
   &:has(.main_game) {
     max-height: 100vh;
   }
+}
+
+.preloader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 999;
 }
 </style>

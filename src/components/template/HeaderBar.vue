@@ -1,8 +1,9 @@
 <template>
   <div class="header">
     <div class="header__container">
-      <MainButton v-if="isAuth" title="ВОЙТИ" size="medium" />
-      <Menu v-else />
+      <div class="header__logo"></div>
+      <MainButton v-if="!isAuth && !isAuthPage" title="войти" size="medium" @click="toAuth" />
+      <Menu v-else-if="isAuth || !isAuthPage" />
     </div>
   </div>
 </template>
@@ -12,12 +13,24 @@ import MainButton from '@/components/ui/button/MainButton.vue'
 import { useUserStore } from '@/stores/useUserStore.ts'
 import { computed } from 'vue'
 import Menu from '@/components/template/Menu.vue'
+import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const isAuth = computed(() => {
   return userStore.currentUser !== null
 })
+
+const isAuthPage = computed(() => {
+  return route.path === '/auth'
+})
+
+const toAuth = () => {
+  router.push('/auth')
+}
 </script>
 
 <style lang="scss">

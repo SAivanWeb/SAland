@@ -1,7 +1,7 @@
 <template>
   <div class="input">
     <label v-if="label" :for="name">{{ label }}</label>
-    <n-input v-model:value="localValue" :name="name" :placeholder="placeholder" :size="size"/>
+    <n-input v-model:value="localValue" :name="name" :placeholder="placeholder" :type="fieldType" :size="size"/>
   </div>
 </template>
 
@@ -17,9 +17,13 @@ interface Props {
   placeholder: string
   label?: string
   modelValue: string
-  size: 'small' | 'medium' | 'large'
+  size?: 'small' | 'medium' | 'large'
+  fieldType?: 'text' | 'password'
 }
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  size: 'large',
+  fieldType: 'text',
+})
 
 const localValue = ref(props.modelValue)
 

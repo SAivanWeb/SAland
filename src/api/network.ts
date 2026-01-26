@@ -78,7 +78,6 @@ async function refreshAccessToken(): Promise<string | null> {
     }
 
     setAccessToken(json.data.access_token)
-    window.location.href = '/games'
     return json.data.access_token
   } catch {
     setAccessToken(null)

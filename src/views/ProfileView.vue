@@ -31,7 +31,7 @@
           <div class="profile__friends">
             <div class="profile__friends-header">
               <h2>Друзья</h2>
-              <MainButton title="Добавить" size="small" />
+              <MainButton title="Добавить" size="small" @click="showSearch = !showSearch" />
             </div>
             <div class="profile__friends-content">
               <div class="profile__friends-none">Нет друзей</div>
@@ -41,6 +41,8 @@
       </div>
     </div>
   </div>
+
+  <SearchPlayerModal :is-open="showSearch"/>
 </template>
 
 <script setup lang="ts">
@@ -49,10 +51,12 @@ import MainButton from '@/components/ui/button/MainButton.vue'
 import { api, type Friend, type UserProfile } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { onMounted, ref } from 'vue'
+import SearchPlayerModal from '@/components/modals/SearchPlayerModal.vue'
 
 const processingStore = useProcessingStore()
 const profile = ref<UserProfile>()
 const friends = ref<Friend[]>([])
+const showSearch = ref<boolean>(false)
 
 async function fetchProfile() {
   try {

@@ -1,7 +1,7 @@
 <template>
   <n-popover style="padding: 0" trigger="click" placement="bottom">
     <template #trigger>
-      <n-icon size="36" color="#3cade6" class="menu__button">
+      <n-icon size="36" color="#FFD166" class="menu__button">
         <Menu />
       </n-icon>
     </template>
@@ -21,7 +21,7 @@ import { useUserStore } from '@/stores/useUserStore.ts'
 const userStore = useUserStore()
 
 function renderIcon(icon: Component) {
-  return () => h(NIcon, { size: 24, color: '#3cade6' }, { default: () => h(icon) })
+  return () => h(NIcon, { size: 24, color: '#FFD166' }, { default: () => h(icon) })
 }
 
 const menuOptions: MenuOption[] = [
@@ -66,7 +66,13 @@ function logout(key: string) {
 </script>
 
 <style scoped lang="scss">
-.menu__button{
+.menu__button {
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.2);
+    transform: scale(1.05);
+  }
 }
 </style>

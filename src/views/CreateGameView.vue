@@ -86,25 +86,56 @@ const timeOption = [
     max-width: 1080px;
     width: 100%;
     margin: 0 auto;
-
     display: flex;
     flex-direction: column;
     gap: 24px;
   }
 
+  h1 {
+    color: $text-primary;
+  }
+
   &__card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px 16px;
-    background-color: #fff;
-    border-radius: 4px;
+    gap: 16px;
+    padding: 20px 24px;
+    background: $second-background;
+    border-radius: $border-radius;
     border: 1px solid $border;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $border-accent;
+    }
+
+    &-title {
+      color: $text-primary;
+    }
+
+    &-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
     &-param {
       display: flex;
       gap: 12px;
     }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__answer {
+    padding: 12px;
+    background: $third-background;
+    border-radius: $border-radius;
+    border: 1px solid $border;
   }
 }
 </style>

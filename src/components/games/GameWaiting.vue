@@ -23,13 +23,28 @@ const props = defineProps<Props>()
 
 <style scoped lang="scss">
 .players {
-  padding: 12px 16px;
-  background-color: #fff;
-  border-radius: 4px;
+  padding: 20px 24px;
+  background: $second-background;
+  border-radius: $border-radius;
   border: 1px solid $border;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $border-accent;
+  }
+
+  &__title {
+    color: $text-primary;
+  }
+
+  &__list {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
 }
 </style>

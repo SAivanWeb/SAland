@@ -42,7 +42,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(60, 173, 230, 0.6);
+  background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+  box-shadow: 0 0 60px $primary-glow;
 }
 
 .loader {
@@ -50,6 +51,7 @@
   width: 100px;
   height: 100px;
   position: relative;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.3));
 }
 
 .container {
@@ -80,8 +82,8 @@
   height: 57.74%;
   left: 0;
   top: 21.13%;
-  border-left: 2px solid #fff;
-  border-right: 2px solid #fff;
+  border-left: 2px solid $background;
+  border-right: 2px solid $background;
 }
 
 .hex0 {

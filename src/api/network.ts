@@ -1,6 +1,6 @@
 // Network layer for API requests
 
-import type { ApiError } from './modules/types'
+import type { ApiResponse } from './modules/types'
 
 const BASE_URL = import.meta.env.VITE_APP_BASE_URL || 'http://localhost:3000/api'
 
@@ -69,10 +69,17 @@ async function refreshAccessToken(): Promise<string | null> {
       return null
     }
 
-    const data = await response.json()
-    setAccessToken(data.access_token)
+    const json: ApiResponse<{ access_token: string }> = await response.json()
+
+    if (!json.status) {
+      setAccessToken(null)
+      window.location.href = '/auth'
+      return null
+    }
+
+    setAccessToken(json.data.access_token)
     window.location.href = '/games'
-    return data.access_token
+    return json.data.access_token
   } catch {
     setAccessToken(null)
     window.location.href = '/auth'
@@ -87,39 +94,38 @@ async function ensureValidToken(): Promise<string | null> {
   return getAccessToken()
 }
 
-export class ApiRequestError extends Error implements ApiError {
-  status: number
-  code?: string
+export class ApiRequestError extends Error {
+  status: boolean
+  code: number
+  httpStatus: number
 
-  constructor(status: number, message: string, code?: string) {
+  constructor(httpStatus: number, message: string, code?: number, status?: boolean) {
     super(message)
     this.name = 'ApiRequestError'
-    this.status = status
-    this.code = code
+    this.httpStatus = httpStatus
+    this.code = code ?? httpStatus
+    this.status = status ?? false
   }
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    let message = 'Request failed'
-    let code: string | undefined
-
-    try {
-      const errorData = await response.json()
-      message = errorData.message || message
-      code = errorData.code
-    } catch {
-      // Ignore JSON parse error
-    }
-
-    throw new ApiRequestError(response.status, message, code)
-  }
-
   if (response.status === 204) {
     return {} as T
   }
 
-  return response.json()
+  const json: ApiResponse<T> = await response.json()
+
+  if (!response.ok || !json.status) {
+    const errorData = json as unknown as { message?: string; status: boolean; code: number }
+    throw new ApiRequestError(
+      response.status,
+      errorData.message || 'Request failed',
+      json.code,
+      json.status
+    )
+  }
+
+  return json.data
 }
 
 export async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {

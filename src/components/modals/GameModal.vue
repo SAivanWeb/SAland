@@ -24,7 +24,7 @@
             :show-indicator="false"
             :height="8"
             :border-radius="4"
-            color="#3cade6"
+            color="#FFD166"
           />
         </div>
         <h2 class="modal__question">{{ question }}</h2>
@@ -156,7 +156,6 @@ onUnmounted(() => {
     gap: 12px;
     align-items: center;
 
-
     &-list {
       display: flex;
       gap: 12px;
@@ -171,20 +170,21 @@ onUnmounted(() => {
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: $border-radius;
     border: 2px solid;
-    background: #fff;
+    background: $third-background;
 
     &-indicator {
       width: 12px;
       height: 12px;
       border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
     }
 
     &-name {
       font-size: 1rem;
       font-weight: 600;
-      color: #333;
+      color: $text-primary;
     }
   }
 
@@ -195,10 +195,11 @@ onUnmounted(() => {
     align-items: center;
 
     &-time {
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: 700;
-      color: #3cade6;
+      color: $primary;
       font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 20px $primary-glow;
     }
   }
 
@@ -207,7 +208,7 @@ onUnmounted(() => {
     font-weight: 700;
     text-align: center;
     margin: 0;
-    color: #333;
+    color: $text-primary;
   }
 
   &__answers {
@@ -222,32 +223,43 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 8px;
     padding: 16px;
-    border-radius: 8px;
-    border: 2px solid $border;
+    border-radius: $border-radius;
+    border: 1px solid $border;
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: #fff;
+    transition: all 0.2s ease;
+    background: $third-background;
 
     &:hover {
       border-color: $primary;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(60, 173, 230, 0.2);
+      box-shadow: 0 4px 20px $primary-glow;
+      background: $surface-elevated;
     }
 
     &-header {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
-      color: #666;
+      color: $text-muted;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
     }
 
     &-body {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
       margin: 0;
-      color: #333;
+      color: $text-primary;
     }
   }
+}
+
+// Переопределение стилей NCard для темной темы
+:deep(.n-card) {
+  background: $second-background !important;
+  border: 1px solid $border !important;
+}
+
+:deep(.n-card-header) {
+  border-bottom: 1px solid $border !important;
 }
 </style>

@@ -175,6 +175,26 @@ Authorization: Bearer <access_token>
 #### GET `/user/profile`
 Профиль текущего пользователя.
 
+>TODO: привести к актуальному виду. Сейчас приходит
+> "data": {
+"user": {
+"id": "84e47ec6-a9ee-479e-9285-1c2d2e4097b5",
+"email": "test@ya.ru",
+"name": "Иван",
+"created_at": 1769346081000,
+"stats": {
+"games_played": 0,
+"games_won": 0,
+"win_rate": 0,
+"total_territories_captured": 0,
+"total_questions_answered": 0,
+"total_correct_answers": 0
+}
+},
+"friends_count": 0,
+"pending_requests_count": 0
+}
+
 **Response (200):**
 ```typescript
 {

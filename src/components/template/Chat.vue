@@ -223,6 +223,7 @@ watch(
   display: flex;
   align-items: center;
   gap: 8px;
+  color: $text-primary;
 }
 
 .messages-container {
@@ -247,43 +248,52 @@ watch(
     flex-direction: row-reverse;
 
     .message-content {
-      background: $primary;
-      color: #fff;
+      background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+      color: $background;
       border-radius: 16px 16px 4px 16px;
     }
 
     .message-author {
       text-align: right;
+      color: $background;
     }
 
     .message-time {
       text-align: right;
+      color: $background;
+      opacity: 0.7;
+    }
+
+    .message-text {
+      color: $background;
     }
   }
 }
 
 .message-content {
-  background: #f0f0f0;
-  padding: 8px 12px;
+  background: $third-background;
+  padding: 10px 14px;
   border-radius: 16px 16px 16px 4px;
   min-width: 100px;
+  border: 1px solid $border;
 }
 
 .message-author {
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 4px;
-  opacity: 0.8;
+  color: $secondary;
 }
 
 .message-text {
   word-break: break-word;
   white-space: pre-wrap;
+  color: $text-primary;
 }
 
 .message-time {
   font-size: 10px;
-  opacity: 0.6;
+  color: $text-muted;
   margin-top: 4px;
 }
 
@@ -296,5 +306,23 @@ watch(
 
 .message-avatar {
   flex-shrink: 0;
+}
+
+// Стили для drawer в темной теме
+:deep(.n-drawer) {
+  background: $second-background !important;
+}
+
+:deep(.n-drawer-header__main) {
+  color: $text-primary !important;
+}
+
+:deep(.n-drawer-body-content-wrapper) {
+  background: $second-background !important;
+}
+
+:deep(.n-drawer-footer) {
+  background: $second-background !important;
+  border-top: 1px solid $border !important;
 }
 </style>

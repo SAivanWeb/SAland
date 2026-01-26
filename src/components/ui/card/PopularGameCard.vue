@@ -4,7 +4,7 @@
     <div class="card__body">
       <div class="card__item">
         <div class="card__item-value">
-          <n-icon size="24" color="#3cade6">
+          <n-icon size="24" color="#06D6A0">
             <Accessibility />
           </n-icon>
           3
@@ -12,7 +12,7 @@
       </div>
       <div class="card__item">
         <div class="card__item-value">
-          <n-icon size="24" color="#ffba00">
+          <n-icon size="24" color="#FFD166">
             <Star />
           </n-icon>
           5
@@ -21,13 +21,13 @@
       <div class="card__item">
         <div class="card__item-values">
           <div class="card__item-value">
-            <n-icon size="24" color="#008a00">
+            <n-icon size="24" color="#06D6A0">
               <Like />
             </n-icon>
             10
           </div>
           <div class="card__item-value">
-            <n-icon size="24" color="#e00501">
+            <n-icon size="24" color="#EF476F">
               <Dislike />
             </n-icon>
             2
@@ -51,14 +51,24 @@ import Dislike from '@/assets/icons/dislike.vue'
 
 <style scoped lang="scss">
 .card {
-  padding: 12px 16px;
-  background-color: #fff;
-  border-radius: 4px;
+  padding: 16px 20px;
+  background: $second-background;
+  border-radius: $border-radius;
   border: 1px solid $border;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $border-accent;
+    background: $third-background;
+  }
+
+  &__title {
+    color: $text-primary;
+  }
 
   &__body {
     display: flex;
@@ -75,6 +85,8 @@ import Dislike from '@/assets/icons/dislike.vue'
       display: flex;
       align-items: center;
       gap: 6px;
+      color: $text-secondary;
+      font-weight: 500;
     }
 
     &-values {

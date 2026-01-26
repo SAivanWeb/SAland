@@ -41,7 +41,7 @@ const toAuth = () => {
   display: flex;
   align-items: center;
   padding: 0 $side-padding;
-  background: #fff;
+  background: $second-background;
 
   &__container {
     width: 100%;

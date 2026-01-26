@@ -1,14 +1,58 @@
-$primary: #3cade6;
-$dark: #3889C5FF;
-$text-dark: #2e3b42;
-$text-light: #ffffff;
-$background: #f2f5fa;
-$second-background: #e6e8ec;
-$border: #dfdfe4;
+// ========================================
+// Cyberpunk Gold Palette
+// ========================================
 
+// Primary accent (золотой желтый)
+$primary: #FFD166;
+$primary-hover: #FFBE0B;
+$primary-muted: rgba(255, 209, 102, 0.2);
+$primary-glow: rgba(255, 209, 102, 0.4);
+
+// Secondary accent (бирюзовый)
+$secondary: #06D6A0;
+$secondary-hover: #05B384;
+$secondary-muted: rgba(6, 214, 160, 0.2);
+
+// Backgrounds
+$background: #0D0D0D;
+$second-background: #1A1A1A;
+$third-background: #242424;
+$surface-elevated: #2A2A2A;
+
+// Text
+$text-primary: #FFFFFF;
+$text-secondary: #A0A0A0;
+$text-muted: #666666;
+$text-dark: #FFFFFF;
+$text-light: #A0A0A0;
+
+// Borders
+$border: rgba(255, 255, 255, 0.1);
+$border-accent: rgba(255, 209, 102, 0.2);
+
+// Semantic colors
+$success: #06D6A0;
+$error: #EF476F;
+$warning: #FFD166;
+$info: #118AB2;
+
+// Player colors (для гексов и аватаров)
+$player-1: #06D6A0;  // Бирюзовый
+$player-2: #118AB2;  // Синий
+$player-3: #EF476F;  // Розовый
+$player-4: #9B5DE5;  // Фиолетовый
+
+// Legacy support
+$dark: $secondary;
+
+// ========================================
+// Layout
+// ========================================
 $side-padding: 24px;
 $header-height: 64px;
 $footer-height: 124px;
+$border-radius: 8px;
+$border-radius-lg: 12px;
 
 @mixin body-0 {
   font-size: 20px;
@@ -51,4 +95,111 @@ $footer-height: 124px;
   font-size: 12px;
   font-weight: 400;
   line-height: 14px;
+}
+
+// ========================================
+// UI Mixins
+// ========================================
+
+@mixin card-surface {
+  background: $second-background;
+  border: 1px solid $border;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $border-accent;
+    background: $third-background;
+  }
+}
+
+@mixin card-elevated {
+  background: $surface-elevated;
+  border: 1px solid $border;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+@mixin glow-effect($color: $primary) {
+  box-shadow: 0 0 20px rgba($color, 0.3),
+              0 0 40px rgba($color, 0.1);
+}
+
+@mixin button-primary {
+  background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+  color: $background;
+  font-weight: 600;
+  border: none;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px $primary-glow;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px $primary-glow;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@mixin button-secondary {
+  background: transparent;
+  color: $primary;
+  font-weight: 600;
+  border: 1px solid $primary;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $primary-muted;
+  }
+}
+
+@mixin button-ghost {
+  background: transparent;
+  color: $text-secondary;
+  border: 1px solid $border;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $text-primary;
+    border-color: $text-secondary;
+  }
+}
+
+@mixin input-field {
+  background: $third-background;
+  border: 1px solid $border;
+  border-radius: $border-radius;
+  color: $text-primary;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px $primary-muted;
+  }
+
+  &::placeholder {
+    color: $text-muted;
+  }
+}
+
+@mixin hex-cell {
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+    z-index: 10;
+  }
+}
+
+@mixin text-gradient {
+  background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

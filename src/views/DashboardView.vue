@@ -49,7 +49,7 @@ async function fetchPopularGames() {
   try {
     processingStore.startLoading()
     const res = await api.themes.popular()
-    popularGames.value = res.data.themes;
+    popularGames.value = res.themes;
 
   } catch (error) {
     console.log(error)

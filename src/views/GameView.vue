@@ -78,12 +78,15 @@ interface HexCell {
 
 const showGameModal = ref<boolean>(false)
 
+// Цвета игроков (Cyberpunk Gold palette)
+const playerColors = ['#06D6A0', '#118AB2', '#EF476F', '#9B5DE5']
+
 // Тестовые данные для вопроса
 const currentQuestion = ref('В каком году на Руси появилась картошка?')
 const currentAnswers = ref(['1698', '1750', '1812', '1920'])
 const currentPlayers = ref<Player[]>([
-  { id: 0, name: 'Игрок 1', color: '#4CAF50' },
-  { id: 1, name: 'Игрок 2', color: '#2196F3' },
+  { id: 0, name: 'Игрок 1', color: playerColors[0] },
+  { id: 1, name: 'Игрок 2', color: playerColors[1] },
 ])
 
 // Обработка выбора ответа
@@ -172,10 +175,10 @@ const currentPreset = computed(() => boardPresets[playerCount.value] || boardPre
 // Игроки
 const players = ref<Player[]>(
   [
-    { id: 0, name: 'Игрок 1', color: '#4CAF50' },
-    { id: 1, name: 'Игрок 2', color: '#2196F3' },
-    { id: 2, name: 'Игрок 3', color: '#FF9800' },
-    { id: 3, name: 'Игрок 4', color: '#E91E63' },
+    { id: 0, name: 'Игрок 1', color: playerColors[0] },
+    { id: 1, name: 'Игрок 2', color: playerColors[1] },
+    { id: 2, name: 'Игрок 3', color: playerColors[2] },
+    { id: 3, name: 'Игрок 4', color: playerColors[3] },
   ].slice(0, playerCount.value),
 )
 
@@ -275,11 +278,12 @@ const onCellClick = (cell: HexCell) => {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  background: radial-gradient(ellipse at center, $second-background 0%, $background 100%);
 
   &__user {
     padding: 12px 16px;
-    background-color: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
+    background: rgba($second-background, 0.95);
+    border-radius: $border-radius;
     border: 2px solid;
     width: fit-content;
     display: flex;
@@ -288,42 +292,43 @@ const onCellClick = (cell: HexCell) => {
     position: absolute;
     z-index: 10;
     backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
     &.first {
       top: 16px;
       left: 16px;
-      border-color: #4caf50;
+      border-color: $player-1;
     }
     &.second {
       right: 16px;
       top: 16px;
-      border-color: #2196f3;
+      border-color: $player-2;
     }
     &.third {
       bottom: 16px;
       left: 16px;
-      border-color: #ff9800;
+      border-color: $player-3;
     }
     &.fourth {
       right: 16px;
       bottom: 16px;
-      border-color: #e91e63;
+      border-color: $player-4;
     }
 
     &-name {
       font-size: 1rem;
       font-weight: 600;
-      color: #333;
+      color: $text-primary;
     }
 
     &-stat {
       font-size: 0.9rem;
       font-weight: 500;
-      color: #666;
+      color: $text-secondary;
 
       span {
         font-weight: 700;
-        color: #333;
+        color: $primary;
       }
     }
   }
@@ -377,35 +382,43 @@ const onCellClick = (cell: HexCell) => {
     z-index: 5;
 
     &::before {
-      filter: brightness(1.15);
+      filter: brightness(1.2);
+      box-shadow: 0 0 25px var(--player-color);
     }
   }
 
   &--neutral {
     &::before {
-      background: $border;
+      background: $third-background;
+      border: 1px solid $border;
+    }
+
+    &:hover::before {
+      background: $surface-elevated;
+      box-shadow: 0 0 15px $primary-glow;
     }
   }
 
   &--player-0::before {
-    background: #4caf50;
+    background: $player-1;
   }
 
   &--player-1::before {
-    background: #2196f3;
+    background: $player-2;
   }
 
   &--player-2::before {
-    background: #ff9800;
+    background: $player-3;
   }
 
   &--player-3::before {
-    background: #e91e63;
+    background: $player-4;
   }
 
   &--start {
     &::before {
-      box-shadow: 0 0 15px var(--player-color);
+      box-shadow: 0 0 20px var(--player-color),
+                  0 0 40px rgba(var(--player-color), 0.3);
     }
   }
 }

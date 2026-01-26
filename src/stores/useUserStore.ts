@@ -13,9 +13,8 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       processingStore.startLoading()
       const res = await api.auth.login(data)
-      currentUser.value = res.data.user
-      console.log(res)
-      localStorage.setItem('access_token', res.data.access_token)
+      currentUser.value = res.user
+      localStorage.setItem('access_token', res.access_token)
       await router.push('/games')
     } catch (e) {
       console.error('Login error:', e)
@@ -54,7 +53,7 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       processingStore.startLoading()
       const res = await api.user.init();
-      currentUser.value = res.data.user;
+      currentUser.value = res.user;
     } catch (e) {
       console.log(e)
     } finally {

@@ -113,15 +113,18 @@ const register = () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 12px 16px;
-  background-color: #fff;
-  border-radius: 4px;
+  padding: 24px 28px;
+  background: $second-background;
+  border-radius: $border-radius-lg;
   border: 1px solid $border;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
   max-width: 450px;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.4),
+    0 0 60px $primary-muted;
 
   &__form {
     display: flex;
@@ -129,14 +132,23 @@ const register = () => {
     gap: 24px;
   }
 
-  &::v-deep .auth__tabs {
-    & .n-tabs-wrapper {
-      margin: 0 auto;
-    }
+  :deep(.n-tabs-wrapper) {
+    margin: 0 auto;
   }
 
-  &::v-deep .n-tabs .n-tabs-bar {
-    display: none !important;
+  :deep(.n-tabs .n-tabs-bar) {
+    display: none;
+  }
+
+  :deep(.n-tabs-tab--active .n-tabs-tab__label) {
+    color: $primary !important;
+  }
+
+  :deep(.n-tabs-tab__label) {
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 36px;
   }
 }
 </style>

@@ -41,11 +41,22 @@ watch(localValue, (val) => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .input {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
+
+  label {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-secondary;
+    transition: color 0.2s ease;
+  }
+
+  &:focus-within label {
+    color: $primary;
+  }
 }
 </style>

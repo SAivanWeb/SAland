@@ -10,18 +10,18 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-  - [Auth](#auth)
-  - [User](#user)
-  - [Friends](#friends)
-  - [Themes](#themes)
-  - [Health](#health)
+    - [Auth](#auth)
+    - [User](#user)
+    - [Friends](#friends)
+    - [Themes](#themes)
+    - [Health](#health)
 - [WebSocket API](#websocket-api)
-  - [Подключение](#подключение)
-  - [Rooms](#rooms-events)
-  - [Game](#game-events)
-  - [Chat](#chat-events)
-  - [Notifications](#notifications-events)
-  - [Main Gateway](#main-gateway-events)
+    - [Подключение](#подключение)
+    - [Rooms](#rooms-events)
+    - [Game](#game-events)
+    - [Chat](#chat-events)
+    - [Notifications](#notifications-events)
+    - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -148,7 +148,7 @@ Authorization: Bearer <access_token>
 ### User
 
 #### GET `/user/init`
-Получение начальных данных пользователя (профиль, друзья, статистика).
+Получение начальных данных пользователя при загрузке приложения.
 
 **Response (200):**
 ```typescript
@@ -157,16 +157,11 @@ Authorization: Bearer <access_token>
     id: string;
     email: string;
     name: string;
-    created_at: string;
-    stats: {
-      games_played: number;
-      games_won: number;
-      total_questions: number;
-      correct_answers: number;
-    };
+    created_at: number;
   };
-  friends: Friend[];
-  pending_requests: FriendRequest[];
+  pending_requests_count: number;
+  active_room_id: string | null;
+  active_game_id: string | null;
 }
 ```
 
@@ -181,12 +176,14 @@ Authorization: Bearer <access_token>
   id: string;
   email: string;
   name: string;
-  created_at: string;
+  created_at: number;
   stats: {
     games_played: number;
     games_won: number;
-    total_questions: number;
-    correct_answers: number;
+    win_rate: number;
+    total_territories_captured: number;
+    total_questions_answered: number;
+    total_correct_answers: number;
   };
 }
 ```
@@ -382,14 +379,13 @@ Authorization: Bearer <access_token>
 ### Themes
 
 #### GET `/themes/popular`
-Список популярных тем.
+Список популярных тем. Поддерживает поиск по названию через параметр `query`.
 
 **Query Parameters:**
 ```typescript
 {
   limit?: number;     // 1-50, по умолчанию 20
-  offset?: number;    // >= 0, по умолчанию 0
-  sort_by?: 'popular' | 'newest' | 'most_played';  // по умолчанию 'popular'
+  query?: string;     // 2-100 символов, поиск по названию (опционально)
 }
 ```
 
@@ -399,13 +395,11 @@ Authorization: Bearer <access_token>
   themes: Array<{
     id: string;
     name: string;
-    description: string;
-    questions_count: number;
-    games_played: number;
-    likes_count: number;
-    dislikes_count: number;
-    author_name: string;
-    created_at: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    likes: number;
+    dislikes: number;
+    players_count: number;
+    created_at: number;
   }>;
   total: number;
 }
@@ -413,25 +407,31 @@ Authorization: Bearer <access_token>
 
 ---
 
-#### GET `/themes/search`
-Поиск тем.
+#### POST `/themes/create`
+Создание новой темы с вопросами. Тема создаётся неактивной и становится доступной в списке популярных после получения первого лайка.
 
-**Query Parameters:**
+**Request Body:**
 ```typescript
 {
-  query: string;      // 2-100 символов, обязательный
-  limit?: number;     // 1-50, по умолчанию 20
-  offset?: number;    // >= 0, по умолчанию 0
+  name: string;             // 2-255 символов
+  players_count: number;    // 2-4
+  questions: Array<{        // Минимум 50 вопросов
+    question: string;       // 1-1000 символов
+    answers: string[];      // Ровно 4 варианта ответа
+    correct_answer: number; // Индекс правильного ответа (0-3)
+  }>;
 }
 ```
 
-**Response (200):**
+**Response (201):**
 ```typescript
 {
-  themes: Array<Theme>;
-  total: number;
+  theme_id: string;
 }
 ```
+
+**Ошибки:**
+- `400` - Валидация не пройдена (мало вопросов, невалидные данные)
 
 ---
 
@@ -446,20 +446,11 @@ Authorization: Bearer <access_token>
 {
   id: string;
   name: string;
-  description: string;
-  questions_count: number;
-  games_played: number;
-  likes_count: number;
-  dislikes_count: number;
-  difficulty_ratings: {
-    easy: number;
-    medium: number;
-    hard: number;
-  };
-  author_id: string;
-  author_name: string;
-  created_at: string;
-  user_rating?: 'like' | 'dislike' | null;  // Рейтинг текущего пользователя
+  difficulty: 'easy' | 'medium' | 'hard';
+  likes: number;
+  dislikes: number;
+  players_count: number;
+  created_at: number;
 }
 ```
 

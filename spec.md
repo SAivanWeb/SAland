@@ -14,6 +14,12 @@
 | Тип вопросов | Статические (создаются админом сайта) |
 | Цель игры | Захватить все территории ИЛИ остаться единственным игроком с территориями |
 
+
+> Тема создаётся пользователем через POST /themes/create (название, кол-во игроков, вопросы с 4 ответами).
+> Новая тема неактивна до первого лайка. После лайка тема становится доступной в списке популярных.
+> При создании комнаты из сохранённой темы кол-во игроков не может превышать players_count темы.
+> Параметры времени (game_timer, time_per_turn, time_per_question) задаются при создании комнаты и не сохраняются в теме.
+
 ---
 
 ## 2. Игровое поле
@@ -21,9 +27,9 @@
 ### 2.1 Поле
 
 - Игровое поле — гексагональная сетка, количество территорий зависит от числа игроков:
-  - 2 игрока: 7 территорий (радиус 1)
-  - 3 игрока: 10 территорий (радиус 2, 9 ячеек исключено для треугольной формы)
-  - 4 игрока: 17 территорий (радиус 2, 2 ячейки исключено)
+    - 2 игрока: 7 территорий (радиус 1)
+    - 3 игрока: 10 территорий (радиус 2, 9 ячеек исключено для треугольной формы)
+    - 4 игрока: 17 территорий (радиус 2, 2 ячейки исключено)
 - Каждая территория соединена минимум с 1 и максимум с 6 соседними
 - Поле фиксированное и симметричное
 
@@ -94,8 +100,8 @@
 1. Игроку даётся основное время на выбор ячейки
 2. Если время истекло — даётся дополнительное время (предупреждение)
 3. Если дополнительное время истекло — **игрок удаляется из игры**
-   - Все его территории становятся свободными
-   - Ход переходит к следующему игроку
+    - Все его территории становятся свободными
+    - Ход переходит к следующему игроку
 
 ---
 
@@ -765,7 +771,7 @@ const socket = io('wss://server', {
 {
   "user_id": "string",
   "name": "string",
-    "color": "string"
+  "color": "string"
 }
 ```
 
@@ -1197,7 +1203,7 @@ const socket = io('wss://server', {
   "message_id": "string",
   "user_id": "string",
   "user_name": "string",
-    "message": "string",
+  "message": "string",
   "timestamp": "number",
   "type": "user | system"
 }
@@ -1751,21 +1757,21 @@ const socket = io('wss://server', {
 ```sql
 -- Users
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+                       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                       email VARCHAR(255) NOT NULL UNIQUE,
+                       name VARCHAR(100) NOT NULL,
+                       password_hash VARCHAR(255) NOT NULL,
+                       created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+                       updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 
 -- Refresh tokens
 CREATE TABLE refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL,
-    expires_at BIGINT NOT NULL,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                                token_hash VARCHAR(255) NOT NULL,
+                                expires_at BIGINT NOT NULL,
+                                created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
@@ -1773,32 +1779,32 @@ CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 
 -- User stats
 CREATE TABLE user_stats (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    games_played INT NOT NULL DEFAULT 0,
-    games_won INT NOT NULL DEFAULT 0,
-    total_territories_captured INT NOT NULL DEFAULT 0,
-    total_questions_answered INT NOT NULL DEFAULT 0,
-    total_correct_answers INT NOT NULL DEFAULT 0
+                            user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                            games_played INT NOT NULL DEFAULT 0,
+                            games_won INT NOT NULL DEFAULT 0,
+                            total_territories_captured INT NOT NULL DEFAULT 0,
+                            total_questions_answered INT NOT NULL DEFAULT 0,
+                            total_correct_answers INT NOT NULL DEFAULT 0
 );
 
 -- Friendships
 CREATE TABLE friendships (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    PRIMARY KEY (user_id, friend_id)
+                             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                             friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                             created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+                             PRIMARY KEY (user_id, friend_id)
 );
 CREATE INDEX idx_friendships_reverse ON friendships(friend_id, user_id);
 
 -- Friend requests
 CREATE TYPE friend_request_status AS ENUM ('pending', 'accepted', 'rejected');
 CREATE TABLE friend_requests (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status friend_request_status NOT NULL DEFAULT 'pending',
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+                                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                 from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                                 to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                                 status friend_request_status NOT NULL DEFAULT 'pending',
+                                 created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+                                 updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_friend_requests_to ON friend_requests(to_user_id, status);
 CREATE INDEX idx_friend_requests_pair ON friend_requests(from_user_id, to_user_id);
@@ -1806,15 +1812,15 @@ CREATE INDEX idx_friend_requests_pair ON friend_requests(from_user_id, to_user_i
 -- Themes
 CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard');
 CREATE TABLE themes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    difficulty difficulty_level NOT NULL DEFAULT 'medium',
-    likes INT NOT NULL DEFAULT 0,
-    dislikes INT NOT NULL DEFAULT 0,
-    times_played INT NOT NULL DEFAULT 0,
-    is_active BOOLEAN NOT NULL DEFAULT false,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        name VARCHAR(255) NOT NULL,
+                        description TEXT,
+                        difficulty difficulty_level NOT NULL DEFAULT 'medium',
+                        likes INT NOT NULL DEFAULT 0,
+                        dislikes INT NOT NULL DEFAULT 0,
+                        times_played INT NOT NULL DEFAULT 0,
+                        is_active BOOLEAN NOT NULL DEFAULT false,
+                        created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_themes_popular ON themes(likes DESC, created_at DESC);
 CREATE INDEX idx_themes_name ON themes(name);
@@ -1822,58 +1828,58 @@ CREATE INDEX idx_themes_active ON themes(is_active);
 
 -- Questions
 CREATE TABLE questions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
-    question TEXT NOT NULL,
-    answers JSONB NOT NULL,
-    correct_answer INT NOT NULL CHECK (correct_answer >= 0 AND correct_answer <= 3),
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                           theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+                           question TEXT NOT NULL,
+                           answers JSONB NOT NULL,
+                           correct_answer INT NOT NULL CHECK (correct_answer >= 0 AND correct_answer <= 3),
+                           created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_questions_theme ON questions(theme_id);
 
 -- Theme ratings
 CREATE TYPE rating_type AS ENUM ('like', 'dislike');
 CREATE TABLE theme_ratings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    rating rating_type NOT NULL,
-    difficulty_rating difficulty_level NOT NULL,
-    game_id UUID NOT NULL,
-    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-    UNIQUE(theme_id, user_id)
+                               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                               theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+                               user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                               rating rating_type NOT NULL,
+                               difficulty_rating difficulty_level NOT NULL,
+                               game_id UUID NOT NULL,
+                               created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+                               UNIQUE(theme_id, user_id)
 );
 CREATE INDEX idx_theme_ratings_theme ON theme_ratings(theme_id);
 
 -- Games history
 CREATE TYPE game_end_reason AS ENUM ('conquest', 'last_standing', 'game_timer', 'forfeit');
 CREATE TABLE games (
-    id UUID PRIMARY KEY,
-    theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
-    theme_name VARCHAR(255) NOT NULL,
-    players_count INT NOT NULL,
-    time_per_question INT NOT NULL,
-    time_per_turn INT NOT NULL,
-    game_timer INT,
-    winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    end_reason game_end_reason NOT NULL,
-    started_at BIGINT NOT NULL,
-    ended_at BIGINT NOT NULL
+                       id UUID PRIMARY KEY,
+                       theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
+                       theme_name VARCHAR(255) NOT NULL,
+                       players_count INT NOT NULL,
+                       time_per_question INT NOT NULL,
+                       time_per_turn INT NOT NULL,
+                       game_timer INT,
+                       winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                       end_reason game_end_reason NOT NULL,
+                       started_at BIGINT NOT NULL,
+                       ended_at BIGINT NOT NULL
 );
 CREATE INDEX idx_games_winner ON games(winner_id);
 CREATE INDEX idx_games_ended ON games(ended_at DESC);
 
 -- Game players
 CREATE TABLE game_players (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    player_index INT NOT NULL,
-    place INT NOT NULL,
-    final_territories INT NOT NULL,
-    questions_answered INT NOT NULL,
-    correct_answers INT NOT NULL,
-    color VARCHAR(20) NOT NULL
+                              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                              game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                              user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                              player_index INT NOT NULL,
+                              place INT NOT NULL,
+                              final_territories INT NOT NULL,
+                              questions_answered INT NOT NULL,
+                              correct_answers INT NOT NULL,
+                              color VARCHAR(20) NOT NULL
 );
 CREATE INDEX idx_game_players_game ON game_players(game_id);
 CREATE INDEX idx_game_players_user ON game_players(user_id, game_id);

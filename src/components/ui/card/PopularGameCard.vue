@@ -36,7 +36,7 @@
       </div>
     </div>
     <div class="card__footer">
-      <MainButton title="Создать комнату" size="small" />
+      <MainButton title="Создать комнату" size="small" color="green"/>
     </div>
   </div>
 </template>
@@ -52,22 +52,16 @@ import Dislike from '@/assets/icons/dislike.vue'
 <style scoped lang="scss">
 .card {
   padding: 16px 20px;
-  background: $second-background;
+  background: $primary-yellow;
   border-radius: $border-radius;
-  border: 1px solid $border;
+  border: 2px solid $border;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: $border-accent;
-    background: $third-background;
-  }
 
   &__title {
-    color: $text-primary;
+    color: $text-dark;
   }
 
   &__body {
@@ -85,7 +79,7 @@ import Dislike from '@/assets/icons/dislike.vue'
       display: flex;
       align-items: center;
       gap: 6px;
-      color: $text-secondary;
+      color: $text-dark;
       font-weight: 500;
     }
 

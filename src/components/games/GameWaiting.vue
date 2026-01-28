@@ -24,21 +24,18 @@ const props = defineProps<Props>()
 <style scoped lang="scss">
 .players {
   padding: 20px 24px;
-  background: $second-background;
+  background: $primary-green;
   border-radius: $border-radius;
-  border: 1px solid $border;
+  border: 2px solid $border;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
   transition: all 0.2s ease;
 
-  &:hover {
-    border-color: $border-accent;
-  }
 
   &__title {
-    color: $text-primary;
+    color: $text-dark;
   }
 
   &__list {

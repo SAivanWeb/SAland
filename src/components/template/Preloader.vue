@@ -42,8 +42,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
-  box-shadow: 0 0 60px $primary-glow;
+  background: $background;
 }
 
 .loader {
@@ -82,8 +81,8 @@
   height: 57.74%;
   left: 0;
   top: 21.13%;
-  border-left: 2px solid $background;
-  border-right: 2px solid $background;
+  border-left: 2px solid $primary-orange;
+  border-right: 2px solid $primary-green;
 }
 
 .hex0 {

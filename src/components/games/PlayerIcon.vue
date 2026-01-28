@@ -29,17 +29,15 @@ const iconName = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, $primary 0%, $primary-hover 100%);
+  background: $primary-purple;
   border-radius: 50%;
-  color: $background;
+  color: $text-dark;
   font-weight: 600;
   font-size: 16px;
-  box-shadow: 0 2px 10px $primary-glow;
   transition: all 0.2s ease;
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 15px $primary-glow;
   }
 }
 </style>

@@ -12,7 +12,7 @@
 
 body {
   min-height: 100vh;
-  color: $text-primary;
+  color: $text-dark;
   background-color: $background;
   transition:
           color 0.3s ease,
@@ -94,79 +94,8 @@ button {
   padding-left: 16px !important;
 }
 
-// ========================================
-// Selection & Scrollbar
-// ========================================
-
-::selection {
-  background: $primary-muted;
-  color: $text-primary;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: $second-background;
-}
-
-::-webkit-scrollbar-thumb {
-  background: $third-background;
-  border-radius: 4px;
-
-  &:hover {
-    background: $text-muted;
-  }
-}
-
-// ========================================
-// Links
-// ========================================
-
-a {
-  color: $primary;
-  text-decoration: none;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: $primary-hover;
-  }
-}
-
-// ========================================
-// Utility Classes
-// ========================================
-
-.text-primary {
-  color: $primary !important;
-}
-
-.text-secondary {
-  color: $secondary !important;
-}
-
-.text-muted {
-  color: $text-muted !important;
-}
-
-.text-gradient {
-  @include text-gradient;
-}
-
-.bg-surface {
-  background: $second-background;
-}
-
-.bg-elevated {
-  background: $surface-elevated;
-}
-
-.glow {
-  @include glow-effect;
-}
-
-.glow-secondary {
-  @include glow-effect($secondary);
+.n-popover:not(.n-popover--raw) {
+  background-color: #fff;
+  border-radius: $border-radius;
+  border: 2px solid $border;
 }

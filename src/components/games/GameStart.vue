@@ -5,10 +5,6 @@
       на тему&nbsp;<span class="typewriter"></span>
     </h1>
     <MainButton title="Создать игру" size="large" @click="goTo" />
-    <div class="promo__hexagon large light"></div>
-    <div class="promo__hexagon medium dark"></div>
-    <div class="promo__hexagon large light reverse"></div>
-    <div class="promo__hexagon medium dark reverse"></div>
   </div>
 </template>
 
@@ -39,52 +35,16 @@ const goTo = () => {
   flex-direction: column;
   gap: 24px;
   align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
 
   &__title {
     font-size: 48px;
-    padding-top: 48px;
     line-height: 1;
     text-align: center;
   }
 
-  &__hexagon {
-    position: absolute;
-    aspect-ratio: 1 / 1;
-    clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
-
-    &.large {
-      bottom: -25vw;
-      left: -25vw;
-      width: 50vw;
-      right: initial;
-
-      &.reverse {
-        left: initial;
-        right: -25vw;
-      }
-    }
-
-    &.medium {
-      width: 30vw;
-      left: 10vw;
-      bottom: -15vw;
-
-      &.reverse {
-        left: initial;
-        right: 10vw;
-      }
-    }
-
-    &.light {
-      background: $primary;
-    }
-
-    &.dark {
-      background: $dark;
-    }
-  }
 }
 
 /* Typewriter effect 1 */
@@ -226,7 +186,7 @@ const goTo = () => {
 
 .typewriter {
   --caret: currentcolor;
-  color: $primary;
+  color: $primary-green;
 }
 
 .typewriter::before {

@@ -36,22 +36,17 @@ import Swords from '@/assets/icons/swords.vue'
 <style scoped lang="scss">
 .card {
   padding: 16px 20px;
-  background: $second-background;
+  background: $primary-green;
   border-radius: $border-radius;
-  border: 1px solid $border;
+  border: 2px solid $border;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
   transition: all 0.2s ease;
 
-  &:hover {
-    border-color: $border-accent;
-    background: $third-background;
-  }
-
   &__title {
-    color: $text-primary;
+    color: $text-dark;
   }
 
   &__body {
@@ -63,11 +58,6 @@ import Swords from '@/assets/icons/swords.vue'
   &__connect {
     cursor: pointer;
     transition: all 0.2s ease;
-
-    &:hover {
-      transform: scale(1.1);
-      filter: brightness(1.2);
-    }
   }
 }
 </style>

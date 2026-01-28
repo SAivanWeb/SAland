@@ -114,22 +114,21 @@ const register = () => {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 24px 28px;
-  background: $second-background;
-  border-radius: $border-radius-lg;
-  border: 1px solid $border;
+  background: $primary-green;
+  border-radius: $border-radius;
+  border: 2px solid $border;
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
   max-width: 450px;
-  box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.4),
-    0 0 60px $primary-muted;
+  box-shadow: 4px 6px 0px $border;
 
   &__form {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    padding: 4px;
   }
 
   :deep(.n-tabs-wrapper) {
@@ -141,7 +140,7 @@ const register = () => {
   }
 
   :deep(.n-tabs-tab--active .n-tabs-tab__label) {
-    color: $primary !important;
+    color: $text-dark !important;
   }
 
   :deep(.n-tabs-tab__label) {
@@ -149,6 +148,11 @@ const register = () => {
     font-style: normal;
     font-weight: 800;
     line-height: 36px;
+    transition: 0.2s ease;
+  }
+
+  :deep(.n-tabs-tab:hover) {
+    color: $text-dark !important;
   }
 }
 </style>

@@ -1,34 +1,21 @@
-// ========================================
-// Cyberpunk Gold Palette
-// ========================================
 
-// Primary accent (золотой желтый)
-$primary: #FFD166;
-$primary-hover: #FFBE0B;
-$primary-muted: rgba(255, 209, 102, 0.2);
-$primary-glow: rgba(255, 209, 102, 0.4);
-
-// Secondary accent (бирюзовый)
-$secondary: #06D6A0;
-$secondary-hover: #05B384;
-$secondary-muted: rgba(6, 214, 160, 0.2);
+// Primary accent
+$primary-yellow: #fed787;
+$primary-green: #abe6bb;
+$primary-orange: #fea775;
+$primary-purple: #cfade8;
+$primary-red: #fea89a;
 
 // Backgrounds
-$background: #0D0D0D;
-$second-background: #1A1A1A;
-$third-background: #242424;
-$surface-elevated: #2A2A2A;
+$background: #fefaf2;
+
 
 // Text
-$text-primary: #FFFFFF;
-$text-secondary: #A0A0A0;
-$text-muted: #666666;
-$text-dark: #FFFFFF;
-$text-light: #A0A0A0;
+$text-dark: #151515;
+$text-light: #ffffff;
 
 // Borders
-$border: rgba(255, 255, 255, 0.1);
-$border-accent: rgba(255, 209, 102, 0.2);
+$border: #73716b;
 
 // Semantic colors
 $success: #06D6A0;
@@ -42,8 +29,6 @@ $player-2: #118AB2;  // Синий
 $player-3: #EF476F;  // Розовый
 $player-4: #9B5DE5;  // Фиолетовый
 
-// Legacy support
-$dark: $secondary;
 
 // ========================================
 // Layout

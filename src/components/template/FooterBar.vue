@@ -7,7 +7,7 @@
 <style scoped lang="scss">
 .footer {
   padding: 24px;
-  background: $second-background;
+  background: $primary-orange;
   height: $footer-height;
 }
 </style>

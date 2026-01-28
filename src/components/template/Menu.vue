@@ -1,7 +1,12 @@
 <template>
-  <n-popover style="padding: 0" trigger="click" placement="bottom">
+  <n-popover
+    style="padding: 0; top: 12px; right: 50px"
+    trigger="click"
+    placement="bottom"
+    :show-arrow="false"
+  >
     <template #trigger>
-      <n-icon size="36" color="#FFD166" class="menu__button">
+      <n-icon size="36" color="#151515" class="menu__button">
         <Menu />
       </n-icon>
     </template>
@@ -21,7 +26,7 @@ import { useUserStore } from '@/stores/useUserStore.ts'
 const userStore = useUserStore()
 
 function renderIcon(icon: Component) {
-  return () => h(NIcon, { size: 24, color: '#FFD166' }, { default: () => h(icon) })
+  return () => h(NIcon, { size: 24, color: '#151515' }, { default: () => h(icon) })
 }
 
 const menuOptions: MenuOption[] = [
@@ -65,14 +70,45 @@ function logout(key: string) {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .menu__button {
   cursor: pointer;
   transition: all 0.2s ease;
+}
 
-  &:hover {
-    filter: brightness(1.2);
-    transform: scale(1.05);
-  }
+.n-menu {
+  border-radius: $border-radius;
+}
+
+.n-menu .n-menu-item-content .n-menu-item-content-header a,
+.n-menu .n-menu-item-content .n-menu-item-content-header {
+  color: $text-dark;
+}
+
+.n-menu
+  .n-menu-item-content:not(.n-menu-item-content--disabled):hover
+  .n-menu-item-content-header
+  a,
+.n-menu .n-menu-item-content:not(.n-menu-item-content--disabled):hover .n-menu-item-content-header {
+  color: $text-dark;
+}
+
+.n-menu .n-menu-item-content:not(.n-menu-item-content--disabled):hover::before {
+  background-color: $primary-red;
+}
+
+.n-menu .n-menu-item-content.n-menu-item-content--selected .n-menu-item-content-header a,
+.n-menu
+  .n-menu-item-content:not(.n-menu-item-content--disabled).n-menu-item-content--selected:hover
+  .n-menu-item-content-header a {
+  color: $text-dark;
+}
+
+.n-menu .n-menu-item-content.n-menu-item-content--selected::before,
+.n-menu
+  .n-menu-item-content:not(
+    .n-menu-item-content--disabled
+  ).n-menu-item-content--selected:hover::before {
+  background-color: $primary-red;
 }
 </style>

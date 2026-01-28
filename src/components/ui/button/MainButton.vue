@@ -1,18 +1,11 @@
 <template>
-  <n-button
-    :type="variant"
-    :size="size"
-    :disabled="disabled"
-    :attr-type="attrType"
-    :class="['main-button', { 'main-button--glow': glow }]"
-    @click="onClick"
-  >
+  <button :type="attrType" :disabled="disabled" class="button" :class="classes" @click="onClick">
     {{ title }}
-  </n-button>
+  </button>
 </template>
 
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
+import { computed } from 'vue'
 
 const emit = defineEmits<{
   (e: 'click'): void
@@ -20,35 +13,76 @@ const emit = defineEmits<{
 
 interface Props {
   title: string
-  size: 'small' | 'medium' | 'large'
   disabled?: boolean
   attrType?: 'button' | 'submit' | 'reset'
-  variant?: 'primary' | 'info' | 'success' | 'warning' | 'error' | 'default'
-  glow?: boolean
+  color?: 'yellow' | 'red' | 'green' | 'purple' | 'orange'
+  size?: 'small' | 'large'
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   attrType: 'button',
-  variant: 'warning',
-  glow: true,
+  color: 'yellow',
+  size: 'large',
 })
 
 const onClick = () => {
   emit('click')
 }
+
+const classes = computed(() => {
+  const classes = []
+  if (props.color) {
+    classes.push(`button_${props.color}`)
+  }
+  if (props.size) {
+    classes.push(`button_${props.size}`)
+  }
+  if (props.disabled) {
+    classes.push(`button_disabled`)
+  }
+  return classes
+})
 </script>
 
 <style scoped lang="scss">
-.main-button {
-  font-weight: 600;
-  transition: all 0.2s ease;
+.button {
+  @include body-1-bold;
+  color: $text-dark;
+  border: 2px solid $border;
+  border-radius: $border-radius;
+  -webkit-box-shadow: 2px 4px 0px $border;
+  -moz-box-shadow: 2px 4px 0px $border;
+  box-shadow: 1px 2px 0px $border;
+  white-space: nowrap;
 
-  &--glow {
-    box-shadow: 0 4px 15px $primary-glow;
+  &:not(.button_disabled):active {
+    -webkit-box-shadow: 0px 0px 0px $border;
+    -moz-box-shadow: 0px 0px 0px $border;
+    box-shadow: 0px 0px 0px $border;
+    transform: translate(1px, 2px);
+  }
 
-    &:hover {
-      box-shadow: 0 6px 25px $primary-glow;
-    }
+  &_large{
+    padding: 12px 20px;
+  }
+
+  &_medium{
+    padding: 10px 16px;
+  }
+
+  &_small{
+    padding: 6px 12px;
+  }
+
+  &_yellow {
+    background-color: $primary-yellow;
+  }
+  &_green {
+    background-color: $primary-green;
+  }
+
+  &_disabled{
+    cursor: not-allowed;
   }
 }
 </style>

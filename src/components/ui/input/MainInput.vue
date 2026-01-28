@@ -1,12 +1,11 @@
 <template>
   <div class="input">
     <label v-if="label" :for="name">{{ label }}</label>
-    <n-input v-model:value="localValue" :name="name" :placeholder="placeholder" :type="fieldType" :size="size"/>
+    <input class="input__field" v-model="localValue" :name="name" :placeholder="placeholder" :type="fieldType" :size="size"/>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NInput } from 'naive-ui'
 import { ref, watch } from 'vue'
 
 const emit = defineEmits<{
@@ -48,15 +47,19 @@ watch(localValue, (val) => {
   gap: 8px;
   width: 100%;
 
-  label {
-    font-size: 14px;
-    font-weight: 500;
-    color: $text-secondary;
-    transition: color 0.2s ease;
+  & label {
+    @include body-1;
+    color: $text-dark;
+  }
+
+  &__field{
+    padding: 12px 20px;
+    border: 2px solid $border;
+    border-radius: $border-radius;
   }
 
   &:focus-within label {
-    color: $primary;
+    color: $text-dark;
   }
 }
 </style>

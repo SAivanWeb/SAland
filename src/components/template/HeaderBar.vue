@@ -2,7 +2,7 @@
   <div class="header">
     <div class="header__container">
       <div class="header__logo"></div>
-      <MainButton v-if="!isAuth && !isAuthPage" title="войти" size="medium" @click="toAuth" />
+      <MainButton v-if="!isAuth && !isAuthPage" title="войти" size="small" color="green" @click="toAuth" />
       <Menu v-else-if="isAuth || !isAuthPage" />
     </div>
   </div>
@@ -37,11 +37,11 @@ const toAuth = () => {
 .header {
   width: 100%;
   height: $header-height;
-  border-bottom: 1px solid $border;
+  border-bottom: 2px solid $border;
   display: flex;
   align-items: center;
   padding: 0 $side-padding;
-  background: $second-background;
+  background: $primary-yellow;
 
   &__container {
     width: 100%;

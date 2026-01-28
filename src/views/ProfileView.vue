@@ -6,7 +6,7 @@
         <div class="profile__user">
           <PersonCircle class="profile__user-avatar" />
           <h2 class="profile__user-name">MC_TRAHER</h2>
-          <MainButton title="Редактировать" size="medium" />
+          <MainButton title="Редактировать" size="large" color="green"/>
         </div>
         <div class="profile__info">
           <div class="profile__stats">
@@ -31,7 +31,7 @@
           <div class="profile__friends">
             <div class="profile__friends-header">
               <h2>Друзья</h2>
-              <MainButton title="Добавить" size="small" @click="showSearch = !showSearch" />
+              <MainButton title="Добавить" size="small" @click="showSearch = !showSearch" color="green" />
             </div>
             <div class="profile__friends-content">
               <div class="profile__friends-none">Нет друзей</div>
@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <SearchPlayerModal :is-open="showSearch"/>
+  <SearchPlayerModal :is-open="showSearch" />
 </template>
 
 <script setup lang="ts">
@@ -100,10 +100,6 @@ onMounted(() => {
     gap: 24px;
   }
 
-  h1 {
-    color: $text-primary;
-  }
-
   &__content {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -115,25 +111,21 @@ onMounted(() => {
     flex-direction: column;
     gap: 16px;
     padding: 20px;
-    background: $second-background;
+    background: $primary-yellow;
     border-radius: $border-radius;
-    border: 1px solid $border;
+    border: 2px solid $border;
     transition: all 0.2s ease;
-
-    &:hover {
-      border-color: $border-accent;
-    }
+    box-shadow: 4px 6px 0px $border;
 
     &-avatar {
-      color: $primary;
+      color: $text-dark;
       width: 80%;
       margin: 0 auto;
-      filter: drop-shadow(0 0 10px $primary-glow);
     }
 
     &-name {
       margin: 0 auto;
-      color: $text-primary;
+      color: $text-dark;
     }
   }
 
@@ -145,21 +137,13 @@ onMounted(() => {
 
   &__stats {
     padding: 20px;
-    background: $second-background;
+    background: $primary-yellow;
     border-radius: $border-radius;
-    border: 1px solid $border;
+    border: 2px solid $border;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: $border-accent;
-    }
-
-    h2 {
-      color: $text-primary;
-    }
+    box-shadow: 4px 6px 0px $border;
 
     &-items {
       display: flex;
@@ -172,50 +156,35 @@ onMounted(() => {
       flex-direction: column;
       gap: 8px;
       width: 100%;
-      background: $third-background;
+      background: $primary-yellow;
       border: 1px solid $border;
       padding: 12px;
       border-radius: $border-radius;
       transition: all 0.2s ease;
 
-      &:hover {
-        border-color: $primary;
-        box-shadow: 0 0 15px $primary-muted;
-      }
-
       &-name {
         @include body-1;
-        color: $text-secondary;
       }
 
       &-value {
         text-align: center;
         font-size: 2rem;
         font-weight: 700;
-        color: $primary;
-        text-shadow: 0 0 15px $primary-glow;
+        color: $primary-red;
       }
     }
   }
 
   &__friends {
     padding: 20px;
-    background: $second-background;
+    background: $primary-yellow;
     border-radius: $border-radius;
-    border: 1px solid $border;
+    border: 2px solid $border;
     display: flex;
     flex-direction: column;
     gap: 16px;
     min-height: 140px;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: $border-accent;
-    }
-
-    h2 {
-      color: $text-primary;
-    }
+    box-shadow: 4px 6px 0px $border;
 
     &-header {
       display: flex;
@@ -231,7 +200,6 @@ onMounted(() => {
 
     &-none {
       margin: 0 auto;
-      color: $text-muted;
       font-style: italic;
     }
   }

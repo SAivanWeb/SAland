@@ -99,3 +99,7 @@ button {
   border-radius: $border-radius;
   border: 2px solid $border;
 }
+
+.n-popover-shared .n-popover-arrow-wrapper .n-popover-arrow {
+  background-color: $border !important;
+}

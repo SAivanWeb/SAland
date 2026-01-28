@@ -1,55 +1,70 @@
 <template>
-  <n-modal v-model:show="isVisible">
-    <n-card style="width: 500px" :bordered="false" size="huge" role="dialog" aria-modal="true">
-      <div class="modal">
-        <h3>Поиск пользователей</h3>
-        <div class="modal__search">
-          <MainInput name="search" placeholder="Введите имя игрока" v-model="searchParams.query" />
-          <MainButton
-            title="Найти"
-            size="large"
-            @click="fetchPlayers"
-            :disabled="searchParams.query.length < 2"
-          />
-        </div>
-        <div v-if="players" class="modal__users">
-          <n-popover v-for="item in players" :key="item.id" trigger="click">
-            <template #trigger>
-              <PlayerIcon :name="item.name" />
-            </template>
-            <div class="player-actions">
-              <span>{{ item.name }}</span>
-              <MainButton title="Выбрать" size="small" />
-            </div>
-          </n-popover>
-        </div>
+  <ModalContainer v-model:show="show" modal-width="500px">
+    <template #header>
+      <h3>Поиск пользователей</h3>
+    </template>
+    <template #body>
+      <form @submit.prevent="fetchPlayers" class="modal__search">
+        <MainInput name="search" placeholder="Введите имя игрока" v-model="searchParams.query" />
+        <MainButton
+          title="Найти"
+          size="large"
+          attrType="submit"
+          :disabled="searchParams.query.length < 2"
+          color="purple"
+        />
+      </form>
+      <div v-if="players && players.total !== 0" class="modal__users">
+        <n-popover
+          style="padding: 12px 16px"
+          v-for="item in players.users"
+          :key="item.id"
+          trigger="hover"
+          placement="bottom"
+        >
+          <template #trigger>
+            <PlayerIcon :name="item.name" no-tooltip />
+          </template>
+          <div class="player-actions">
+            <span>{{ item.name }}</span>
+            <MainButton title="Добавить" size="small" color="green" @click="addFriend(item.id)" />
+          </div>
+        </n-popover>
       </div>
-    </n-card>
-  </n-modal>
+      <div v-else-if="players && players.total === 0" class="modal__not-found">
+        Пользователи не найдены
+      </div>
+    </template>
+  </ModalContainer>
 </template>
 
 <script setup lang="ts">
-import { NCard, NModal, NPopover } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
-import { api, type SearchUsersParams } from '@/api'
+import { NPopover } from 'naive-ui'
+import { computed, ref } from 'vue'
+import {
+  api,
+  type SearchUsersParams,
+  type SearchUsersResponse,
+} from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
+import ModalContainer from '@/components/template/ModalContainer.vue'
 
 interface Props {
-  isOpen: boolean
+  show: boolean
 }
 
 const props = defineProps<Props>()
+
 const processingStore = useProcessingStore()
 const emit = defineEmits<{
-  'update:isOpen': [value: boolean]
+  (e: 'update:show', value: boolean): void
 }>()
-
-const isVisible = computed({
-  get: () => props.isOpen,
-  set: (value) => emit('update:isOpen', value),
+const show = computed({
+  get: () => props.show,
+  set: (value: boolean) => emit('update:show', value),
 })
 
 const searchParams = ref<SearchUsersParams>({
@@ -57,13 +72,24 @@ const searchParams = ref<SearchUsersParams>({
   limit: 10,
 })
 
-const players = ref()
+const players = ref<SearchUsersResponse>()
 
 async function fetchPlayers() {
   try {
     processingStore.startLoading()
-    const res = await api.user.search(searchParams.value)
-    players.value = res.users
+    players.value = await api.user.search(searchParams.value)
+  } catch (e) {
+    console.log(e)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function addFriend(id: string) {
+  try {
+    processingStore.startLoading()
+    await api.friends.sendRequest({user_id: id})
+    emit('update:show', false);
   } catch (e) {
     console.log(e)
   } finally {
@@ -73,19 +99,14 @@ async function fetchPlayers() {
 </script>
 
 <style scoped lang="scss">
-.modal {
+.player-actions {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
+  text-align: center;
 
-  &__search {
-    display: flex;
-    gap: 12px;
-  }
-
-  &__users {
-    display: flex;
-    gap: 12px;
+  & span {
+    @include body-1;
   }
 }
 </style>

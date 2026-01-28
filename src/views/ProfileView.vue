@@ -1,17 +1,17 @@
 <template>
   <div class="profile">
-    <div class="profile__container">
+    <div v-if="profile" class="profile__container">
       <h1>Профиль</h1>
       <div class="profile__content">
         <div class="profile__user">
           <PersonCircle class="profile__user-avatar" />
-          <h2 class="profile__user-name">MC_TRAHER</h2>
-          <MainButton title="Редактировать" size="large" color="green"/>
+          <h2 class="profile__user-name">{{ profile.name }}</h2>
+          <MainButton title="Редактировать" size="large" color="green" />
         </div>
         <div class="profile__info">
           <div class="profile__stats">
             <h2>Статистика</h2>
-            <div v-if="profile" class="profile__stats-items">
+            <div class="profile__stats-items">
               <div class="profile__stats-item">
                 <span class="profile__stats-item-name">Сыграно</span>
                 <div class="profile__stats-item-value">{{ profile.stats.games_played }}</div>
@@ -31,7 +31,12 @@
           <div class="profile__friends">
             <div class="profile__friends-header">
               <h2>Друзья</h2>
-              <MainButton title="Добавить" size="small" @click="showSearch = !showSearch" color="green" />
+              <MainButton
+                title="Добавить"
+                size="small"
+                @click="showSearch = !showSearch"
+                color="green"
+              />
             </div>
             <div class="profile__friends-content">
               <div class="profile__friends-none">Нет друзей</div>
@@ -42,7 +47,7 @@
     </div>
   </div>
 
-  <SearchPlayerModal :is-open="showSearch" />
+  <SearchPlayerModal v-model:show="showSearch" />
 </template>
 
 <script setup lang="ts">

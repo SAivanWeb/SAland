@@ -1,11 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api, type LoginRequest, type RegisterRequest, type AuthUser } from '@/api'
+import {
+  api,
+  type LoginRequest,
+  type RegisterRequest,
+  type InitResponse,
+} from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
 
 export const useUserStore = defineStore('UserStore', () => {
-  const currentUser = ref<AuthUser | null>(null)
+  const currentUser = ref<InitResponse | null>(null)
   const processingStore = useProcessingStore()
   const router = useRouter()
 
@@ -13,8 +18,8 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       processingStore.startLoading()
       const res = await api.auth.login(data)
-      currentUser.value = res.user
       localStorage.setItem('access_token', res.access_token)
+      await initUser();
       await router.push('/games')
     } catch (e) {
       console.error('Login error:', e)
@@ -28,8 +33,8 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       processingStore.startLoading()
       const res = await api.auth.register(data)
-      currentUser.value = res.user
       localStorage.setItem('access_token', res.access_token)
+      await initUser()
       await router.push('/games')
     } catch (e) {
       console.error('Register error:', e)
@@ -52,8 +57,7 @@ export const useUserStore = defineStore('UserStore', () => {
   async function initUser() {
     try {
       processingStore.startLoading()
-      const res = await api.user.init();
-      currentUser.value = res.user;
+      currentUser.value = await api.user.init();
     } catch (e) {
       console.log(e)
     } finally {

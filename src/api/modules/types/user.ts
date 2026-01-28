@@ -33,7 +33,7 @@ export interface FriendRequest {
 export interface InitResponse {
   user: UserProfile
   friends: Friend[]
-  pending_requests: FriendRequest[]
+  pending_requests_count: FriendRequest[]
 }
 
 export interface UpdateProfileRequest {

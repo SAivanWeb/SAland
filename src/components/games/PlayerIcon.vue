@@ -1,10 +1,11 @@
 <template>
-  <n-tooltip placement="bottom" trigger="hover">
+  <n-tooltip v-if="!noTooltip" placement="bottom" trigger="hover">
     <template #trigger>
       <div class="player">{{ iconName }}</div>
     </template>
     <span> {{ name }} </span>
   </n-tooltip>
+  <div v-else class="player">{{ iconName }}</div>
 </template>
 
 <script setup lang="ts">
@@ -13,6 +14,7 @@ import { computed } from 'vue'
 
 interface Props {
   name: string
+  noTooltip?: boolean
 }
 
 const props = defineProps<Props>()
@@ -35,9 +37,6 @@ const iconName = computed(() => {
   font-weight: 600;
   font-size: 16px;
   transition: all 0.2s ease;
-
-  &:hover {
-    transform: scale(1.05);
-  }
+  border: 2px solid $border;
 }
 </style>

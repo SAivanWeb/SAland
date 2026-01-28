@@ -80,6 +80,12 @@ const classes = computed(() => {
   &_green {
     background-color: $primary-green;
   }
+  &_red {
+    background-color: $primary-red;
+  }
+  &_purple {
+    background-color: $primary-purple;
+  }
 
   &_disabled{
     cursor: not-allowed;

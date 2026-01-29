@@ -46,7 +46,6 @@ const classes = computed(() => {
 
 <style scoped lang="scss">
 .button {
-  @include body-1-bold;
   color: $text-dark;
   border: 2px solid $border;
   border-radius: $border-radius;
@@ -54,6 +53,7 @@ const classes = computed(() => {
   -moz-box-shadow: 2px 4px 0px $border;
   box-shadow: 1px 2px 0px $border;
   white-space: nowrap;
+  height: fit-content;
 
   &:not(.button_disabled):active {
     -webkit-box-shadow: 0px 0px 0px $border;
@@ -62,16 +62,19 @@ const classes = computed(() => {
     transform: translate(1px, 2px);
   }
 
-  &_large{
+  &_large {
     padding: 12px 20px;
+    @include body-1-bold;
   }
 
-  &_medium{
+  &_medium {
     padding: 10px 16px;
+    @include body-1-bold;
   }
 
-  &_small{
+  &_small {
     padding: 6px 12px;
+    @include body-2-bold;
   }
 
   &_yellow {
@@ -87,7 +90,7 @@ const classes = computed(() => {
     background-color: $primary-purple;
   }
 
-  &_disabled{
+  &_disabled {
     cursor: not-allowed;
   }
 }

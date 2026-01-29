@@ -1,14 +1,16 @@
 <template>
   <n-popover
-    style="padding: 0; top: 12px; right: 50px"
+    style="padding: 0; top: 12px;"
     trigger="click"
-    placement="bottom"
+    placement="bottom-end"
     :show-arrow="false"
   >
     <template #trigger>
-      <n-icon size="36" color="#151515" class="menu__button">
-        <Menu />
-      </n-icon>
+      <div class="menu__button">
+        <n-icon size="20" color="#151515" class="menu__button-icon">
+          <Menu />
+        </n-icon>
+      </div>
     </template>
     <n-menu :options="menuOptions" @update:value="logout" />
   </n-popover>
@@ -73,7 +75,25 @@ function logout(key: string) {
 <style lang="scss">
 .menu__button {
   cursor: pointer;
-  transition: all 0.2s ease;
+  background-color: $primary-green;
+  border-radius: 50%;
+  border: 2px solid $border;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-box-shadow: 2px 4px 0px $border;
+  -moz-box-shadow: 2px 4px 0px $border;
+  box-shadow: 1px 2px 0px $border;
+  cursor: pointer;
+  position: relative;
+  &:active {
+    -webkit-box-shadow: 0px 0px 0px $border;
+    -moz-box-shadow: 0px 0px 0px $border;
+    box-shadow: 0px 0px 0px $border;
+    transform: translate(1px, 2px);
+  }
 }
 
 .n-menu {
@@ -100,7 +120,8 @@ function logout(key: string) {
 .n-menu .n-menu-item-content.n-menu-item-content--selected .n-menu-item-content-header a,
 .n-menu
   .n-menu-item-content:not(.n-menu-item-content--disabled).n-menu-item-content--selected:hover
-  .n-menu-item-content-header a {
+  .n-menu-item-content-header
+  a {
   color: $text-dark;
 }
 

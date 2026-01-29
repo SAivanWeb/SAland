@@ -1,13 +1,12 @@
 // User module types
 
-import type { UserStats, PublicUserStats } from './common'
+import type { PublicUserStats } from './common'
 
 export interface UserProfile {
   id: string
   email: string
   name: string
   created_at: string
-  stats: UserStats
 }
 
 export interface PublicUserProfile {
@@ -25,15 +24,18 @@ export interface Friend {
 
 export interface FriendRequest {
   id: string
-  from_user_id: string
-  from_user_name: string
+  from_user: {
+    id: string
+    name: string
+  }
   created_at: string
 }
 
 export interface InitResponse {
   user: UserProfile
-  friends: Friend[]
-  pending_requests_count: FriendRequest[]
+  pending_requests_count: number
+  active_game_id: string
+  active_room_id: string
 }
 
 export interface UpdateProfileRequest {

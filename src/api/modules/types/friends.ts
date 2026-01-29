@@ -6,9 +6,7 @@ export interface FriendsListResponse {
   friends: Friend[]
 }
 
-export interface FriendRequestsResponse {
-  requests: FriendRequest[]
-}
+export type FriendRequestsResponse = FriendRequest[]
 
 export interface SendFriendRequestBody {
   user_id: string

@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { NModal, NIcon } from 'naive-ui'
-import Close from '@/assets/icons/Close.vue'
+import Close from '@/assets/icons/close.vue'
 
 interface ModalContainerProps {
   show: boolean

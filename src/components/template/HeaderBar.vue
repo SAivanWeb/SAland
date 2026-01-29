@@ -11,15 +11,47 @@
           @click="toAuth"
         />
         <template v-if="currentUser">
-          <div
-            v-if="isAuth || !isAuthPage"
-            class="header__notification"
-            :class="{ header__notification_has: currentUser.pending_requests_count > 0 }"
+          <n-popover
+            style="padding: 0; top: 12px; width: 300px"
+            trigger="click"
+            placement="bottom-end"
+            :show-arrow="false"
           >
-            <n-icon size="20">
-              <notification />
-            </n-icon>
-          </div>
+            <template #trigger>
+              <div
+                v-if="isAuth || !isAuthPage"
+                class="header__notification"
+                :class="{ header__notification_has: currentUser.pending_requests_count > 0 }"
+              >
+                <n-icon size="20">
+                  <notification />
+                </n-icon>
+              </div>
+            </template>
+            <div class="header__requests">
+              <div class="header__friend">
+                <span>Запросы в друзья:</span>
+                <div v-for="item in requests" :key="item.id" class="header__friend-item">
+                  <div class="header__friend-user">
+                    <PlayerIcon :name="item.from_user.name" no-tooltip />
+                    <span>{{ item.from_user.name }}</span>
+                  </div>
+                  <div class="header__friend-btns">
+                    <div class="header__friend-btns-item cancel">
+                      <n-icon size="20">
+                        <close />
+                      </n-icon>
+                    </div>
+                    <div class="header__friend-btns-item accept">
+                      <n-icon size="20">
+                        <check />
+                      </n-icon>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </n-popover>
         </template>
         <Menu v-if="isAuth || !isAuthPage" />
       </div>
@@ -30,16 +62,23 @@
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useUserStore } from '@/stores/useUserStore.ts'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Menu from '@/components/template/Menu.vue'
 import { useRouter } from 'vue-router'
 import { useRoute } from 'vue-router'
-import { NIcon } from 'naive-ui'
 import Notification from '@/assets/icons/notification.vue'
+import { api, type FriendRequest } from '@/api'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
+import { NPopover, NIcon } from 'naive-ui'
+import PlayerIcon from '@/components/games/PlayerIcon.vue'
+import Close from '@/assets/icons/close.vue'
+import Check from '@/assets/icons/check.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const processingStore = useProcessingStore()
+const requests = ref<FriendRequest[]>()
 
 const isAuth = computed(() => {
   return userStore.currentUser !== null
@@ -56,6 +95,27 @@ const isAuthPage = computed(() => {
 const toAuth = () => {
   router.push('/auth')
 }
+
+async function fetchPendingRequests() {
+  try {
+    processingStore.startLoading()
+    requests.value = await api.friends.getRequests()
+  } catch (error) {
+    console.log(error)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+watch(
+  currentUser,
+  (newValue) => {
+    if (newValue && newValue.pending_requests_count > 0) {
+      fetchPendingRequests()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style lang="scss">
@@ -121,6 +181,76 @@ const toAuth = () => {
       -moz-box-shadow: 0px 0px 0px $border;
       box-shadow: 0px 0px 0px $border;
       transform: translate(1px, 2px);
+    }
+  }
+
+  &__requests {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  &__friend {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    & span {
+      @include body-1;
+    }
+
+    &-item {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    &-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      & span {
+        @include body-1-bold;
+      }
+    }
+
+    &-btns {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      &-item {
+        border-radius: 50%;
+        border: 2px solid $border;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-box-shadow: 2px 4px 0px $border;
+        -moz-box-shadow: 2px 4px 0px $border;
+        box-shadow: 1px 2px 0px $border;
+        cursor: pointer;
+
+        &:active {
+          -webkit-box-shadow: 0px 0px 0px $border;
+          -moz-box-shadow: 0px 0px 0px $border;
+          box-shadow: 0px 0px 0px $border;
+          transform: translate(1px, 2px);
+        }
+
+        &.accept {
+          background-color: $primary-green;
+        }
+
+        &.cancel{
+          background-color: $primary-red;
+        }
+      }
     }
   }
 }

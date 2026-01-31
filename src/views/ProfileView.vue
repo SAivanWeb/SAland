@@ -38,8 +38,18 @@
                 color="green"
               />
             </div>
-            <div class="profile__friends-content">
-              <div class="profile__friends-none">Нет друзей</div>
+            <div v-if="friends" class="profile__friends-content">
+              <div v-if="friends.length < 1" class="profile__friends-none">Нет друзей</div>
+              <div v-else class="profile__friends-list">
+                <div
+                  v-for="item in friends"
+                  :key="item.id"
+                  class="profile__friends-item"
+                  @click="fetchUserProfile(item.id)"
+                >
+                  <PlayerIcon :name="item.name" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -48,20 +58,25 @@
   </div>
 
   <SearchPlayerModal v-model:show="showSearch" />
+  <UserProfileModal v-model:show="showProfile" :user="selectedUser" @deleted="fetchFriends" />
 </template>
 
 <script setup lang="ts">
 import { PersonCircle } from '@vicons/ionicons5'
 import MainButton from '@/components/ui/button/MainButton.vue'
-import { api, type Friend, type UserProfile } from '@/api'
+import { api, type Friend, type PublicUserProfile, type UserProfile } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { onMounted, ref } from 'vue'
 import SearchPlayerModal from '@/components/modals/SearchPlayerModal.vue'
+import PlayerIcon from '@/components/games/PlayerIcon.vue'
+import UserProfileModal from '@/components/modals/UserProfileModal.vue'
 
 const processingStore = useProcessingStore()
 const profile = ref<UserProfile>()
 const friends = ref<Friend[]>([])
 const showSearch = ref<boolean>(false)
+const showProfile = ref<boolean>(false)
+const selectedUser = ref<PublicUserProfile>()
 
 async function fetchProfile() {
   try {
@@ -77,10 +92,21 @@ async function fetchProfile() {
 async function fetchFriends() {
   try {
     processingStore.startLoading()
-    const res = await api.friends.list()
-    friends.value = res.friends
+    friends.value = await api.friends.list()
   } catch (error) {
     console.log(error)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function fetchUserProfile(id: string) {
+  try {
+    processingStore.startLoading()
+    selectedUser.value = await api.user.getPublicProfile(id)
+    showProfile.value = true
+  } catch (error) {
+    console.error(error)
   } finally {
     processingStore.stopLoading()
   }
@@ -201,11 +227,13 @@ onMounted(() => {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      margin: auto 0;
     }
 
     &-none {
       margin: 0 auto;
       font-style: italic;
+      color: $text-grey;
     }
   }
 }

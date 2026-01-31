@@ -2,9 +2,7 @@
 
 import type { Friend, FriendRequest } from './user'
 
-export interface FriendsListResponse {
-  friends: Friend[]
-}
+export type FriendsListResponse = Friend[]
 
 export type FriendRequestsResponse = FriendRequest[]
 

@@ -33,8 +33,3 @@ export interface UserStats {
   total_questions_answered: number
   total_correct_answers: number
 }
-
-export interface PublicUserStats {
-  games_played: number
-  games_won: number
-}

@@ -98,8 +98,10 @@ button {
   background-color: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;
+  color: $text-dark !important;
 }
 
 .n-popover-shared .n-popover-arrow-wrapper .n-popover-arrow {
   background-color: $border !important;
 }
+

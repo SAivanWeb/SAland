@@ -16,12 +16,13 @@
             trigger="click"
             placement="bottom-end"
             :show-arrow="false"
+            v-if="requests"
           >
             <template #trigger>
               <div
                 v-if="isAuth || !isAuthPage"
                 class="header__notification"
-                :class="{ header__notification_has: currentUser.pending_requests_count > 0 }"
+                :class="{ header__notification_has: requests.length > 0 }"
               >
                 <n-icon size="20">
                   <notification />
@@ -37,12 +38,12 @@
                     <span>{{ item.from_user.name }}</span>
                   </div>
                   <div class="header__friend-btns">
-                    <div class="header__friend-btns-item cancel">
+                    <div class="header__friend-btns-item cancel" @click="rejectRequest(item.id)">
                       <n-icon size="20">
                         <close />
                       </n-icon>
                     </div>
-                    <div class="header__friend-btns-item accept">
+                    <div class="header__friend-btns-item accept" @click="acceptRequest(item.id)">
                       <n-icon size="20">
                         <check />
                       </n-icon>
@@ -100,6 +101,30 @@ async function fetchPendingRequests() {
   try {
     processingStore.startLoading()
     requests.value = await api.friends.getRequests()
+  } catch (error) {
+    console.log(error)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function acceptRequest(id: string) {
+  try {
+    processingStore.startLoading()
+    await api.friends.acceptRequest({ request_id: id })
+    await fetchPendingRequests()
+  } catch (error) {
+    console.log(error)
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function rejectRequest(id: string) {
+  try {
+    processingStore.startLoading()
+    await api.friends.rejectRequest({ request_id: id })
+    await fetchPendingRequests()
   } catch (error) {
     console.log(error)
   } finally {
@@ -247,7 +272,7 @@ watch(
           background-color: $primary-green;
         }
 
-        &.cancel{
+        &.cancel {
           background-color: $primary-red;
         }
       }

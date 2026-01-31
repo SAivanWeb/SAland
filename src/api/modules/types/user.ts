@@ -1,25 +1,37 @@
 // User module types
 
-import type { PublicUserStats } from './common'
+import type { UserStats } from './common'
 
 export interface UserProfile {
   id: string
   email: string
   name: string
   created_at: string
+  stats: {
+    games_played: number
+    games_won: number
+    win_rate: number
+    total_territories_captured: number
+    total_questions_answered: number
+    total_correct_answers: number
+  }
 }
 
 export interface PublicUserProfile {
   id: string
   name: string
-  stats: PublicUserStats
+  created_at: string
+  stats: UserStats
 }
 
 export interface Friend {
-  user_id: string
+  id: string
   name: string
-  is_online: boolean
-  added_at: string
+  stats: {
+    games_played: number
+    games_won: number
+  }
+  added_at: number
 }
 
 export interface FriendRequest {
@@ -32,7 +44,12 @@ export interface FriendRequest {
 }
 
 export interface InitResponse {
-  user: UserProfile
+  user: {
+    id: string
+    email: string
+    name: string
+    created_at: string
+  }
   pending_requests_count: number
   active_game_id: string
   active_room_id: string

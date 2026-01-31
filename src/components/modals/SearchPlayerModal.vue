@@ -88,8 +88,8 @@ async function fetchPlayers() {
 async function addFriend(id: string) {
   try {
     processingStore.startLoading()
-    await api.friends.sendRequest({user_id: id})
-    emit('update:show', false);
+    await api.friends.sendRequest({ user_id: id })
+    emit('update:show', false)
   } catch (e) {
     console.log(e)
   } finally {

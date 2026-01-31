@@ -6,21 +6,14 @@ export interface UserProfile {
   id: string
   email: string
   name: string
-  created_at: string
-  stats: {
-    games_played: number
-    games_won: number
-    win_rate: number
-    total_territories_captured: number
-    total_questions_answered: number
-    total_correct_answers: number
-  }
+  created_at: number
+  stats: UserStats
 }
 
 export interface PublicUserProfile {
   id: string
   name: string
-  created_at: string
+  created_at: number
   stats: UserStats
 }
 
@@ -40,7 +33,7 @@ export interface FriendRequest {
     id: string
     name: string
   }
-  created_at: string
+  created_at: number
 }
 
 export interface InitResponse {
@@ -48,11 +41,11 @@ export interface InitResponse {
     id: string
     email: string
     name: string
-    created_at: string
+    created_at: number
   }
   pending_requests_count: number
-  active_game_id: string
-  active_room_id: string
+  active_game_id: string | null
+  active_room_id: string | null
 }
 
 export interface UpdateProfileRequest {
@@ -63,7 +56,8 @@ export interface UpdateProfileResponse {
   id: string
   email: string
   name: string
-  created_at: string
+  created_at: number
+  stats: UserStats
 }
 
 export interface SearchUsersParams {
@@ -75,6 +69,10 @@ export interface SearchUsersParams {
 export interface SearchUserResult {
   id: string
   name: string
+  stats: {
+    games_played: number
+    games_won: number
+  }
 }
 
 export interface SearchUsersResponse {

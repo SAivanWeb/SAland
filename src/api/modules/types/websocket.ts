@@ -167,7 +167,7 @@ export interface GameAnswerPayload {
 
 export interface GameAnswerSubmittedEvent {
   resolved: boolean
-  waiting_for_opponent: boolean
+  waiting_for_opponent?: boolean
 }
 
 export type TurnResultType = 'solo_capture' | 'battle_won' | 'battle_lost' | 'battle_draw' | 'timeout' | 'skip'
@@ -252,11 +252,15 @@ export interface ChatSendPayload {
 
 export interface ChatMessage {
   id: string
-  user_id: string
-  user_name: string
+  type: 'user' | 'system'
+  user_id: string | null
+  user_name: string | null
   content: string
   room_id?: string
   game_id?: string
+  system_type?: 'player_joined' | 'player_left' | 'player_kicked'
+    | 'game_starting' | 'game_started' | 'game_ended'
+    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited'
   timestamp: number
 }
 
@@ -299,11 +303,14 @@ export interface RoomInvite {
   id: string
   from_user_id: string
   from_user_name: string
+  to_user_id: string
   room_id: string
+  room_name: string
   theme_name: string
   players_count: number
   current_players: number
   created_at: number
+  expires_at: number
 }
 
 export interface FriendRoomInviteEvent {
@@ -316,23 +323,42 @@ export interface FriendRoomInviteEvent {
   current_players: number
 }
 
-export type NotificationType = 'friend_request' | 'friend_accepted' | 'game_invite' | 'system'
+export type NotificationType =
+  | 'friend_request'
+  | 'friend_accepted'
+  | 'game_invite'
+  | 'game_invite_accepted'
+  | 'game_invite_rejected'
+  | 'game_invite_expired'
 
 export interface NotificationEvent {
+  id: string
   type: NotificationType
-  data: Record<string, unknown>
+  from_user_id: string
+  from_user_name: string
+  to_user_id: string
+  data?: {
+    request_id?: string
+    invite_id?: string
+    room_id?: string
+    room_name?: string
+    theme_name?: string
+    players_count?: number
+    current_players?: number
+    expires_at?: number
+  }
   timestamp: number
 }
 
 export interface FriendOnlineEvent {
   user_id: string
-  name: string
+  name: string | null
   timestamp: number
 }
 
 export interface FriendOfflineEvent {
   user_id: string
-  name: string
+  name: string | null
   timestamp: number
 }
 
@@ -360,8 +386,10 @@ export type WsErrorCode =
   | 'INVALID_MOVE'
   | 'NOT_FRIENDS'
   | 'USER_BUSY'
+  | 'USER_OFFLINE'
   | 'INVITE_NOT_FOUND'
   | 'INVITE_EXPIRED'
+  | 'INVITE_EXISTS'
 
 export interface WsError {
   code: WsErrorCode

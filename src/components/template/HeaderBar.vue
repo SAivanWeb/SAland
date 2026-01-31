@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useUserStore } from '@/stores/useUserStore.ts'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import Menu from '@/components/template/Menu.vue'
 import { useRouter } from 'vue-router'
 import { useRoute } from 'vue-router'
@@ -74,12 +74,14 @@ import { NPopover, NIcon } from 'naive-ui'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import Close from '@/assets/icons/close.vue'
 import Check from '@/assets/icons/check.vue'
+import { useWebSocket } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const processingStore = useProcessingStore()
 const requests = ref<FriendRequest[]>()
+const ws = useWebSocket()
 
 const isAuth = computed(() => {
   return userStore.currentUser !== null
@@ -91,6 +93,20 @@ const currentUser = computed(() => {
 
 const isAuthPage = computed(() => {
   return route.path === '/auth'
+})
+
+let unsubNotification: (() => void) | null = null
+
+onMounted(() => {
+  unsubNotification = ws.notifications.onNotification((data) => {
+    if (data.type === 'friend_request') {
+      fetchPendingRequests()
+    }
+  })
+})
+
+onUnmounted(() => {
+  unsubNotification?.()
 })
 
 const toAuth = () => {

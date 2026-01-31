@@ -6,6 +6,7 @@ import {
   type RegisterRequest,
   type InitResponse,
 } from '@/api'
+import { ws } from '@/api/websocket'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
 
@@ -48,6 +49,7 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       await api.auth.logout()
     } finally {
+      ws.disconnect()
       currentUser.value = null
       localStorage.removeItem('access_token')
       await router.push('/auth')
@@ -58,6 +60,7 @@ export const useUserStore = defineStore('UserStore', () => {
     try {
       processingStore.startLoading()
       currentUser.value = await api.user.init();
+      await ws.connect();
     } catch (e) {
       console.log(e)
     } finally {

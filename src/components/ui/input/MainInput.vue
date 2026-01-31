@@ -7,7 +7,6 @@
       :name="name"
       :placeholder="placeholder"
       :type="fieldType"
-      :size="size"
     />
   </div>
 </template>

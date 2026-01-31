@@ -71,7 +71,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
     const json: ApiResponse<{ access_token: string }> = await response.json()
 
-    if (!json.status) {
+    if (json.status !== 'success') {
       setAccessToken(null)
       window.location.href = '/auth'
       return null
@@ -94,16 +94,12 @@ async function ensureValidToken(): Promise<string | null> {
 }
 
 export class ApiRequestError extends Error {
-  status: boolean
-  code: number
   httpStatus: number
 
-  constructor(httpStatus: number, message: string, code?: number, status?: boolean) {
+  constructor(httpStatus: number, message: string) {
     super(message)
     this.name = 'ApiRequestError'
     this.httpStatus = httpStatus
-    this.code = code ?? httpStatus
-    this.status = status ?? false
   }
 }
 
@@ -114,13 +110,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
   const json: ApiResponse<T> = await response.json()
 
-  if (!response.ok || !json.status) {
-    const errorData = json as unknown as { message?: string; status: boolean; code: number }
+  if (!response.ok || json.status !== 'success') {
+    const errorData = json as unknown as { message?: string; status: string }
     throw new ApiRequestError(
       response.status,
       errorData.message || 'Request failed',
-      json.code,
-      json.status
     )
   }
 

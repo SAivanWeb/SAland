@@ -58,7 +58,7 @@
   </div>
 
   <SearchPlayerModal v-model:show="showSearch" />
-  <UserProfileModal v-model:show="showProfile" :user="selectedUser" @deleted="fetchFriends" />
+  <UserProfileModal v-if="selectedUser" v-model:show="showProfile" :user="selectedUser" @deleted="fetchFriends" />
 </template>
 
 <script setup lang="ts">
@@ -66,11 +66,13 @@ import { PersonCircle } from '@vicons/ionicons5'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { api, type Friend, type PublicUserProfile, type UserProfile } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import SearchPlayerModal from '@/components/modals/SearchPlayerModal.vue'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import UserProfileModal from '@/components/modals/UserProfileModal.vue'
+import { useWebSocket } from '@/api'
 
+const ws = useWebSocket()
 const processingStore = useProcessingStore()
 const profile = ref<UserProfile>()
 const friends = ref<Friend[]>([])
@@ -115,6 +117,20 @@ async function fetchUserProfile(id: string) {
 onMounted(() => {
   fetchProfile()
   fetchFriends()
+})
+
+let unsubNotification: (() => void) | null = null
+
+onMounted(() => {
+  unsubNotification = ws.notifications.onNotification((data) => {
+    if (data.type === 'friend_accepted') {
+      fetchFriends()
+    }
+  })
+})
+
+onUnmounted(() => {
+  unsubNotification?.()
 })
 </script>
 

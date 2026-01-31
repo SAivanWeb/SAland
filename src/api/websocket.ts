@@ -87,12 +87,14 @@ class WebSocketClient {
       })
 
       this.socket.on('connect', () => {
+        console.log('[WS] Connected successfully')
         this.isConnected.value = true
         this.connectionError.value = null
         resolve()
       })
 
       this.socket.on('connect_error', (error) => {
+        console.error('[WS] Connection error:', error)
         this.isConnected.value = false
         this.connectionError.value = error
         reject(error)
@@ -104,6 +106,7 @@ class WebSocketClient {
 
       // Re-emit all registered events to internal handlers
       this.socket.onAny((event, data) => {
+        console.log('[WS] Event received:', event, data)
         const handlers = this.eventHandlers.get(event)
         if (handlers) {
           handlers.forEach(handler => handler(data))

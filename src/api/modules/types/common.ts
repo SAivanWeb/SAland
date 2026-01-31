@@ -4,14 +4,12 @@
  * Общий формат ответа от API
  */
 export interface ApiResponse<T> {
-  status: boolean
-  code: number
+  status: string
   data: T
 }
 
 export interface ApiError {
-  status: boolean
-  code: number
+  status: string
   message: string
 }
 

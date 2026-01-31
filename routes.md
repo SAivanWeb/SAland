@@ -10,6 +10,7 @@
 ## Содержание
 
 - [HTTP API](#http-api)
+    - [Формат ответа](#формат-ответа)
     - [Auth](#auth)
     - [User](#user)
     - [Friends](#friends)
@@ -34,7 +35,33 @@
 Authorization: Bearer <access_token>
 ```
 
+### Формат ответа
+
+Все HTTP-ответы оборачиваются `ResponseInterceptor`:
+```typescript
+{
+  status: 'success';
+  data: T;              // Данные эндпоинта
+}
+```
+
+Пример: если эндпоинт возвращает `{ message: "ok" }`, HTTP-ответ будет:
+```json
+{
+  "status": "success",
+  "data": {
+    "message": "ok"
+  }
+}
+```
+
+Ниже документированы только поля внутри `data`.
+
+---
+
 ### Auth
+
+Rate limit: 30 запросов / минуту для всех auth endpoints.
 
 #### POST `/auth/register`
 Регистрация нового пользователя.
@@ -57,14 +84,13 @@ Authorization: Bearer <access_token>
     id: string;       // UUID
     email: string;
     name: string;
-    created_at: string;
   };
   access_token: string;
 }
 ```
 
 **Cookies:**
-- `refresh_token` (httpOnly, secure, sameSite: lax, path: /api/auth)
+- `refresh_token` (httpOnly, secure в production, sameSite: strict, path: /api/auth, maxAge: 7 дней)
 
 **Ошибки:**
 - `400` - Валидация не пройдена
@@ -92,14 +118,13 @@ Authorization: Bearer <access_token>
     id: string;
     email: string;
     name: string;
-    created_at: string;
   };
   access_token: string;
 }
 ```
 
 **Cookies:**
-- `refresh_token` (httpOnly)
+- `refresh_token` (httpOnly, secure в production, sameSite: strict, path: /api/auth)
 
 **Ошибки:**
 - `401` - Неверные учетные данные
@@ -201,9 +226,14 @@ Authorization: Bearer <access_token>
 {
   id: string;
   name: string;
+  created_at: number;
   stats: {
     games_played: number;
     games_won: number;
+    win_rate: number;
+    total_territories_captured: number;
+    total_questions_answered: number;
+    total_correct_answers: number;
   };
 }
 ```
@@ -229,7 +259,15 @@ Authorization: Bearer <access_token>
   id: string;
   email: string;
   name: string;
-  created_at: string;
+  created_at: number;
+  stats: {
+    games_played: number;
+    games_won: number;
+    win_rate: number;
+    total_territories_captured: number;
+    total_questions_answered: number;
+    total_correct_answers: number;
+  };
 }
 ```
 
@@ -253,6 +291,10 @@ Authorization: Bearer <access_token>
   users: Array<{
     id: string;
     name: string;
+    stats: {
+      games_played: number;
+      games_won: number;
+    };
   }>;
   total: number;
 }
@@ -267,14 +309,15 @@ Authorization: Bearer <access_token>
 
 **Response (200):**
 ```typescript
-{
-  friends: Array<{
-    user_id: string;
-    name: string;
-    is_online: boolean;
-    added_at: string;
-  }>;
-}
+Array<{
+  id: string;
+  name: string;
+  stats: {
+    games_played: number;
+    games_won: number;
+  };
+  added_at: number;
+}>
 ```
 
 ---
@@ -284,20 +327,20 @@ Authorization: Bearer <access_token>
 
 **Response (200):**
 ```typescript
-{
-  requests: Array<{
-    id: string;           // ID запроса
-    from_user_id: string;
-    from_user_name: string;
-    created_at: string;
-  }>;
-}
+Array<{
+  id: string;           // ID запроса
+  from_user: {
+    id: string;
+    name: string;
+  };
+  created_at: number;
+}>
 ```
 
 ---
 
 #### POST `/user/friends/request`
-Отправить запрос в друзья.
+Отправить запрос в друзья. Отправляет WebSocket `notification` (type: `friend_request`) получателю.
 
 **Request Body:**
 ```typescript
@@ -310,7 +353,6 @@ Authorization: Bearer <access_token>
 ```typescript
 {
   request_id: string;
-  message: "Friend request sent"
 }
 ```
 
@@ -321,7 +363,7 @@ Authorization: Bearer <access_token>
 ---
 
 #### POST `/user/friends/accept`
-Принять запрос в друзья.
+Принять запрос в друзья. Отправляет WebSocket `notification` (type: `friend_accepted`) отправителю заявки.
 
 **Request Body:**
 ```typescript
@@ -477,7 +519,7 @@ Authorization: Bearer <access_token>
 **Response (200):**
 ```typescript
 {
-  message: "Rating submitted"
+  message: "Rating submitted successfully"
 }
 ```
 
@@ -518,9 +560,9 @@ const socket = io('ws://localhost:3000', {
 ```
 
 **События подключения:**
-- `connect` - Успешное подключение
+- `connect` - Успешное подключение. Сервер автоматически подписывает сокет на персональную комнату `user:{userId}`, нотифицирует онлайн-друзей (`friend:online`).
 - `connect_error` - Ошибка подключения (неверный/истёкший токен)
-- `disconnect` - Отключение
+- `disconnect` - Отключение. Сервер нотифицирует друзей (`friend:offline`), очищает сессию.
 
 ---
 
@@ -542,30 +584,7 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
-**Ответ (room:created):**
-```typescript
-{
-  id: string;                 // UUID комнаты
-  owner_id: string;
-  theme_id: string;
-  theme_name: string;
-  players_count: number;
-  time_per_question: number;
-  time_per_turn: number;
-  extra_time_per_turn: number;
-  game_timer: number | null;
-  is_private: boolean;
-  invite_code: string;        // 6 символов для приватных комнат
-  status: 'waiting' | 'ready';
-  created_at: number;
-  players: Array<{
-    user_id: string;
-    name: string;
-    color: string;            // HEX цвет (#E53935, #1E88E5, #43A047, #FB8C00)
-    is_ready: boolean;
-  }>;
-}
-```
+**Ответ (room:created):** RoomState
 
 **Ошибка (room:error):**
 ```typescript
@@ -588,7 +607,7 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
-**Ответ (room:state):** RoomState (см. выше)
+**Ответ (room:state):** RoomState
 
 **Broadcast (room:player_joined):**
 ```typescript
@@ -683,7 +702,7 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
-После этого через ~2 секунды придёт событие `game:started`.
+После этого придёт событие `game:started`.
 
 ---
 
@@ -835,7 +854,7 @@ Array<{
 ```typescript
 {
   resolved: boolean;          // true = результат готов
-  waiting_for_opponent: boolean;  // true = ожидание ответа соперника
+  waiting_for_opponent?: boolean;  // true = ожидание ответа соперника
 }
 ```
 
@@ -963,6 +982,21 @@ Array<{
 
 ---
 
+#### `game:player_forfeited` (listen)
+Игрок сдался.
+
+**Данные:**
+```typescript
+{
+  user_id: string;
+  player_index: number;
+  name: string;
+  updated_cells: HexCell[];
+}
+```
+
+---
+
 ### Chat Events
 
 #### `chat:send` (emit)
@@ -981,6 +1015,7 @@ Array<{
 ```typescript
 {
   id: string;
+  type: 'user';
   user_id: string;
   user_name: string;
   content: string;
@@ -990,14 +1025,13 @@ Array<{
 }
 ```
 
-**Broadcast (chat:message):**
+**Broadcast (chat:message):** ChatMessage (см. типы данных)
+
+**Ошибка (chat:error):**
 ```typescript
 {
-  id: string;
-  user_id: string;
-  user_name: string;
-  content: string;
-  timestamp: number;
+  code: string;
+  message: string;
 }
 ```
 
@@ -1017,38 +1051,53 @@ Array<{
 
 **Ответ (chat:history):**
 ```typescript
-Array<{
-  id: string;
-  user_id: string;
-  user_name: string;
-  content: string;
-  timestamp: number;
-}>
+Array<ChatMessage>
 ```
 
 ---
 
 #### `chat:message` (listen)
-Новое сообщение в чате.
+Новое сообщение в чате (пользовательское или системное).
 
-**Данные:** ChatMessage (см. выше)
+**Данные:** ChatMessage (см. типы данных)
 
 ---
 
-#### `chat:system` (listen)
-Системное сообщение.
+### Notifications Events
+
+#### `notification` (listen)
+Уведомление. Приходит в персональную комнату `user:{userId}`.
 
 **Данные:**
 ```typescript
 {
-  content: string;
+  id: string;
+  type: 'friend_request'
+      | 'friend_accepted'
+      | 'game_invite'
+      | 'game_invite_accepted'
+      | 'game_invite_rejected'
+      | 'game_invite_expired';
+  from_user_id: string;
+  from_user_name: string;
+  to_user_id: string;
+  data?: {
+    // friend_request:
+    request_id?: string;
+    // game_invite:
+    invite_id?: string;
+    room_id?: string;
+    room_name?: string;
+    theme_name?: string;
+    players_count?: number;
+    current_players?: number;
+    expires_at?: number;
+  };
   timestamp: number;
 }
 ```
 
 ---
-
-### Notifications Events
 
 #### `friend:invite_to_room` (emit)
 Пригласить друга в комнату.
@@ -1068,11 +1117,15 @@ Array<{
 }
 ```
 
-**Ошибки:**
-- `NOT_FRIENDS` - Не друзья
-- `USER_BUSY` - Пользователь уже в игре/комнате
+**Ошибки (friend:invite_error):**
+- `USER_NOT_FOUND` - Пользователь не найден
 - `NOT_IN_ROOM` - Отправитель не в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
 - `ROOM_FULL` - Комната заполнена
+- `NOT_FRIENDS` - Не друзья
+- `USER_BUSY` - Пользователь уже в комнате
+- `USER_OFFLINE` - Пользователь офлайн
+- `INVITE_EXISTS` - Приглашение уже отправлено
 
 ---
 
@@ -1128,46 +1181,15 @@ Array<{
   id: string;
   from_user_id: string;
   from_user_name: string;
+  to_user_id: string;
   room_id: string;
+  room_name: string;
   theme_name: string;
   players_count: number;
   current_players: number;
   created_at: number;
+  expires_at: number;
 }>
-```
-
----
-
-#### `friend:room_invite` (listen)
-Входящее приглашение в комнату.
-
-**Данные:**
-```typescript
-{
-  invite_id: string;
-  from_user_id: string;
-  from_user_name: string;
-  room_id: string;
-  theme_name: string;
-  players_count: number;
-  current_players: number;
-}
-```
-
----
-
-#### `notification` (listen)
-Общее уведомление.
-
-**Данные:**
-```typescript
-{
-  type: 'friend_request' | 'friend_accepted' | 'game_invite' | 'system';
-  data: {
-    // Зависит от типа
-  };
-  timestamp: number;
-}
 ```
 
 ---
@@ -1179,7 +1201,7 @@ Array<{
 ```typescript
 {
   user_id: string;
-  name: string;
+  name: string | null;
   timestamp: number;
 }
 ```
@@ -1193,7 +1215,7 @@ Array<{
 ```typescript
 {
   user_id: string;
-  name: string;
+  name: string | null;
   timestamp: number;
 }
 ```
@@ -1218,6 +1240,23 @@ Array<{
 
 ## Типы данных
 
+### ChatMessage
+```typescript
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'system';
+  room_id?: string;
+  game_id?: string;
+  user_id: string | null;       // null для системных
+  user_name: string | null;     // null для системных
+  content: string;
+  system_type?: 'player_joined' | 'player_left' | 'player_kicked'
+             | 'game_starting' | 'game_started' | 'game_ended'
+             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+  timestamp: number;
+}
+```
+
 ### HexCell
 ```typescript
 interface HexCell {
@@ -1225,7 +1264,7 @@ interface HexCell {
   r: number;                  // Координата строки (axial)
   owner_id: string | null;    // UUID владельца или null (нейтральная)
   player_index: number | null;// Индекс игрока (0-3) или null
-  is_base: boolean;           // База игрока (неуничтожаемая)
+  is_base: boolean;           // База игрока
 }
 ```
 
@@ -1319,8 +1358,11 @@ interface RoomPlayer {
 | `INVALID_MOVE` | Недопустимый ход |
 | `NOT_FRIENDS` | Не друзья |
 | `USER_BUSY` | Пользователь занят |
+| `USER_OFFLINE` | Пользователь офлайн |
 | `INVITE_NOT_FOUND` | Приглашение не найдено |
 | `INVITE_EXPIRED` | Приглашение истекло |
+| `INVITE_EXISTS` | Приглашение уже отправлено |
+| `GAME_START_FAILED` | Не удалось запустить игру |
 
 ---
 

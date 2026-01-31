@@ -12,7 +12,6 @@ export interface SendFriendRequestBody {
 
 export interface SendFriendRequestResponse {
   request_id: string
-  message: string
 }
 
 export interface AcceptFriendRequestBody {

@@ -25,7 +25,7 @@
         <div class="create__card-content">
           <div class="create__card-param">
             <MainInput name="theme" placeholder="Укажите тему" v-model="gameTheme" size="medium" />
-            <MainButton title="Сформировать" size="medium" />
+            <MainButton title="Сформировать" size="large" />
           </div>
           <div class="create__list">
             <div class="create__answer">
@@ -92,7 +92,7 @@ const timeOption = [
   }
 
   h1 {
-    color: $text-primary;
+    color: $text-dark;
   }
 
   &__card {
@@ -100,17 +100,13 @@ const timeOption = [
     flex-direction: column;
     gap: 16px;
     padding: 20px 24px;
-    background: $second-background;
+    background: #fff;
     border-radius: $border-radius;
-    border: 1px solid $border;
+    border: 2px solid $border;
     transition: all 0.2s ease;
 
-    &:hover {
-      border-color: $border-accent;
-    }
-
     &-title {
-      color: $text-primary;
+      color: $text-dark;
     }
 
     &-content {
@@ -131,11 +127,5 @@ const timeOption = [
     gap: 8px;
   }
 
-  &__answer {
-    padding: 12px;
-    background: $third-background;
-    border-radius: $border-radius;
-    border: 1px solid $border;
-  }
 }
 </style>

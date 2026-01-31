@@ -4,7 +4,6 @@ import { get, post } from '../network'
 import type {
   PopularThemesParams,
   ThemesListResponse,
-  SearchThemesParams,
   ThemeDetail,
   RateThemeBody,
   RateThemeResponse,
@@ -16,13 +15,6 @@ export const themes = {
    */
   async popular(params?: PopularThemesParams): Promise<ThemesListResponse> {
     return get<ThemesListResponse>('/themes/popular', { params })
-  },
-
-  /**
-   * Search themes
-   */
-  async search(params: SearchThemesParams): Promise<ThemesListResponse> {
-    return get<ThemesListResponse>('/themes/search', { params })
   },
 
   /**

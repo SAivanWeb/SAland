@@ -65,6 +65,15 @@ watch(localValue, (val) => {
     -webkit-box-shadow: 2px 4px 0px $border;
     -moz-box-shadow: 2px 4px 0px $border;
     box-shadow: 1px 2px 0px $border;
+    transition: 0.2s;
+
+    &:hover{
+      border-color: $text-dark;
+    }
+
+    &:focus-visible {
+      border-color: $text-dark;
+    }
   }
 
   &:focus-within label {

@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NScrollbar, NModalProvider, darkTheme } from 'naive-ui'
+import { NConfigProvider, NScrollbar, NModalProvider, } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
 import { useRoute } from 'vue-router'

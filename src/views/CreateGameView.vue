@@ -7,14 +7,16 @@
         <h3 class="create__card-title">Параметры</h3>
         <div class="create__card-content">
           <div class="create__card-param">
-            <n-select
+            <MainSelect
+              name="players"
               :options="playersOption"
-              v-model:value="gamePlayers"
+              v-model="gamePlayers"
               placeholder="Количество игроков"
             />
-            <n-select
+            <MainSelect
+              name="time"
               :options="timeOption"
-              v-model:value="answerTime"
+              v-model="answerTime"
               placeholder="Время для ответа"
             />
           </div>
@@ -40,8 +42,8 @@
 
 <script setup lang="ts">
 import MainInput from '@/components/ui/input/MainInput.vue'
+import MainSelect from '@/components/ui/select/MainSelect.vue'
 import { ref } from 'vue'
-import { NSelect } from 'naive-ui'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import GameWaiting from '@/components/games/GameWaiting.vue'
 

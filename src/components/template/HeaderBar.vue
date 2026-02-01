@@ -54,7 +54,7 @@
             </div>
           </n-popover>
         </template>
-        <Menu v-if="isAuth || !isAuthPage" />
+        <Menu v-if="!isMainPage && !isAuthPage" />
       </div>
     </div>
   </div>
@@ -93,6 +93,10 @@ const currentUser = computed(() => {
 
 const isAuthPage = computed(() => {
   return route.path === '/auth'
+})
+
+const isMainPage = computed(() => {
+  return route.path === '/'
 })
 
 let unsubNotification: (() => void) | null = null

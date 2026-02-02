@@ -10,13 +10,14 @@
           color="green"
           @click="toAuth"
         />
-        <template v-if="currentUser">
+        <template v-if="currentUser && requests">
           <n-popover
+            v-model:show="showPopover"
             style="padding: 0; top: 12px; width: 300px"
             trigger="click"
             placement="bottom-end"
             :show-arrow="false"
-            v-if="requests"
+            @update:show="handlePopoverChange"
           >
             <template #trigger>
               <div
@@ -83,6 +84,23 @@ const processingStore = useProcessingStore()
 const requests = ref<FriendRequest[]>()
 const ws = useWebSocket()
 
+const showPopover = ref(false);
+
+watch(
+  () => processingStore.showNotification,
+  (newValue) => {
+    if (newValue) {
+      showPopover.value = true
+    }
+  }
+)
+
+const handlePopoverChange = (value: boolean) => {
+  if (!value) {
+    processingStore.showNotification = false
+  }
+}
+
 const isAuth = computed(() => {
   return userStore.currentUser !== null
 })
@@ -104,6 +122,7 @@ let unsubNotification: (() => void) | null = null
 onMounted(() => {
   unsubNotification = ws.notifications.onNotification((data) => {
     if (data.type === 'friend_request') {
+      processingStore.setMessage('info', 'Уведомление', 'Новая заявка в друзья')
       fetchPendingRequests()
     }
   })

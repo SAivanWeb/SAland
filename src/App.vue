@@ -1,26 +1,30 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
-    <n-modal-provider>
-      <HeaderBar v-if="!isGame" />
-      <n-scrollbar class="scrollbar">
-        <div class="main" :class="{ main_game: isGame }">
-          <router-view />
-        </div>
-        <FooterBar v-if="!isGame" />
-      </n-scrollbar>
-      <Preloader v-show="showPreloader" class="preloader" />
-    </n-modal-provider>
+    <n-notification-provider>
+      <n-modal-provider>
+        <HeaderBar v-if="!isGame" />
+        <n-scrollbar class="scrollbar">
+          <div class="main" :class="{ main_game: isGame }">
+            <router-view />
+          </div>
+          <FooterBar v-if="!isGame" />
+        </n-scrollbar>
+        <Preloader v-show="showPreloader" class="preloader" />
+        <NotifyHost />
+      </n-modal-provider>
+    </n-notification-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NScrollbar, NModalProvider, } from 'naive-ui'
+import { NConfigProvider, NScrollbar, NModalProvider, NNotificationProvider } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-import Preloader from '@/components/template/Preloader.vue'
+import Preloader from '@/components/system/Preloader.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
+import NotifyHost from '@/components/system/NotifyHost.vue'
 
 const themeOverrides = {
   common: {
@@ -28,11 +32,11 @@ const themeOverrides = {
   },
   Menu: {
     color: '#fff',
-    borderRadius: '8px'
+    borderRadius: '8px',
   },
   Card: {
     borderRadius: '8px',
-  }
+  },
 }
 
 const route = useRoute()

@@ -94,9 +94,7 @@ const innerShow = computed({
       flex-direction: column;
       gap: 8px;
       @include body-2;
-      -webkit-box-shadow: 2px 4px 0px $border;
-      -moz-box-shadow: 2px 4px 0px $border;
-      box-shadow: 1px 2px 0px $border;
+      box-shadow: $box-shadow;
 
       & span {
         @include body-1-bold;

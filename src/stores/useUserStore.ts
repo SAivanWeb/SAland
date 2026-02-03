@@ -9,6 +9,7 @@ import {
 import { ws } from '@/api/websocket'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
+import { isErrorMessage } from '@/utils/error'
 
 export const useUserStore = defineStore('UserStore', () => {
   const currentUser = ref<InitResponse | null>(null)
@@ -23,8 +24,8 @@ export const useUserStore = defineStore('UserStore', () => {
       await initUser();
       await router.push('/games')
     } catch (e) {
-      console.error('Login error:', e)
-      throw e
+      if (isErrorMessage(e, 'Invalid credentials')) processingStore.setMessage('error', 'Ошибка авторизации', 'Неверный логин или пароль')
+      else processingStore.setMessage('error', 'Ошибка авторизации', '')
     } finally {
       processingStore.stopLoading()
     }
@@ -38,7 +39,13 @@ export const useUserStore = defineStore('UserStore', () => {
       await initUser()
       await router.push('/games')
     } catch (e) {
-      console.error('Register error:', e)
+      if (isErrorMessage(e, 'User with this email already exists'))
+        processingStore.setMessage('error', 'Ошибка регистрации', 'Пользователь с таким email уже существует')
+      else         processingStore.setMessage(
+        'error',
+        'Ошибка регистрации',
+        '',
+      )
       throw e
     } finally {
       processingStore.stopLoading()

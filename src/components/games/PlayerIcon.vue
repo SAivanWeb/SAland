@@ -38,8 +38,6 @@ const iconName = computed(() => {
   font-size: 16px;
   transition: all 0.2s ease;
   border: 2px solid $border;
-  -webkit-box-shadow: 2px 4px 0px $border;
-  -moz-box-shadow: 2px 4px 0px $border;
-  box-shadow: 1px 2px 0px $border;
+  box-shadow: $box-shadow;
 }
 </style>

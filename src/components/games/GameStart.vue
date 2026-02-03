@@ -4,7 +4,7 @@
       Создайте игру <br />
       на тему&nbsp;<span class="typewriter"></span>
     </h1>
-    <MainButton title="Создать игру" size="large" @click="goTo" />
+    <MainButton title="Создать игру" size="large" @click="goTo" color="red"/>
   </div>
 </template>
 

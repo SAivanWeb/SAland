@@ -1,3 +1,5 @@
+<template></template>
+
 <script setup lang="ts">
 import { watch } from 'vue'
 import { useNotification } from 'naive-ui'
@@ -33,9 +35,8 @@ watch(
 .n-notification-wrapper {
   & .n-notification {
     border: 2px solid $border;
-    -webkit-box-shadow: 2px 4px 0px $border;
-    -moz-box-shadow: 2px 4px 0px $border;
-    box-shadow: 1px 2px 0px $border;
+    box-shadow: $box-shadow;
+    border-radius: $border-radius;
   }
 
   &.notify--error .n-notification {
@@ -51,19 +52,22 @@ watch(
   }
 
   & .n-notification-main .n-notification-main__header {
-    color: $text-dark !important;
+    color: $text-light !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
   }
 
   & .n-notification__close {
-    color: $text-dark !important;
+    color: $text-light !important;
   }
 
   & .n-notification-main__description {
+    font-size: 16px !important;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    color: $text-grey !important;
+    color: $text-light !important;
     text-overflow: ellipsis;
   }
 }

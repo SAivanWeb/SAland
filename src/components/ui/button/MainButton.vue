@@ -15,8 +15,8 @@ interface Props {
   title: string
   disabled?: boolean
   attrType?: 'button' | 'submit' | 'reset'
-  color?: 'yellow' | 'red' | 'green' | 'purple' | 'orange'
-  size?: 'small' | 'large'
+  color?: 'yellow' | 'red' | 'green' | 'purple' | 'orange' | 'blue'
+  size?: 'small' | 'large' | 'medium'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -49,9 +49,7 @@ const classes = computed(() => {
   color: $text-dark;
   border: 2px solid $border;
   border-radius: $border-radius;
-  -webkit-box-shadow: 2px 4px 0px $border;
-  -moz-box-shadow: 2px 4px 0px $border;
-  box-shadow: 1px 2px 0px $border;
+  box-shadow: $box-shadow;
   white-space: nowrap;
   height: fit-content;
 
@@ -88,6 +86,9 @@ const classes = computed(() => {
   }
   &_purple {
     background-color: $primary-purple;
+  }
+  &_blue {
+    background-color: $primary-blue;
   }
 
   &_disabled {

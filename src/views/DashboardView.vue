@@ -1,23 +1,35 @@
 <template>
   <GameStart placement="games" />
   <div class="games">
+    <!-- Декоративные шестиугольники -->
+
+
     <div v-if="0" class="games__waiting">
       <GameWaiting role="user" />
     </div>
-    <div class="games__container">
-      <div class="games__content">
-        <h2 class="games__subtitle">Популярные игры</h2>
-        <MainInput name="search" placeholder="Поиск игры" v-model="search" size="large" />
-        <div class="games__list">
-          <PopularGameCard />
-          <PopularGameCard />
-          <PopularGameCard />
+    <div class="games__content">
+      <div class="games__saved">
+        <h2>Сохраненные темы</h2>
+        <div class="games__filters">
+          <MainInput name="search" placeholder="Поиск тем" v-model="search" size="large" />
         </div>
+        <n-scrollbar x-scrollable trigger="none">
+          <div class="games__saved-list">
+            <PopularGameCard />
+            <PopularGameCard />
+            <PopularGameCard />
+            <PopularGameCard />
+            <PopularGameCard />
+            <PopularGameCard />
+            <PopularGameCard />
+          </div>
+        </n-scrollbar>
       </div>
-      <div class="games__divider"></div>
-      <div class="games__content">
-        <h2 class="games__subtitle">Ожидают игры</h2>
-        <div class="games__list">
+    </div>
+    <div class="games__content">
+      <div class="games__active">
+        <h2>Ожидают игры</h2>
+        <div class="games__active-list">
           <ActiveGameCard />
           <ActiveGameCard />
           <ActiveGameCard />
@@ -37,11 +49,11 @@ import GameStart from '@/components/games/GameStart.vue'
 import GameWaiting from '@/components/games/GameWaiting.vue'
 import { api, type Theme } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
+import { NScrollbar } from 'naive-ui'
+import { isErrorMessage } from '@/utils/error.ts'
 
 const processingStore = useProcessingStore()
 const search = ref<string>('')
-
-
 
 const popularGames = ref<Theme[]>([])
 
@@ -49,10 +61,11 @@ async function fetchPopularGames() {
   try {
     processingStore.startLoading()
     const res = await api.themes.popular()
-    popularGames.value = res.themes;
-
-  } catch (error) {
-    console.log(error)
+    popularGames.value = res.themes
+    console.log(res.themes)
+  } catch (e) {
+    if (isErrorMessage(e, 'error'))
+      processingStore.setMessage('error', 'Ошбка', 'Ошибка получения сохраненных тем')
   } finally {
     processingStore.stopLoading()
   }
@@ -68,37 +81,79 @@ onMounted(() => {
   padding: 48px $side-padding 64px $side-padding;
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: 20px;
 
   &__waiting {
     max-width: 1080px;
     width: 100%;
     margin: 0 auto;
-  }
-
-  &__container {
-    display: grid;
-    grid-template-columns: 1fr 1px 1fr;
-    grid-gap: 24px;
-    max-width: 1080px;
-    width: 100%;
-    margin: 0 auto;
+    position: relative;
+    z-index: 1;
   }
 
   &__content {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
   }
 
-  &__list {
+  &__saved {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    padding: 20px 20px 0 20px;
+    background: #fff;
+    box-shadow: $box-shadow;
+    border: 2px solid $border;
+    border-radius: $border-radius;
+
+    &-list {
+      display: flex;
+      gap: 20px;
+      padding: 20px 0;
+    }
   }
 
-  &__divider {
-    border-left: 1px solid $border;
+  &__filters {
+    margin-top: 12px;
+  }
+
+  &__active {
+    background: #fff;
+    border: 2px solid $border;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    &-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+}
+
+// Стилизация скроллбара Naive UI в стиле необрутализма
+:deep(.n-scrollbar-rail) {
+  &.n-scrollbar-rail--horizontal {
+    height: 8px !important;
+    bottom: px !important;
+  }
+
+  & > .n-scrollbar-rail__scrollbar {
+    height: 8px !important;
+  }
+}
+
+:deep(.n-scrollbar-rail__scrollbar) {
+  background: $primary-yellow !important;
+
+  &:hover {
+    background: $primary-orange !important;
   }
 }
 </style>

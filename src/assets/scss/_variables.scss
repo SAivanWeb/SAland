@@ -5,6 +5,7 @@ $primary-green: #abe6bb;
 $primary-orange: #fea775;
 $primary-purple: #cfade8;
 $primary-red: #fea89a;
+$primary-blue: #cae4d8;
 
 // Backgrounds
 $background: #fefaf2;
@@ -39,6 +40,9 @@ $header-height: 64px;
 $footer-height: 124px;
 $border-radius: 8px;
 $border-radius-lg: 12px;
+
+// Shadows
+$box-shadow: 1px 2px 0px $border;
 
 @mixin body-0 {
   font-size: 20px;

@@ -1,42 +1,30 @@
 <template>
   <div class="card">
-    <h3 class="card__title">Спорт</h3>
-    <div class="card__body">
-      <div class="card__item">
-        <div class="card__item-value">
-          <n-icon size="24" color="#06D6A0">
-            <Accessibility />
-          </n-icon>
-          3
-        </div>
+    <div class="card__header">
+      <h3 class="card__title">Спорт</h3>
+      <div class="card__rating">
+        <n-icon size="20" color="#FFD166">
+          <Star />
+        </n-icon>
+        <span>5.0</span>
       </div>
-      <div class="card__item">
-        <div class="card__item-value">
-          <n-icon size="24" color="#FFD166">
-            <Star />
-          </n-icon>
-          5
-        </div>
+    </div>
+    <div class="card__stats">
+      <div class="card__stat card__stat--like">
+        <n-icon size="18">
+          <Like />
+        </n-icon>
+        <span>10</span>
       </div>
-      <div class="card__item">
-        <div class="card__item-values">
-          <div class="card__item-value">
-            <n-icon size="24" color="#06D6A0">
-              <Like />
-            </n-icon>
-            10
-          </div>
-          <div class="card__item-value">
-            <n-icon size="24" color="#EF476F">
-              <Dislike />
-            </n-icon>
-            2
-          </div>
-        </div>
+      <div class="card__stat card__stat--dislike">
+        <n-icon size="18">
+          <Dislike />
+        </n-icon>
+        <span>2</span>
       </div>
     </div>
     <div class="card__footer">
-      <MainButton title="Создать комнату" size="small" color="green"/>
+      <MainButton title="Играть" size="small" color="yellow" />
     </div>
   </div>
 </template>
@@ -51,49 +39,95 @@ import Dislike from '@/assets/icons/dislike.vue'
 
 <style scoped lang="scss">
 .card {
-  padding: 16px 20px;
-  background: $primary-yellow;
+  padding: 16px;
+  background: $primary-blue;
   border-radius: $border-radius;
   border: 2px solid $border;
-  width: 100%;
+  box-shadow: $box-shadow;
+  min-width: 220px;
+  max-width: 220px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 2px 6px 0px $border;
+  }
+
+  &:active {
+    transform: translateY(-2px);
+    box-shadow: 1px 3px 0px $border;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
 
   &__title {
     color: $text-dark;
+    @include body-1-bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  &__body {
+  &__rating {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 4px;
+    background: $primary-yellow;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 2px solid $border;
+
+    & span {
+      @include body-2-bold;
+      color: $text-dark;
+    }
   }
 
-  &__item {
+  &__stats {
     display: flex;
-    flex-direction: column;
     gap: 8px;
+  }
 
-    &-value {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 2px solid $border;
+    flex: 1;
+
+    & span {
+      @include body-2-bold;
       color: $text-dark;
-      font-weight: 500;
     }
 
-    &-values {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    &--like {
+      background: $primary-green;
+    }
+
+    &--dislike {
+      background: $primary-red;
     }
   }
 
   &__footer {
     display: flex;
     align-items: center;
-    justify-content: end;
+    justify-content: stretch;
+
+    & button {
+      width: 100%;
+    }
   }
 }
 </style>

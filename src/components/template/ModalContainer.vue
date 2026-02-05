@@ -102,5 +102,34 @@ const innerShow = computed({
       }
     }
   }
+
+  &__instruction{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &-divider {
+      margin: 0 auto;
+      width: 90%;
+      border-top: 1px solid $text-grey;
+    }
+
+    &-additional {
+      color: $text-grey;
+    }
+
+    &-fields{
+      display: flex;
+      gap: 12px;
+    }
+
+    & button{
+      width: fit-content;
+    }
+
+    &-save{
+      margin-left: auto;
+    }
+  }
 }
 </style>

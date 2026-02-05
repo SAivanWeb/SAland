@@ -50,7 +50,7 @@ watch(localValue, (val) => {
 .input {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   width: 100%;
 
   & label {
@@ -59,6 +59,7 @@ watch(localValue, (val) => {
   }
 
   &__field {
+    @include body-1;
     padding: 12px 20px;
     border: 2px solid $border;
     border-radius: $border-radius;

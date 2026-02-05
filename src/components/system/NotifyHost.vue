@@ -49,6 +49,18 @@ watch(
 
   &.notify--info .n-notification {
     background-color: #fff;
+
+    & .n-notification-main .n-notification-main__header {
+      color: $text-dark !important;
+    }
+
+    & .n-notification__close {
+      color: $text-dark !important;
+    }
+
+    & .n-notification-main__description {
+      color: $text-dark !important;
+    }
   }
 
   & .n-notification-main .n-notification-main__header {

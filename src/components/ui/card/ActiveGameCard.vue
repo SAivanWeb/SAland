@@ -82,7 +82,7 @@ import MainButton from '@/components/ui/button/MainButton.vue'
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    background: $primary-yellow;
+    background: $primary-orange;
     border: 2px solid $border;
     border-radius: 6px;
 

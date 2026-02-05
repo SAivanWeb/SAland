@@ -45,11 +45,13 @@ export interface PlayerAnswer {
 
 // ============= Room Types =============
 
+export type RoomStatus = 'inactive' | 'waiting' | 'ready'
+
 export interface RoomState {
   id: string
   owner_id: string
-  theme_id: string
-  theme_name: string
+  theme_id: string | null
+  theme_name: string | null
   players_count: number
   time_per_question: number
   time_per_turn: number
@@ -57,19 +59,18 @@ export interface RoomState {
   game_timer: number | null
   is_private: boolean
   invite_code: string
-  status: 'waiting' | 'ready'
+  status: RoomStatus
   created_at: number
   players: RoomPlayer[]
 }
 
 export interface RoomCreatePayload {
-  theme_id: string
-  players_count: number
-  time_per_question: number
-  time_per_turn: number
-  extra_time_per_turn: number
+  players_count?: number
+  time_per_question?: number
+  time_per_turn?: number
+  extra_time_per_turn?: number
   game_timer?: number | null
-  is_private: boolean
+  is_private?: boolean
 }
 
 export interface RoomJoinPayload {
@@ -107,9 +108,75 @@ export interface RoomErrorEvent {
 export interface RoomListItem {
   id: string
   owner_name: string
-  theme_name: string
+  theme_name: string | null
   players_count: number
   current_players: number
+}
+
+// Room params update
+export interface RoomUpdateParamsPayload {
+  players_count?: number
+  time_per_question?: number
+  time_per_turn?: number
+  extra_time_per_turn?: number
+  game_timer?: number | null
+  is_private?: boolean
+}
+
+export interface RoomParamsUpdatedEvent {
+  params: {
+    players_count: number
+    time_per_question: number
+    time_per_turn: number
+    extra_time_per_turn: number
+    game_timer: number | null
+    is_private: boolean
+  }
+}
+
+// Room theme generation
+export interface RoomGenerateThemePayload {
+  theme_name: string
+}
+
+export interface RoomThemeGenerationStartedEvent {
+  room_id?: string
+  generation_started?: boolean
+  theme_name: string
+}
+
+// Room theme upload
+export interface RoomUploadThemeQuestion {
+  question: string
+  answers: string[]
+  correct_answer: number
+}
+
+export interface RoomUploadThemePayload {
+  theme_name: string
+  questions: RoomUploadThemeQuestion[]
+}
+
+export interface RoomThemeUploadedEvent {
+  theme_name: string
+}
+
+// Room activation/deactivation
+export interface RoomActivatedEvent {
+  status: 'waiting'
+}
+
+export interface RoomDeactivatedEvent {
+  status: 'inactive'
+}
+
+export interface RoomThemeDeletedEvent {
+  theme_name: null
+}
+
+export interface RoomKickedEvent {
+  room_id: string
+  reason: string
 }
 
 // ============= Game Types =============
@@ -123,7 +190,9 @@ export interface GameConfig {
 
 export interface GameStartedEvent {
   game_id: string
+  theme_id: string | null
   theme_name: string
+  is_temp_theme: boolean
   players: GamePlayer[]
   cells: HexCell[]
   config: GameConfig
@@ -228,6 +297,9 @@ export interface GameEndedEvent {
   winner_name: string | null
   final_standings: FinalStanding[]
   game_duration: number
+  theme_id: string | null
+  theme_name: string
+  is_temp_theme: boolean
 }
 
 export interface GamePlayerDisconnectedEvent {
@@ -240,6 +312,13 @@ export interface GamePlayerReconnectedEvent {
   user_id: string
   player_index: number
   name: string
+}
+
+export interface GamePlayerForfeitedEvent {
+  user_id: string
+  player_index: number
+  name: string
+  updated_cells: HexCell[]
 }
 
 // ============= Chat Types =============
@@ -362,6 +441,32 @@ export interface FriendOfflineEvent {
   timestamp: number
 }
 
+// ============= AI Generation Events =============
+
+export interface AIGenerationProgress {
+  generated: number
+  total: 80
+}
+
+export interface AIProgressEvent {
+  session_id: string
+  status: 'generating'
+  progress: AIGenerationProgress
+}
+
+export interface AIReadyEvent {
+  session_id: string
+  status: 'ready'
+  progress: AIGenerationProgress
+}
+
+export interface AIErrorEvent {
+  session_id: string
+  status: 'error'
+  error: string
+  progress: AIGenerationProgress
+}
+
 // ============= Main Gateway Types =============
 
 export interface PongEvent {
@@ -371,25 +476,73 @@ export interface PongEvent {
 // ============= Error Codes =============
 
 export type WsErrorCode =
+  // Auth & User errors
   | 'UNAUTHORIZED'
+  | 'VALIDATION_ERROR'
   | 'USER_NOT_FOUND'
+  // Theme errors
   | 'THEME_NOT_FOUND'
+  | 'INVALID_PLAYERS_COUNT'
+  // Room errors
   | 'ROOM_NOT_FOUND'
   | 'ROOM_FULL'
+  | 'ROOM_INACTIVE'
+  | 'ROOM_NOT_INACTIVE'
   | 'ALREADY_IN_ROOM'
   | 'NOT_IN_ROOM'
   | 'NOT_OWNER'
-  | 'NOT_ALL_READY'
+  | 'INVALID_STATUS'
+  | 'CANNOT_KICK_SELF'
+  | 'PLAYER_NOT_IN_ROOM'
+  | 'PLAYERS_NOT_READY'
+  | 'NOT_ENOUGH_PLAYERS'
+  | 'ROOM_ALREADY_ACTIVE'
+  | 'ROOM_NOT_ACTIVE'
+  | 'THEME_EXISTS'
+  | 'NO_THEME'
+  | 'INVALID_QUESTIONS_COUNT'
+  // Game errors
   | 'GAME_NOT_FOUND'
+  | 'GAME_START_FAILED'
+  | 'GAME_ENDED'
   | 'NOT_IN_GAME'
   | 'NOT_YOUR_TURN'
+  | 'INVALID_PHASE'
+  | 'NO_ACTIVE_TURN'
+  | 'NO_ACTIVE_QUESTION'
   | 'INVALID_MOVE'
+  | 'CELL_NOT_FOUND'
+  | 'NO_QUESTIONS'
+  | 'PLAYER_NOT_FOUND'
+  | 'INVALID_ANSWER'
+  | 'NOT_IN_BATTLE'
+  | 'ALREADY_ANSWERED'
+  | 'NO_QUESTION'
+  | 'NO_BATTLE_DATA'
+  // Chat errors
+  | 'INVALID_TARGET'
+  | 'SEND_FAILED'
+  | 'HISTORY_FAILED'
+  // Friend/Invite errors
   | 'NOT_FRIENDS'
   | 'USER_BUSY'
   | 'USER_OFFLINE'
   | 'INVITE_NOT_FOUND'
   | 'INVITE_EXPIRED'
   | 'INVITE_EXISTS'
+  | 'INVITE_FAILED'
+  | 'ACCEPT_FAILED'
+  | 'REJECT_FAILED'
+  // AI/Session errors
+  | 'SESSION_NOT_FOUND'
+  | 'SESSION_NOT_READY'
+  | 'SESSION_EXISTS'
+  | 'AI_SERVICE_UNAVAILABLE'
+  | 'AI_GENERATION_FAILED'
+  // Theme rating errors
+  | 'NOT_TEMP_THEME'
+  | 'ALREADY_VOTED'
+  | 'VOTING_CLOSED'
 
 export interface WsError {
   code: WsErrorCode

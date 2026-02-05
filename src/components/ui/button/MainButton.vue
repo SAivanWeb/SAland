@@ -52,12 +52,17 @@ const classes = computed(() => {
   box-shadow: $box-shadow;
   white-space: nowrap;
   height: fit-content;
+  transition: border-color 0.2s;
 
   &:not(.button_disabled):active {
     -webkit-box-shadow: 0px 0px 0px $border;
     -moz-box-shadow: 0px 0px 0px $border;
     box-shadow: 0px 0px 0px $border;
     transform: translate(1px, 2px);
+  }
+
+  &:not(.button_disabled):hover {
+    border-color: $text-dark;
   }
 
   &_large {

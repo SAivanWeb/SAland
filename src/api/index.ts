@@ -1,7 +1,7 @@
 // API Client for Vue
 
 import type { App, InjectionKey } from 'vue'
-import { auth, user, friends, themes, health } from './modules'
+import { auth, user, friends, themes, games, health } from './modules'
 import { setAccessToken, getAccessToken, ApiRequestError } from './network'
 import { ws } from './websocket'
 
@@ -11,6 +11,7 @@ export const api = {
   user,
   friends,
   themes,
+  games,
   health,
   ws,
 }

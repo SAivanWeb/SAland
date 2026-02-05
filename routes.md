@@ -10,19 +10,24 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-    - [Формат ответа](#формат-ответа)
-    - [Auth](#auth)
-    - [User](#user)
-    - [Friends](#friends)
-    - [Themes](#themes)
-    - [Health](#health)
+  - [Формат ответа](#формат-ответа)
+  - [Auth](#auth)
+  - [User](#user)
+  - [Friends](#friends)
+  - [Themes](#themes)
+  - [Games](#games)
+  - [AI-генерация тем](#ai-генерация-тем)
+  - [Ручное создание тем](#ручное-создание-тем)
+  - [Админ](#админ)
+  - [Health](#health)
 - [WebSocket API](#websocket-api)
-    - [Подключение](#подключение)
-    - [Rooms](#rooms-events)
-    - [Game](#game-events)
-    - [Chat](#chat-events)
-    - [Notifications](#notifications-events)
-    - [Main Gateway](#main-gateway-events)
+  - [Подключение](#подключение)
+  - [Rooms](#rooms-events)
+  - [Game](#game-events)
+  - [Chat](#chat-events)
+  - [Notifications](#notifications-events)
+  - [AI Generation](#ai-generation-events)
+  - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -93,8 +98,9 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 - `refresh_token` (httpOnly, secure в production, sameSite: strict, path: /api/auth, maxAge: 7 дней)
 
 **Ошибки:**
-- `400` - Валидация не пройдена
+- `400` - Валидация не пройдена (невалидный email, пароль не соответствует требованиям, имя вне диапазона 2-100 символов)
 - `409` - Email уже используется
+- `429` - Превышен лимит запросов (30/мин)
 
 ---
 
@@ -127,7 +133,9 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 - `refresh_token` (httpOnly, secure в production, sameSite: strict, path: /api/auth)
 
 **Ошибки:**
+- `400` - Валидация не пройдена (невалидный email, отсутствуют обязательные поля)
 - `401` - Неверные учетные данные
+- `429` - Превышен лимит запросов (30/мин)
 
 ---
 
@@ -149,7 +157,8 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 - Новый `refresh_token` (ротация токенов)
 
 **Ошибки:**
-- `401` - Refresh token отсутствует или невалидный
+- `401` - Refresh token отсутствует, невалидный или истёкший
+- `429` - Превышен лимит запросов (30/мин)
 
 ---
 
@@ -167,6 +176,9 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 
 **Cookies:**
 - `refresh_token` очищается
+
+**Ошибки:**
+- `429` - Превышен лимит запросов (30/мин)
 
 ---
 
@@ -190,6 +202,11 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 }
 ```
 
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
+
 ---
 
 #### GET `/user/profile`
@@ -212,6 +229,11 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
   };
 }
 ```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -239,7 +261,10 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 ```
 
 **Ошибки:**
+- `400` - Невалидный UUID формат user_id
+- `401` - Отсутствует или невалидный JWT токен
 - `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -271,6 +296,11 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 }
 ```
 
+**Ошибки:**
+- `400` - Валидация не пройдена (невалидное имя)
+- `401` - Отсутствует или невалидный JWT токен
+- `429` - Превышен лимит запросов
+
 ---
 
 #### GET `/user/search`
@@ -300,6 +330,11 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 }
 ```
 
+**Ошибки:**
+- `400` - Валидация не пройдена (невалидные query параметры)
+- `401` - Отсутствует или невалидный JWT токен
+- `429` - Превышен лимит запросов
+
 ---
 
 ### Friends
@@ -320,6 +355,10 @@ Array<{
 }>
 ```
 
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `429` - Превышен лимит запросов
+
 ---
 
 #### GET `/user/friends/requests`
@@ -336,6 +375,10 @@ Array<{
   created_at: number;
 }>
 ```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -357,8 +400,11 @@ Array<{
 ```
 
 **Ошибки:**
-- `400` - Уже друзья или запрос уже отправлен
+- `400` - Нельзя отправить запрос самому себе / валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
 - `404` - Пользователь не найден
+- `409` - Уже друзья / запрос уже отправлен / этот пользователь уже отправил вам запрос
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -380,7 +426,11 @@ Array<{
 ```
 
 **Ошибки:**
+- `400` - Можно принимать только запросы, отправленные вам
+- `401` - Отсутствует или невалидный JWT токен
 - `404` - Запрос не найден
+- `409` - Запрос уже обработан
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -401,6 +451,13 @@ Array<{
 }
 ```
 
+**Ошибки:**
+- `400` - Можно отклонять только запросы, отправленные вам
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Запрос не найден
+- `409` - Запрос уже обработан
+- `429` - Превышен лимит запросов
+
 ---
 
 #### DELETE `/user/friends/:user_id`
@@ -416,18 +473,27 @@ Array<{
 }
 ```
 
+**Ошибки:**
+- `400` - Невалидный UUID формат user_id
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Дружба не найдена
+- `429` - Превышен лимит запросов
+
 ---
 
 ### Themes
 
 #### GET `/themes/popular`
-Список популярных тем. Поддерживает поиск по названию через параметр `query`.
+Список тем с пагинацией, поиском и фильтрацией.
 
 **Query Parameters:**
 ```typescript
 {
-  limit?: number;     // 1-50, по умолчанию 20
-  query?: string;     // 2-100 символов, поиск по названию (опционально)
+  q?: string;              // Строка поиска (опционально)
+  difficulty?: 'easy' | 'medium' | 'hard';  // Фильтр по сложности
+  sort?: 'popular' | 'recent' | 'played';   // Сортировка, по умолчанию 'popular'
+  page?: number;           // Номер страницы, по умолчанию 1
+  size?: number;           // 1-50, по умолчанию 10
 }
 ```
 
@@ -437,43 +503,31 @@ Array<{
   themes: Array<{
     id: string;
     name: string;
+    description: string | null;
     difficulty: 'easy' | 'medium' | 'hard';
     likes: number;
     dislikes: number;
-    players_count: number;
+    times_played: number;
+    questions_count: number;
+    created_by: {
+      user_id: string;
+      name: string;
+    } | null;
     created_at: number;
   }>;
-  total: number;
-}
-```
-
----
-
-#### POST `/themes/create`
-Создание новой темы с вопросами. Тема создаётся неактивной и становится доступной в списке популярных после получения первого лайка.
-
-**Request Body:**
-```typescript
-{
-  name: string;             // 2-255 символов
-  players_count: number;    // 2-4
-  questions: Array<{        // Минимум 50 вопросов
-    question: string;       // 1-1000 символов
-    answers: string[];      // Ровно 4 варианта ответа
-    correct_answer: number; // Индекс правильного ответа (0-3)
-  }>;
-}
-```
-
-**Response (201):**
-```typescript
-{
-  theme_id: string;
+  pagination: {
+    page: number;
+    size: number;
+    total_pages: number;
+    total_items: number;
+  };
 }
 ```
 
 **Ошибки:**
-- `400` - Валидация не пройдена (мало вопросов, невалидные данные)
+- `400` - Валидация не пройдена (невалидные query параметры)
+- `401` - Отсутствует или невалидный JWT токен
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -488,21 +542,30 @@ Array<{
 {
   id: string;
   name: string;
+  description: string | null;
   difficulty: 'easy' | 'medium' | 'hard';
   likes: number;
   dislikes: number;
-  players_count: number;
+  times_played: number;
+  questions_count: number;
+  created_by: {
+    user_id: string;
+    name: string;
+  } | null;
   created_at: number;
 }
 ```
 
 **Ошибки:**
+- `400` - Невалидный UUID формат theme_id
+- `401` - Отсутствует или невалидный JWT токен
 - `404` - Тема не найдена
+- `429` - Превышен лимит запросов
 
 ---
 
 #### POST `/themes/:theme_id/rate`
-Оценить тему.
+Оценить постоянную тему после игры.
 
 **Параметры:**
 - `theme_id` - UUID темы
@@ -510,18 +573,293 @@ Array<{
 **Request Body:**
 ```typescript
 {
+  game_id: string;         // UUID игры (обязательно)
   rating: 'like' | 'dislike';
-  difficulty_rating?: 'easy' | 'medium' | 'hard';  // Опционально
-  game_id?: string;   // UUID игры, если оценка после игры
+  difficulty_rating: 'easy' | 'medium' | 'hard';
 }
 ```
 
 **Response (200):**
 ```typescript
 {
-  message: "Rating submitted successfully"
+  success: true
 }
 ```
+
+**Ошибки:**
+- `400` - Невалидный UUID формат theme_id / валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Тема не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+### Games
+
+#### POST `/games/:game_id/rate-temp-theme`
+Оценить временную тему после игры. Используется для тем, созданных через AI или вручную.
+
+**Параметры:**
+- `game_id` - UUID игры
+
+**Request Body:**
+```typescript
+{
+  rating: 'like' | 'dislike' | 'skip';
+  difficulty_rating?: 'easy' | 'medium' | 'hard';
+}
+```
+
+**Response (200):**
+```typescript
+{
+  success: true;
+  theme_saved: boolean;    // true если тема сохранена (получила первый лайк)
+  theme_id: string | null; // ID сохранённой темы (только если theme_saved=true)
+}
+```
+
+> Сервер собирает оценки от всех игроков. Если хотя бы 1 лайк → тема сохраняется в PostgreSQL.
+
+**Ошибки:**
+- `400` - Невалидный UUID / валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Игра не найдена / не временная тема
+- `409` - Уже проголосовали
+- `429` - Превышен лимит запросов
+
+---
+
+### AI-генерация тем
+
+#### POST `/themes/ai/generate`
+Начать генерацию темы через AI (GigaChat).
+
+**Request Body:**
+```typescript
+{
+  name: string;            // 2-255 символов, название темы
+}
+```
+
+**Response (201):**
+```typescript
+{
+  session_id: string;
+  status: 'generating';
+  progress: {
+    generated: 0;
+    total: 80;
+  };
+}
+```
+
+> После вызова сервер начинает генерацию в фоне. Прогресс приходит через WebSocket события `ai:progress`, `ai:ready`, `ai:error`.
+
+**Ошибки:**
+- `400` - Валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `409` - У пользователя уже есть активная сессия генерации
+- `429` - Превышен лимит запросов
+- `503` - AI сервис недоступен
+
+---
+
+#### GET `/themes/ai/:session_id/status`
+Статус генерации (альтернатива WebSocket).
+
+**Параметры:**
+- `session_id` - UUID сессии
+
+**Response (200):**
+```typescript
+{
+  session_id: string;
+  status: 'generating' | 'ready' | 'error';
+  progress: {
+    generated: number;
+    total: 80;
+  };
+  error: string | null;
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Сессия принадлежит другому пользователю
+- `404` - Сессия не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/themes/ai/:session_id/questions`
+Получить сгенерированные вопросы для превью.
+
+**Параметры:**
+- `session_id` - UUID сессии
+
+**Response (200):**
+```typescript
+{
+  name: string;
+  questions: Array<{
+    question: string;
+    answers: string[];     // 4 варианта (без correct_answer!)
+  }>;
+}
+```
+
+> **Важно:** Правильный ответ не передаётся клиенту (защита от подглядывания).
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Сессия принадлежит другому пользователю
+- `404` - Сессия не найдена
+- `409` - Генерация ещё не завершена
+- `429` - Превышен лимит запросов
+
+---
+
+#### DELETE `/themes/ai/:session_id`
+Отменить генерацию и удалить все данные.
+
+**Параметры:**
+- `session_id` - UUID сессии
+
+**Response (200):**
+```typescript
+{
+  success: true
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Сессия принадлежит другому пользователю
+- `404` - Сессия не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+### Ручное создание тем
+
+#### POST `/themes/manual/create`
+Создание темы вручную (загрузка готового JSON с вопросами).
+
+**Request Body:**
+```typescript
+{
+  name: string;                 // 2-255 символов
+  questions: Array<{            // Ровно 80 вопросов
+    question: string;           // 1-1000 символов
+    answers: string[];          // Ровно 4 варианта ответа
+    correct_answer: number;     // Индекс правильного ответа (0-3)
+  }>;
+}
+```
+
+**Response (201):**
+```typescript
+{
+  session_id: string;
+  name: string;
+  questions_count: number;
+  status: 'ready';
+}
+```
+
+> **DEPRECATED:** Этот HTTP endpoint используется только для отладки.
+> **В продакшене:** используйте WebSocket события `room:create` → `room:upload_theme` → `room:activate`.
+
+**Ошибки:**
+- `400` - Валидация не пройдена (не 80 вопросов, невалидный формат)
+- `401` - Отсутствует или невалидный JWT токен
+- `409` - У пользователя уже есть активная сессия
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/themes/manual/:session_id/questions`
+Получить загруженные вопросы для превью.
+
+**Параметры:**
+- `session_id` - UUID сессии
+
+**Response (200):**
+```typescript
+{
+  name: string;
+  questions: Array<{
+    question: string;
+    answers: string[];     // 4 варианта (без correct_answer!)
+  }>;
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Сессия принадлежит другому пользователю
+- `404` - Сессия не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+#### DELETE `/themes/manual/:session_id`
+Отменить и удалить ручную сессию.
+
+**Параметры:**
+- `session_id` - UUID сессии
+
+**Response (200):**
+```typescript
+{
+  success: true
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Сессия принадлежит другому пользователю
+- `404` - Сессия не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+### Админ
+
+#### POST `/themes/admin/create`
+Создание темы админом (сразу в PostgreSQL).
+
+**Request Body:**
+```typescript
+{
+  name: string;                 // 2-255 символов
+  description?: string;         // До 1000 символов
+  difficulty: 'easy' | 'medium' | 'hard';
+  questions: Array<{            // 50-100 вопросов
+    question: string;
+    answers: string[];
+    correct_answer: number;
+  }>;
+}
+```
+
+**Response (201):**
+```typescript
+{
+  theme_id: string;
+  name: string;
+  questions_count: number;
+}
+```
+
+> Требуется роль админа. Тема сразу сохраняется с `is_active=true`.
+
+**Ошибки:**
+- `400` - Валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
 
 ---
 
@@ -569,30 +907,34 @@ const socket = io('ws://localhost:3000', {
 ### Rooms Events
 
 #### `room:create` (emit)
-Создание комнаты.
+Создание INACTIVE комнаты (без темы). Тема добавляется позже через `room:upload_theme` или `room:generate_theme`.
+Все поля опциональны — можно отправить пустой объект `{}`, будут использованы значения по умолчанию.
+
+> **Flow создания комнаты с временной темой:**
+> 1. `room:create` - создать INACTIVE комнату (пустой payload или частичное переопределение)
+> 2. `room:update_params` - (опционально) настроить параметры
+> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) - создать тему в комнате
+> 4. `room:activate` - активировать комнату для присоединения игроков
 
 **Данные:**
 ```typescript
 {
-  theme_id: string;           // UUID темы
-  players_count: number;      // 2-4
-  time_per_question: number;  // 10-45 секунд
-  time_per_turn: number;      // 15-60 секунд
-  extra_time_per_turn: number;// 10-30 секунд
-  game_timer?: number | null; // 10-60 минут, null = без ограничения
-  is_private: boolean;
+  players_count?: number;      // 2-4, по умолчанию 2
+  time_per_question?: number;  // 10-45 секунд, по умолчанию 20
+  time_per_turn?: number;      // 15-60 секунд, по умолчанию 30
+  extra_time_per_turn?: number;// 10-30 секунд, по умолчанию 15
+  game_timer?: number | null;  // 600-3600 (секунды), null = без ограничения, по умолчанию null
+  is_private?: boolean;        // по умолчанию false
 }
 ```
 
-**Ответ (room:created):** RoomState
+> **Примечание:** `theme_id` не передаётся при создании. Комната создаётся со статусом `inactive`, `theme_id` и `theme_name` равны `null`.
 
-**Ошибка (room:error):**
-```typescript
-{
-  code: string;
-  message: string;
-}
-```
+**Ответ (room:created):** RoomState (полное состояние комнаты со статусом `inactive`)
+
+**Ошибки (room:error):**
+- `ALREADY_IN_ROOM` - Вы уже находитесь в комнате
+- `VALIDATION_ERROR` - Невалидные данные
 
 ---
 
@@ -623,6 +965,14 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
+**Ошибки (room:error):**
+- `ALREADY_IN_ROOM` - Вы уже находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `ROOM_FULL` - Комната заполнена
+- `ROOM_INACTIVE` - Комната в статусе inactive, владелец ещё не активировал
+- `INVALID_STATUS` - Комната не принимает игроков
+- `VALIDATION_ERROR` - Невалидные данные
+
 ---
 
 #### `room:leave` (emit)
@@ -636,6 +986,9 @@ const socket = io('ws://localhost:3000', {
   success: true
 }
 ```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
 
 **Broadcast (room:player_left):**
 ```typescript
@@ -666,6 +1019,13 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может выгонять игроков
+- `CANNOT_KICK_SELF` - Нельзя выгнать самого себя
+- `PLAYER_NOT_IN_ROOM` - Игрок не находится в этой комнате
+
 ---
 
 #### `room:ready` (emit)
@@ -688,6 +1048,209 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+
+---
+
+#### `room:update_params` (emit)
+Обновить параметры комнаты (только владелец, только для INACTIVE комнат).
+
+**Данные:**
+```typescript
+{
+  players_count?: number;        // 2-4
+  time_per_question?: number;    // 10-45 секунд
+  time_per_turn?: number;        // 15-60 секунд
+  extra_time_per_turn?: number;  // 10-30 секунд
+  game_timer?: number | null;    // 600-3600 секунд или null
+  is_private?: boolean;
+}
+```
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:params_updated):**
+```typescript
+{
+  params: {
+    players_count: number;
+    time_per_question: number;
+    time_per_turn: number;
+    extra_time_per_turn: number;
+    game_timer: number | null;
+    is_private: boolean;
+  }
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может изменять параметры
+- `ROOM_ALREADY_ACTIVE` - Параметры можно изменять только для неактивных комнат
+
+---
+
+#### `room:generate_theme` (emit)
+Сгенерировать тему через AI (только владелец, только для INACTIVE комнат).
+
+**Данные:**
+```typescript
+{
+  theme_name: string;            // 2-255 символов
+}
+```
+
+**Ответ (room:theme_generation_started):**
+```typescript
+{
+  room_id: string;
+  generation_started: boolean;
+  theme_name: string;
+}
+```
+
+**Broadcast (room:theme_generation_started):**
+```typescript
+{
+  theme_name: string;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может генерировать тему
+- `ROOM_ALREADY_ACTIVE` - Тему можно создать только для неактивных комнат
+- `THEME_EXISTS` - В комнате уже есть тема
+
+---
+
+#### `room:upload_theme` (emit)
+Загрузить тему из JSON (только владелец, только для INACTIVE комнат).
+
+**Данные:**
+```typescript
+{
+  theme_name: string;            // 2-255 символов
+  questions: Array<{             // Ровно 80 вопросов
+    question: string;            // 1-1000 символов
+    answers: string[];           // Ровно 4 варианта ответа
+    correct_answer: number;      // 0-3
+  }>;
+}
+```
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:theme_uploaded):**
+```typescript
+{
+  theme_name: string;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может загружать тему
+- `ROOM_ALREADY_ACTIVE` - Тему можно создать только для неактивных комнат
+- `THEME_EXISTS` - В комнате уже есть тема
+- `INVALID_QUESTIONS_COUNT` - Тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:activate` (emit)
+Активировать комнату (только владелец, только для INACTIVE комнат с темой).
+
+**Данные:** нет
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:activated):**
+```typescript
+{
+  status: 'waiting';
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может активировать ее
+- `ROOM_NOT_INACTIVE` - Комната не в статусе inactive
+- `NO_THEME` - Необходимо создать тему перед активацией
+- `INVALID_QUESTIONS_COUNT` - Тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:delete_theme` (emit)
+Удалить тему из комнаты (только владелец, только для INACTIVE комнат).
+
+**Данные:** нет
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:theme_deleted):**
+```typescript
+{
+  theme_name: null;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может удалять тему
+- `ROOM_ALREADY_ACTIVE` - Нельзя удалить тему из активной комнаты
+- `NO_THEME` - В комнате нет темы
+
+---
+
+#### `room:deactivate` (emit)
+Деактивировать комнату (только владелец, только для WAITING комнат).
+
+**Данные:** нет
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:deactivated):**
+```typescript
+{
+  status: 'inactive';
+}
+```
+
+**Действия:**
+- Статус меняется WAITING → INACTIVE
+- Все игроки кроме владельца удаляются из комнаты
+- Удаленные игроки получают событие `room:kicked` с причиной "Room was deactivated by owner"
+- Комната удаляется из публичного списка
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может деактивировать ее
+- `ROOM_NOT_ACTIVE` - Комната не активна
+
+---
+
+#### `room:get_state` (emit)
+Получить текущее состояние комнаты (для переподключения).
+
+**Данные:** нет
+
+**Ответ (room:state):** RoomState
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+
+> Используется при переподключении клиента для восстановления состояния комнаты.
+> Сначала клиент получает active_room_id из init endpoint, затем вызывает room:get_state.
+
 ---
 
 #### `room:start` (emit)
@@ -701,6 +1264,13 @@ const socket = io('ws://localhost:3000', {
   room: RoomState
 }
 ```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может начать игру
+- `PLAYERS_NOT_READY` - Не все игроки готовы
+- `NOT_ENOUGH_PLAYERS` - Нужно минимум 2 игрока для начала
 
 После этого придёт событие `game:started`.
 
@@ -716,13 +1286,14 @@ const socket = io('ws://localhost:3000', {
 Array<{
   id: string;
   owner_name: string;
-  theme_name: string;
+  theme_name: string | null;
   players_count: number;      // Максимум игроков
   current_players: number;    // Текущее количество
 }>
 ```
 
-Событие `rooms:list` также приходит при изменении списка комнат.
+> Возвращает только WAITING, не заполненные комнаты (макс. 50).
+> Событие `rooms:list` также приходит при изменении списка комнат.
 
 ---
 
@@ -749,7 +1320,9 @@ Array<{
 ```typescript
 {
   game_id: string;
+  theme_id: string | null;    // null для временных тем
   theme_name: string;
+  is_temp_theme: boolean;     // true если тема временная
   players: Array<{
     user_id: string;
     name: string;
@@ -817,6 +1390,16 @@ Array<{
 }
 ```
 
+**Ошибки (game:error):**
+- `NOT_IN_GAME` - Вы не участвуете в игре
+- `GAME_NOT_FOUND` - Игра не найдена
+- `INVALID_PHASE` - Не фаза выбора клетки
+- `NO_ACTIVE_TURN` - Нет активного хода
+- `NOT_YOUR_TURN` - Сейчас не ваш ход
+- `INVALID_MOVE` - Недопустимый выбор клетки
+- `CELL_NOT_FOUND` - Клетка не найдена
+- `NO_QUESTIONS` - Нет доступных вопросов
+
 После выбора придёт событие `game:question`.
 
 ---
@@ -857,6 +1440,19 @@ Array<{
   waiting_for_opponent?: boolean;  // true = ожидание ответа соперника
 }
 ```
+
+**Ошибки (game:error):**
+- `NOT_IN_GAME` - Вы не участвуете в игре
+- `GAME_NOT_FOUND` - Игра не найдена
+- `INVALID_PHASE` - Не фаза вопроса
+- `NO_ACTIVE_QUESTION` - Нет активного вопроса
+- `PLAYER_NOT_FOUND` - Игрок не найден
+- `INVALID_ANSWER` - Невалидный индекс ответа
+- `NOT_IN_BATTLE` - Вы не участвуете в этом сражении
+- `ALREADY_ANSWERED` - Вы уже ответили
+- `NOT_YOUR_TURN` - Сейчас не ваш ход
+- `NO_QUESTION` - Вопрос не найден
+- `NO_BATTLE_DATA` - Данные сражения не найдены
 
 После ответов всех участников придёт событие `game:answer_result`.
 
@@ -899,6 +1495,11 @@ Array<{
 }
 ```
 
+**Ошибки (game:error):**
+- `NOT_IN_GAME` - Вы не участвуете в игре
+- `GAME_ENDED` - Игра уже завершена
+- `PLAYER_NOT_FOUND` - Игрок не найден
+
 После этого придёт событие `game:ended` всем игрокам.
 
 ---
@@ -919,6 +1520,10 @@ Array<{
 }
 ```
 
+**Ошибки (game:error):**
+- `NOT_IN_GAME` - Вы не участвуете в игре
+- `GAME_NOT_FOUND` - Игра не найдена
+
 ---
 
 #### `game:state` (emit)
@@ -927,6 +1532,10 @@ Array<{
 **Данные:** нет
 
 **Ответ (game:state):** GameStatePayload (см. выше)
+
+**Ошибки (game:error):**
+- `NOT_IN_GAME` - Вы не участвуете в игре
+- `GAME_NOT_FOUND` - Игра не найдена
 
 ---
 
@@ -949,8 +1558,15 @@ Array<{
     correct_answers: number;
   }>;
   game_duration: number;      // Миллисекунды
+  theme_id: string | null;    // null для временных тем
+  theme_name: string;
+  is_temp_theme: boolean;     // true если тема временная
 }
 ```
+
+> Если `is_temp_theme=true`, клиент должен показать окно оценки темы.
+> Оценка отправляется через `POST /games/:game_id/rate-temp-theme`.
+> От оценок зависит будет ли тема сохранена (нужен хотя бы 1 лайк).
 
 ---
 
@@ -1027,13 +1643,13 @@ Array<{
 
 **Broadcast (chat:message):** ChatMessage (см. типы данных)
 
-**Ошибка (chat:error):**
-```typescript
-{
-  code: string;
-  message: string;
-}
-```
+**Ошибки (chat:error):**
+- `USER_NOT_FOUND` - Пользователь не найден
+- `NOT_IN_ROOM` - Вы не находитесь в этой комнате
+- `NOT_IN_GAME` - Вы не участвуете в этой игре
+- `INVALID_TARGET` - Необходимо указать room_id или game_id
+- `SEND_FAILED` - Не удалось отправить сообщение
+- `VALIDATION_ERROR` - Невалидные данные
 
 ---
 
@@ -1053,6 +1669,13 @@ Array<{
 ```typescript
 Array<ChatMessage>
 ```
+
+**Ошибки (chat:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в этой комнате
+- `NOT_IN_GAME` - Вы не участвуете в этой игре
+- `INVALID_TARGET` - Необходимо указать room_id или game_id
+- `HISTORY_FAILED` - Не удалось получить историю сообщений
+- `VALIDATION_ERROR` - Невалидные данные
 
 ---
 
@@ -1126,6 +1749,7 @@ Array<ChatMessage>
 - `USER_BUSY` - Пользователь уже в комнате
 - `USER_OFFLINE` - Пользователь офлайн
 - `INVITE_EXISTS` - Приглашение уже отправлено
+- `INVITE_FAILED` - Не удалось отправить приглашение
 
 ---
 
@@ -1147,6 +1771,12 @@ Array<ChatMessage>
 }
 ```
 
+**Ошибки (friend:invite_error):**
+- `INVITE_NOT_FOUND` - Приглашение не найдено или истекло
+- `ROOM_NOT_FOUND` - Комната больше не существует
+- `ROOM_FULL` - Комната уже заполнена
+- `ACCEPT_FAILED` - Не удалось принять приглашение
+
 После принятия нужно подключиться к комнате через `room:join`.
 
 ---
@@ -1167,6 +1797,10 @@ Array<ChatMessage>
   success: true
 }
 ```
+
+**Ошибки (friend:invite_error):**
+- `INVITE_NOT_FOUND` - Приглашение не найдено
+- `REJECT_FAILED` - Не удалось отклонить приглашение
 
 ---
 
@@ -1219,6 +1853,67 @@ Array<{
   timestamp: number;
 }
 ```
+
+---
+
+### AI Generation Events
+
+События для отслеживания прогресса генерации темы через AI.
+Используются вместо polling `GET /themes/ai/:session_id/status`.
+
+#### `ai:progress` (listen)
+Прогресс генерации (отправляется после каждого батча из 20 вопросов).
+
+**Данные:**
+```typescript
+{
+  session_id: string;
+  status: 'generating';
+  progress: {
+    generated: number;      // 20, 40, 60...
+    total: 80;
+  };
+}
+```
+
+---
+
+#### `ai:ready` (listen)
+Генерация завершена успешно.
+
+**Данные:**
+```typescript
+{
+  session_id: string;
+  status: 'ready';
+  progress: {
+    generated: 80;
+    total: 80;
+  };
+}
+```
+
+> После этого события можно запросить `GET /themes/ai/:session_id/questions`.
+
+---
+
+#### `ai:error` (listen)
+Ошибка при генерации.
+
+**Данные:**
+```typescript
+{
+  session_id: string;
+  status: 'error';
+  error: string;
+  progress: {
+    generated: number;      // Сколько успели сгенерировать
+    total: 80;
+  };
+}
+```
+
+> При ошибке частично сгенерированные вопросы удаляются.
 
 ---
 
@@ -1300,8 +1995,8 @@ interface PlayerAnswer {
 interface RoomState {
   id: string;
   owner_id: string;
-  theme_id: string;
-  theme_name: string;
+  theme_id: string | null;    // null до привязки постоянной темы или для временных тем
+  theme_name: string | null;  // null пока тема не создана
   players_count: number;
   time_per_question: number;
   time_per_turn: number;
@@ -1309,11 +2004,16 @@ interface RoomState {
   game_timer: number | null;
   is_private: boolean;
   invite_code: string;
-  status: 'waiting' | 'ready';
+  status: 'inactive' | 'waiting' | 'ready';
   created_at: number;
   players: RoomPlayer[];
 }
 ```
+
+> **Статусы:**
+> - `inactive` — комната в режиме настройки (создание темы, параметры). Нельзя присоединиться.
+> - `waiting` — активная комната, принимает игроков.
+> - `ready` — зарезервировано (не используется).
 
 ### RoomPlayer
 ```typescript
@@ -1344,25 +2044,64 @@ interface RoomPlayer {
 | Код | Описание |
 |-----|----------|
 | `UNAUTHORIZED` | Не авторизован |
+| `VALIDATION_ERROR` | Невалидные данные |
 | `USER_NOT_FOUND` | Пользователь не найден |
 | `THEME_NOT_FOUND` | Тема не найдена |
+| `THEME_EXISTS` | В комнате уже есть тема |
+| `NO_THEME` | В комнате нет темы |
+| `INVALID_QUESTIONS_COUNT` | Тема должна содержать ровно 80 вопросов |
+| `INVALID_PLAYERS_COUNT` | Тема поддерживает другое количество игроков |
 | `ROOM_NOT_FOUND` | Комната не найдена |
 | `ROOM_FULL` | Комната заполнена |
+| `ROOM_INACTIVE` | Комната в статусе inactive, владелец ещё не активировал |
+| `ROOM_NOT_INACTIVE` | Комната не в статусе inactive |
+| `ROOM_NOT_ACTIVE` | Комната не в статусе waiting |
+| `ROOM_ALREADY_ACTIVE` | Действие разрешено только для inactive комнат |
 | `ALREADY_IN_ROOM` | Уже в комнате |
 | `NOT_IN_ROOM` | Не в комнате |
 | `NOT_OWNER` | Не владелец комнаты |
-| `NOT_ALL_READY` | Не все игроки готовы |
+| `INVALID_STATUS` | Комната не принимает игроков |
+| `CANNOT_KICK_SELF` | Нельзя выгнать самого себя |
+| `PLAYER_NOT_IN_ROOM` | Игрок не в комнате |
+| `PLAYERS_NOT_READY` | Не все игроки готовы |
+| `NOT_ENOUGH_PLAYERS` | Недостаточно игроков |
 | `GAME_NOT_FOUND` | Игра не найдена |
+| `GAME_START_FAILED` | Не удалось запустить игру |
+| `GAME_ENDED` | Игра уже завершена |
 | `NOT_IN_GAME` | Не в игре |
 | `NOT_YOUR_TURN` | Не ваш ход |
+| `INVALID_PHASE` | Неверная фаза игры |
+| `NO_ACTIVE_TURN` | Нет активного хода |
+| `NO_ACTIVE_QUESTION` | Нет активного вопроса |
 | `INVALID_MOVE` | Недопустимый ход |
+| `CELL_NOT_FOUND` | Клетка не найдена |
+| `NO_QUESTIONS` | Нет доступных вопросов |
+| `PLAYER_NOT_FOUND` | Игрок не найден |
+| `INVALID_ANSWER` | Невалидный индекс ответа |
+| `NOT_IN_BATTLE` | Не участвует в сражении |
+| `ALREADY_ANSWERED` | Уже ответил |
+| `NO_QUESTION` | Вопрос не найден |
+| `NO_BATTLE_DATA` | Данные сражения не найдены |
+| `INVALID_TARGET` | Не указан room_id или game_id |
+| `SEND_FAILED` | Не удалось отправить сообщение |
+| `HISTORY_FAILED` | Не удалось получить историю |
 | `NOT_FRIENDS` | Не друзья |
 | `USER_BUSY` | Пользователь занят |
 | `USER_OFFLINE` | Пользователь офлайн |
 | `INVITE_NOT_FOUND` | Приглашение не найдено |
 | `INVITE_EXPIRED` | Приглашение истекло |
 | `INVITE_EXISTS` | Приглашение уже отправлено |
-| `GAME_START_FAILED` | Не удалось запустить игру |
+| `INVITE_FAILED` | Не удалось отправить приглашение |
+| `ACCEPT_FAILED` | Не удалось принять приглашение |
+| `REJECT_FAILED` | Не удалось отклонить приглашение |
+| `SESSION_NOT_FOUND` | Сессия генерации не найдена |
+| `SESSION_NOT_READY` | Генерация ещё не завершена |
+| `SESSION_EXISTS` | У пользователя уже есть активная сессия |
+| `AI_SERVICE_UNAVAILABLE` | AI сервис недоступен |
+| `AI_GENERATION_FAILED` | Ошибка генерации AI |
+| `NOT_TEMP_THEME` | Игра не с временной темой |
+| `ALREADY_VOTED` | Уже проголосовали за тему |
+| `VOTING_CLOSED` | Голосование завершено |
 
 ---
 

@@ -14,6 +14,16 @@ import type {
   RoomPlayerReadyEvent,
   RoomErrorEvent,
   RoomListItem,
+  RoomUpdateParamsPayload,
+  RoomParamsUpdatedEvent,
+  RoomGenerateThemePayload,
+  RoomThemeGenerationStartedEvent,
+  RoomUploadThemePayload,
+  RoomThemeUploadedEvent,
+  RoomActivatedEvent,
+  RoomDeactivatedEvent,
+  RoomThemeDeletedEvent,
+  RoomKickedEvent,
   // Game types
   GameStartedEvent,
   GameTurnEvent,
@@ -27,6 +37,7 @@ import type {
   GameEndedEvent,
   GamePlayerDisconnectedEvent,
   GamePlayerReconnectedEvent,
+  GamePlayerForfeitedEvent,
   // Chat types
   ChatSendPayload,
   ChatMessage,
@@ -43,6 +54,10 @@ import type {
   NotificationEvent,
   FriendOnlineEvent,
   FriendOfflineEvent,
+  // AI Generation types
+  AIProgressEvent,
+  AIReadyEvent,
+  AIErrorEvent,
   // Other
   PongEvent,
   WsError,
@@ -191,8 +206,8 @@ class WebSocketClient {
     /**
      * Create a new room
      */
-    create: (payload: RoomCreatePayload): void => {
-      this.emitOnly('room:create', payload)
+    create: (payload?: RoomCreatePayload): void => {
+      this.emitOnly('room:create', payload ?? {})
     },
 
     /**
@@ -228,6 +243,55 @@ class WebSocketClient {
      */
     start: (): void => {
       this.emitOnly('room:start')
+    },
+
+    /**
+     * Update room params (owner only, INACTIVE rooms only)
+     */
+    updateParams: (payload: RoomUpdateParamsPayload): void => {
+      this.emitOnly('room:update_params', payload)
+    },
+
+    /**
+     * Generate theme via AI (owner only, INACTIVE rooms only)
+     */
+    generateTheme: (payload: RoomGenerateThemePayload): void => {
+      this.emitOnly('room:generate_theme', payload)
+    },
+
+    /**
+     * Upload theme from JSON (owner only, INACTIVE rooms only)
+     */
+    uploadTheme: (payload: RoomUploadThemePayload): void => {
+      this.emitOnly('room:upload_theme', payload)
+    },
+
+    /**
+     * Activate room (owner only, INACTIVE rooms with theme only)
+     */
+    activate: (): void => {
+      this.emitOnly('room:activate')
+    },
+
+    /**
+     * Delete theme from room (owner only, INACTIVE rooms only)
+     */
+    deleteTheme: (): void => {
+      this.emitOnly('room:delete_theme')
+    },
+
+    /**
+     * Deactivate room (owner only, WAITING rooms only)
+     */
+    deactivate: (): void => {
+      this.emitOnly('room:deactivate')
+    },
+
+    /**
+     * Get current room state (for reconnection)
+     */
+    getState: (): void => {
+      this.emitOnly('room:get_state')
     },
 
     /**
@@ -287,6 +351,34 @@ class WebSocketClient {
 
     onUnsubscribed: (callback: EventCallback<{ success: true }>): EventUnsubscribe => {
       return this.on('rooms:unsubscribed', callback)
+    },
+
+    onParamsUpdated: (callback: EventCallback<RoomParamsUpdatedEvent>): EventUnsubscribe => {
+      return this.on('room:params_updated', callback)
+    },
+
+    onThemeGenerationStarted: (callback: EventCallback<RoomThemeGenerationStartedEvent>): EventUnsubscribe => {
+      return this.on('room:theme_generation_started', callback)
+    },
+
+    onThemeUploaded: (callback: EventCallback<RoomThemeUploadedEvent>): EventUnsubscribe => {
+      return this.on('room:theme_uploaded', callback)
+    },
+
+    onActivated: (callback: EventCallback<RoomActivatedEvent>): EventUnsubscribe => {
+      return this.on('room:activated', callback)
+    },
+
+    onDeactivated: (callback: EventCallback<RoomDeactivatedEvent>): EventUnsubscribe => {
+      return this.on('room:deactivated', callback)
+    },
+
+    onThemeDeleted: (callback: EventCallback<RoomThemeDeletedEvent>): EventUnsubscribe => {
+      return this.on('room:theme_deleted', callback)
+    },
+
+    onKicked: (callback: EventCallback<RoomKickedEvent>): EventUnsubscribe => {
+      return this.on('room:kicked', callback)
     },
   }
 
@@ -375,6 +467,10 @@ class WebSocketClient {
 
     onPlayerReconnected: (callback: EventCallback<GamePlayerReconnectedEvent>): EventUnsubscribe => {
       return this.on('game:player_reconnected', callback)
+    },
+
+    onPlayerForfeited: (callback: EventCallback<GamePlayerForfeitedEvent>): EventUnsubscribe => {
+      return this.on('game:player_forfeited', callback)
     },
   }
 
@@ -475,6 +571,31 @@ class WebSocketClient {
 
     onFriendOffline: (callback: EventCallback<FriendOfflineEvent>): EventUnsubscribe => {
       return this.on('friend:offline', callback)
+    },
+  }
+
+  // ============= AI Generation Events =============
+
+  ai = {
+    /**
+     * Listen for generation progress (after each batch of 20 questions)
+     */
+    onProgress: (callback: EventCallback<AIProgressEvent>): EventUnsubscribe => {
+      return this.on('ai:progress', callback)
+    },
+
+    /**
+     * Listen for generation complete
+     */
+    onReady: (callback: EventCallback<AIReadyEvent>): EventUnsubscribe => {
+      return this.on('ai:ready', callback)
+    },
+
+    /**
+     * Listen for generation error
+     */
+    onError: (callback: EventCallback<AIErrorEvent>): EventUnsubscribe => {
+      return this.on('ai:error', callback)
     },
   }
 

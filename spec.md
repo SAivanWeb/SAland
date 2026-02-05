@@ -15,10 +15,40 @@
 | Цель игры | Захватить все территории ИЛИ остаться единственным игроком с территориями |
 
 
-> Тема создаётся пользователем через POST /themes/create (название, кол-во игроков, вопросы с 4 ответами).
-> Новая тема неактивна до первого лайка. После лайка тема становится доступной в списке популярных.
-> При создании комнаты из сохранённой темы кол-во игроков не может превышать players_count темы.
-> Параметры времени (game_timer, time_per_turn, time_per_question) задаются при создании комнаты и не сохраняются в теме.
+> **Создание комнаты и темы:**
+> - **Flow:** создание INACTIVE комнаты (WebSocket) → настройка параметров → создание темы внутри комнаты → активация → игроки присоединяются → игра
+> - **Временная тема:** создается внутри INACTIVE комнаты, хранится в Redis привязанной к room_id
+> - **После игры:** если хотя бы 1 лайк → сохраняется в PostgreSQL (is_active=true), иначе удаляется
+> - Темы создаются через AI-генерацию (GigaChat) или загрузку JSON (доступно всем пользователям)
+> - Админские темы создаются сразу в PostgreSQL через HTTP endpoint
+
+> **WebSocket события для управления комнатой:**
+>
+> **Создание и настройка (INACTIVE комната):**
+> 1. `room:create` - создать INACTIVE комнату (без темы, статус INACTIVE). Payload: players_count, таймеры, is_private. Без theme_id.
+> 2. `room:update_params` - настроить параметры (players_count, таймеры, приватность). Только для INACTIVE комнат.
+> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) - создать тему внутри комнаты
+> 4. `room:delete_theme` - удалить тему для пересоздания (если нужно изменить)
+> 5. `room:activate` - активировать комнату (INACTIVE → WAITING), другие игроки могут присоединиться
+>
+> **Управление активной комнатой (WAITING):**
+> - `room:join` - присоединиться к комнате (по room_id или invite_code)
+> - `room:ready` - переключить статус готовности
+> - `room:kick` - исключить игрока (только владелец)
+> - `room:deactivate` - деактивировать комнату (WAITING → INACTIVE, выгнать всех игроков кроме владельца)
+> - `room:start` - запустить игру (когда все не-владельцы готовы, минимум 2 игрока)
+>
+> **Утилиты:**
+> - `room:get_state` - получить текущее состояние (для переподключения)
+> - `rooms:subscribe` / `rooms:unsubscribe` - подписка на список публичных комнат в лобби
+> - Init endpoint возвращает `active_room_id` для восстановления при перезагрузке
+
+> **Генерация вопросов AI:**
+> - Вопросы генерируются батчами по 20 штук (всего 80)
+> - Уже сгенерированные вопросы передаются в следующие запросы для избежания дублей
+> - Правильные ответы не отправляются клиенту при превью (защита от подглядывания)
+> - При ошибке AI — возвращается ошибка пользователю
+> - Пользователь может отменить генерацию в любой момент
 
 ---
 
@@ -68,9 +98,10 @@
 
 ### 3.2 Количество вопросов
 
-- Минимальный пул: 50–70 вопросов на тему
-- Вопросы создаются админом сайта и привязаны к теме
+- Фиксированный пул: 80 вопросов на тему
+- Вопросы создаются через AI-генерацию или вручную админом
 - При создании игры вопросы выбираются случайным образом из пула темы
+- Количество вопросов не зависит от числа игроков — любая тема доступна любому составу
 
 ### 3.3 Таймеры игры
 
@@ -79,7 +110,7 @@
 | Время на ход (выбор ячейки) | 30 сек | 15–60 сек |
 | Дополнительное время на ход | 15 сек | 10–30 сек |
 | Время на ответ | 20 сек | 10–45 сек |
-| Таймер игры | 30 мин | 10–60 мин (или без ограничения) |
+| Таймер игры | null (без ограничения) | 600–3600 сек (или null = без ограничения) |
 
 > Таймер игры останавливается на время ответа на вопрос
 
@@ -491,9 +522,12 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ### GET `themes/popular`
 
-> Популярные темы с пагинацией
+> Список тем с пагинацией, поиском и фильтрацией
 
 **Query params:**
+- `q` — строка поиска (опционально)
+- `difficulty` — фильтр по сложности: `easy`, `medium`, `hard` (опционально)
+- `sort` — сортировка: `popular` (по лайкам), `recent` (по дате), `played` (по играм). По умолчанию `popular`
 - `page` — номер страницы (по умолчанию 1)
 - `size` — количество элементов на странице (по умолчанию 10, максимум 50)
 
@@ -510,45 +544,11 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
         "likes": "number",
         "dislikes": "number",
         "times_played": "number",
-        "questions_count": "number"
-      }
-    ],
-    "pagination": {
-      "page": "number",
-      "size": "number",
-      "total_pages": "number",
-      "total_items": "number"
-    }
-  }
-}
-```
-
----
-
-### GET `themes/search`
-
-> Поиск тем
-
-**Query params:**
-- `q` — строка поиска
-- `difficulty` — фильтр по сложности
-- `page` — номер страницы (по умолчанию 1)
-- `size` — количество элементов на странице (по умолчанию 10, максимум 50)
-
-**Response:**
-```json
-{
-  "data": {
-    "themes": [
-      {
-        "theme_id": "string",
-        "name": "string",
-        "description": "string?",
-        "difficulty": "easy | medium | hard",
-        "likes": "number",
-        "dislikes": "number",
-        "times_played": "number",
-        "questions_count": "number"
+        "questions_count": "number",
+        "created_by": {
+          "user_id": "string",
+          "name": "string"
+        }
       }
     ],
     "pagination": {
@@ -566,15 +566,262 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ### POST `themes/:theme_id/rate`
 
-> Оценка темы после игры
+> Оценка постоянной темы после игры
 
 **Body:**
 ```json
 {
+  "game_id": "string",
   "rating": "like | dislike",
   "difficulty_rating": "easy | medium | hard"
 }
 ```
+
+**Response:**
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+### POST `games/:game_id/rate-temp-theme`
+
+> Оценка временной темы после игры
+
+**Body:**
+```json
+{
+  "rating": "like | dislike | skip",
+  "difficulty_rating": "easy | medium | hard"
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "success": true,
+    "theme_saved": "boolean",
+    "theme_id": "string?"
+  }
+}
+```
+
+> `theme_saved` — true если тема была сохранена (получила первый лайк).
+> `theme_id` — ID сохранённой темы (только если theme_saved=true).
+>
+> Логика сохранения:
+> - Сервер собирает оценки от всех игроков
+> - Если хотя бы 1 лайк → тема сохраняется в PostgreSQL
+> - Если 0 лайков → тема удаляется
+> - После последней оценки возвращается результат
+
+---
+
+## AI-генерация тем
+
+### POST `themes/ai/generate`
+
+> Начать генерацию темы через AI
+
+**Body:**
+```json
+{
+  "name": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "session_id": "string",
+    "status": "generating",
+    "progress": {
+      "generated": 0,
+      "total": 80
+    }
+  }
+}
+```
+
+---
+
+### GET `themes/ai/:session_id/status`
+
+> Статус генерации
+
+**Response:**
+```json
+{
+  "data": {
+    "session_id": "string",
+    "status": "generating | ready | error",
+    "progress": {
+      "generated": "number",
+      "total": 80
+    },
+    "error": "string?"
+  }
+}
+```
+
+**Статусы:**
+- `generating` — генерация в процессе
+- `ready` — генерация завершена, можно просмотреть вопросы
+- `error` — ошибка при генерации
+
+---
+
+### GET `themes/ai/:session_id/questions`
+
+> Получить сгенерированные вопросы для превью
+
+**Response:**
+```json
+{
+  "data": {
+    "name": "string",
+    "questions": [
+      {
+        "question": "string",
+        "answers": ["string", "string", "string", "string"]
+      }
+    ]
+  }
+}
+```
+
+> **Важно:** Правильный ответ не передаётся клиенту (защита от подглядывания)
+
+---
+
+### DELETE `themes/ai/:session_id`
+
+> Отменить генерацию и удалить все данные
+
+**Response:**
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+### POST `themes/manual/create`
+
+> Создание темы вручную (загрузка готового JSON с вопросами)
+
+**Body:**
+```json
+{
+  "name": "string",
+  "questions": [
+    {
+      "question": "string",
+      "answers": ["string", "string", "string", "string"],
+      "correct_answer": 0
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "session_id": "string",
+    "name": "string",
+    "questions_count": "number",
+    "status": "ready"
+  }
+}
+```
+
+> **DEPRECATED:** Этот HTTP endpoint используется только для отладки.
+> **В продакшене:** пользователь создает INACTIVE комнату через WebSocket `room:create`,
+> затем загружает тему через `room:upload_theme`.
+> Валидация: ровно 80 вопросов, 4 варианта ответа, correct_answer 0-3.
+
+---
+
+### GET `themes/manual/:session_id/questions`
+
+> Получить загруженные вопросы для превью
+
+**Response:**
+```json
+{
+  "data": {
+    "name": "string",
+    "questions": [
+      {
+        "question": "string",
+        "answers": ["string", "string", "string", "string"]
+      }
+    ]
+  }
+}
+```
+
+> Правильный ответ не передаётся клиенту
+
+---
+
+### DELETE `themes/manual/:session_id`
+
+> Отменить и удалить ручную сессию
+
+**Response:**
+```json
+{
+  "data": {
+    "success": true
+  }
+}
+```
+
+---
+
+### POST `themes/admin/create`
+
+> Создание темы админом (сразу в PostgreSQL)
+
+**Body:**
+```json
+{
+  "name": "string",
+  "description": "string?",
+  "difficulty": "easy | medium | hard",
+  "questions": [
+    {
+      "question": "string",
+      "answers": ["string", "string", "string", "string"],
+      "correct_answer": 0
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "theme_id": "string",
+    "name": "string",
+    "questions_count": "number"
+  }
+}
+```
+
+> Требуется роль админа. Тема сразу сохраняется в PostgreSQL с `is_active=true`.
 
 ---
 
@@ -607,49 +854,90 @@ const socket = io('wss://server', {
 
 ## Комнаты (Lobby)
 
+### Статусы комнаты
+
+| Статус | Описание |
+|--------|----------|
+| `inactive` | Комната в режиме настройки (создание темы, параметры). Нельзя присоединиться. |
+| `waiting` | Активная комната, принимает игроков. Видна в лобби (если публичная). |
+| `ready` | Все игроки готовы (зарезервирован, не используется в текущей реализации). |
+
+### Переходы статусов
+
+```
+INACTIVE (room:create)
+  ├─ room:update_params (разрешено)
+  ├─ room:generate_theme (разрешено)
+  ├─ room:upload_theme (разрешено)
+  ├─ room:delete_theme (разрешено)
+  └─ room:activate → WAITING (если тема есть, 80 вопросов)
+
+WAITING (после активации)
+  ├─ room:join (разрешено)
+  ├─ room:leave (разрешено)
+  ├─ room:kick (разрешено)
+  ├─ room:ready (разрешено)
+  ├─ room:start (разрешено) → Игра начинается
+  └─ room:deactivate → INACTIVE (все игроки кроме владельца удаляются)
+```
+
 ### Клиент → Сервер
 
 #### `room:create`
 
-> Создание новой комнаты
+> Создание INACTIVE комнаты (без темы). Тема добавляется позже через `room:upload_theme` или `room:generate_theme`.
+> Все поля опциональны — можно отправить пустой объект `{}`, будут использованы значения по умолчанию.
+
+```json
+{}
+```
+
+Или с частичным переопределением:
 
 ```json
 {
-  "theme_id": "string",
-  "players_count": 2,
-  "time_per_question": 20,
-  "time_per_turn": 30,
-  "extra_time_per_turn": 15,
-  "game_timer": 1800,
-  "is_private": false
+  "players_count": 4,
+  "is_private": true
 }
 ```
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `theme_id` | string | ID темы из списка тем |
-| `players_count` | number | Количество игроков (2-4) |
-| `time_per_question` | number | Секунды на ответ (10-45) |
-| `time_per_turn` | number | Секунды на выбор ячейки (15-60) |
-| `extra_time_per_turn` | number | Доп. секунды при таймауте (10-30) |
-| `game_timer` | number? | Таймер игры в секундах (null = без ограничения) |
-| `is_private` | boolean | Приватная комната |
+| Поле | Тип | По умолчанию | Описание |
+|------|-----|-------------|----------|
+| `players_count` | number? | 2 | Количество игроков (2-4) |
+| `time_per_question` | number? | 20 | Секунды на ответ (10-45) |
+| `time_per_turn` | number? | 30 | Секунды на выбор ячейки (15-60) |
+| `extra_time_per_turn` | number? | 15 | Доп. секунды при таймауте (10-30) |
+| `game_timer` | number? | null | Таймер игры в секундах (600-3600, null = без ограничения) |
+| `is_private` | boolean? | false | Приватная комната |
 
-**Ответ:** `room:created` создателю, `rooms:list` всем в лобби
+**Ответ:** `room:created` создателю (RoomState), `rooms:list` всем в лобби (если публичная)
+
+**Ошибки (room:error):**
+- `ALREADY_IN_ROOM` — пользователь уже в комнате
 
 ---
 
 #### `room:join`
 
-> Присоединение к комнате
+> Присоединение к комнате (только WAITING комнаты)
 
 ```json
 {
-  "room_id": "string"
+  "room_id": "string?",
+  "invite_code": "string?"
 }
 ```
 
-**Ответ:** `room:state` всем в комнате, `rooms:list` всем в лобби
+> Необходимо указать `room_id` (UUID) или `invite_code` (6 символов, case-insensitive)
+
+**Ответ:** `room:state` присоединившемуся, `room:player_joined` остальным в комнате
+
+**Ошибки (room:error):**
+- `ALREADY_IN_ROOM` — пользователь уже в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `ROOM_FULL` — комната заполнена
+- `ROOM_INACTIVE` — комната в статусе INACTIVE, владелец ещё не активировал
+- `INVALID_STATUS` — комната не принимает игроков
 
 ---
 
@@ -663,7 +951,13 @@ const socket = io('wss://server', {
 
 > `room_id` не нужен — сервер знает в какой комнате пользователь
 
-**Ответ:** `room:player_left` оставшимся, `rooms:list` всем в лобби
+**Ответ:** `room:left` покинувшему (`{ success: true }`), `room:player_left` оставшимся
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+
+> При выходе владельца — владение передаётся случайному оставшемуся игроку.
+> При выходе последнего игрока — комната удаляется.
 
 ---
 
@@ -677,17 +971,210 @@ const socket = io('wss://server', {
 }
 ```
 
+**Ответ:** `room:kick_success` владельцу (`{ success: true }`), `room:kicked` исключённому, `room:player_left` остальным
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — владелец не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может исключать
+- `CANNOT_KICK_SELF` — нельзя исключить себя
+- `PLAYER_NOT_IN_ROOM` — целевой игрок не в этой комнате
+
 ---
 
-#### `room:start`
+#### `room:ready`
 
-> Запуск игры (только владелец, когда комната заполнена)
+> Переключение статуса готовности
 
 ```json
 {}
 ```
 
-**Ответ:** `game:started` всем в комнате
+**Ответ:** `room:ready_toggled` отправителю (`{ is_ready: boolean }`), `room:player_ready` всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+
+---
+
+#### `room:update_params`
+
+> Обновление параметров комнаты (только владелец, только INACTIVE комнаты)
+
+```json
+{
+  "players_count": 4,
+  "time_per_question": 30,
+  "time_per_turn": 45,
+  "extra_time_per_turn": 20,
+  "game_timer": 1800,
+  "is_private": true
+}
+```
+
+> Все поля опциональны. Обновляются только переданные параметры.
+> `game_timer` в секундах: 600-3600 (10-60 мин) или null.
+
+**Ответ:** `room:state` отправителю, `room:params_updated` всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может изменять параметры
+- `ROOM_ALREADY_ACTIVE` — параметры можно изменять только для INACTIVE комнат
+
+---
+
+#### `room:generate_theme`
+
+> Запуск генерации темы через AI (только владелец, только INACTIVE комнаты)
+
+```json
+{
+  "theme_name": "string"
+}
+```
+
+> `theme_name`: 2-255 символов
+
+**Ответ:** `room:theme_generation_started` отправителю и всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может генерировать тему
+- `ROOM_ALREADY_ACTIVE` — тему можно создать только для INACTIVE комнат
+- `THEME_EXISTS` — в комнате уже есть тема (удалите через `room:delete_theme`)
+
+---
+
+#### `room:upload_theme`
+
+> Загрузка темы из JSON (только владелец, только INACTIVE комнаты)
+
+```json
+{
+  "theme_name": "string",
+  "questions": [
+    {
+      "question": "string",
+      "answers": ["string", "string", "string", "string"],
+      "correct_answer": 0
+    }
+  ]
+}
+```
+
+> `theme_name`: 2-255 символов. `questions`: ровно 80 вопросов, `correct_answer`: 0-3.
+
+**Ответ:** `room:state` отправителю, `room:theme_uploaded` всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может загружать тему
+- `ROOM_ALREADY_ACTIVE` — тему можно создать только для INACTIVE комнат
+- `THEME_EXISTS` — в комнате уже есть тема
+- `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:delete_theme`
+
+> Удаление темы из комнаты (только владелец, только INACTIVE комнаты)
+
+```json
+{}
+```
+
+**Ответ:** `room:state` отправителю, `room:theme_deleted` всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может удалять тему
+- `ROOM_ALREADY_ACTIVE` — нельзя удалить тему из активной комнаты
+- `NO_THEME` — в комнате нет темы
+
+---
+
+#### `room:activate`
+
+> Активация комнаты (только владелец, только INACTIVE комнаты с темой из 80 вопросов)
+
+```json
+{}
+```
+
+> Переводит комнату INACTIVE → WAITING. После активации другие игроки могут присоединяться.
+
+**Ответ:** `room:state` отправителю, `room:activated` всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может активировать комнату
+- `ROOM_NOT_INACTIVE` — комната не в статусе INACTIVE
+- `NO_THEME` — необходимо создать тему перед активацией
+- `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:deactivate`
+
+> Деактивация комнаты (только владелец, только WAITING комнаты)
+
+```json
+{}
+```
+
+> Переводит комнату WAITING → INACTIVE. Все игроки кроме владельца удаляются и получают `room:kicked`.
+
+**Ответ:** `room:state` отправителю, `room:deactivated` в комнате, `room:kicked` удалённым игрокам
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может деактивировать комнату
+- `ROOM_NOT_ACTIVE` — комната не в статусе WAITING
+
+---
+
+#### `room:get_state`
+
+> Получение текущего состояния комнаты (для переподключения)
+
+```json
+{}
+```
+
+**Ответ:** `room:state`
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+
+> Клиент получает `active_room_id` из init endpoint, затем вызывает `room:get_state`.
+
+---
+
+#### `room:start`
+
+> Запуск игры (только владелец, все не-владельцы должны быть готовы, минимум 2 игрока)
+
+```json
+{}
+```
+
+**Ответ:** `game:starting` отправителю и всем в комнате (содержит RoomState)
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может запустить игру
+- `PLAYERS_NOT_READY` — не все игроки готовы
+- `NOT_ENOUGH_PLAYERS` — нужно минимум 2 игрока
+
+> После `game:starting` асинхронно запускается игра и приходит `game:started`.
 
 ---
 
@@ -699,7 +1186,9 @@ const socket = io('wss://server', {
 {}
 ```
 
-**Ответ:** `rooms:list`
+**Ответ:** `rooms:list` (массив PublicRoomInfo)
+
+> Событие `rooms:list` приходит повторно при изменении списка комнат (создание, присоединение, удаление)
 
 ---
 
@@ -711,18 +1200,39 @@ const socket = io('wss://server', {
 {}
 ```
 
+**Ответ:** `rooms:unsubscribed` (`{ success: true }`)
+
 ---
 
 ### Сервер → Клиент
 
 #### `room:created`
 
-> Подтверждение создания комнаты (создателю)
+> Подтверждение создания комнаты (создателю). Содержит полное состояние комнаты (RoomState).
 
 ```json
 {
-  "room_id": "string",
-  "invite_code": "string"
+  "id": "string",
+  "owner_id": "string",
+  "theme_id": null,
+  "theme_name": null,
+  "players_count": 2,
+  "time_per_question": 20,
+  "time_per_turn": 30,
+  "extra_time_per_turn": 15,
+  "game_timer": null,
+  "is_private": false,
+  "invite_code": "ABC123",
+  "status": "inactive",
+  "created_at": 1234567890,
+  "players": [
+    {
+      "user_id": "string",
+      "name": "string",
+      "color": "#E53935",
+      "is_ready": false
+    }
+  ]
 }
 ```
 
@@ -730,15 +1240,14 @@ const socket = io('wss://server', {
 
 #### `room:state`
 
-> Полное состояние комнаты
+> Полное состояние комнаты (RoomState)
 
 ```json
 {
-  "room_id": "string",
-  "status": "waiting | ready",
+  "id": "string",
   "owner_id": "string",
-  "theme_id": "string",
-  "theme_name": "string",
+  "theme_id": "string | null",
+  "theme_name": "string | null",
   "players_count": "number",
   "time_per_question": "number",
   "time_per_turn": "number",
@@ -746,6 +1255,8 @@ const socket = io('wss://server', {
   "game_timer": "number | null",
   "is_private": "boolean",
   "invite_code": "string",
+  "status": "inactive | waiting | ready",
+  "created_at": "number",
   "players": [
     {
       "user_id": "string",
@@ -757,21 +1268,33 @@ const socket = io('wss://server', {
 }
 ```
 
+| Поле | Описание |
+|------|----------|
+| `id` | UUID комнаты |
+| `theme_id` | ID постоянной темы (null для временных тем и до создания темы) |
+| `theme_name` | Название темы (null пока тема не создана) |
+
 **Статусы:**
-- `waiting` — ожидание игроков
-- `ready` — все игроки на месте, владелец может начать
+- `inactive` — настройка комнаты (создание темы, параметры). Нельзя присоединиться.
+- `waiting` — ожидание игроков, можно присоединиться.
+- `ready` — зарезервировано.
 
 ---
 
 #### `room:player_joined`
 
-> Игрок присоединился
+> Игрок присоединился (broadcast остальным в комнате)
 
 ```json
 {
-  "user_id": "string",
-  "name": "string",
-  "color": "string"
+  "player": {
+    "user_id": "string",
+    "name": "string",
+    "color": "string",
+    "is_ready": false
+  },
+  "current_players": "number",
+  "status": "waiting"
 }
 ```
 
@@ -779,17 +1302,20 @@ const socket = io('wss://server', {
 
 #### `room:player_left`
 
-> Игрок покинул комнату
+> Игрок покинул комнату (broadcast остальным в комнате)
 
 ```json
 {
   "user_id": "string",
-  "reason": "left | kicked | disconnected",
-  "new_owner_id": "string?"
+  "new_owner_id": "string?",
+  "kicked": "boolean?",
+  "disconnected": "boolean?"
 }
 ```
 
-> `new_owner_id` — если владелец вышел, права передаются **случайному** игроку из оставшихся
+> `new_owner_id` — если владелец вышел, права передаются **случайному** игроку из оставшихся.
+> `kicked: true` — если игрок был исключён владельцем.
+> `disconnected: true` — если игрок отключился.
 
 ---
 
@@ -799,7 +1325,103 @@ const socket = io('wss://server', {
 
 ```json
 {
-  "room_id": "string"
+  "room_id": "string",
+  "reason": "string"
+}
+```
+
+> `reason`: `"You were kicked by the room owner"` или `"Room was deactivated by owner"`
+```
+
+---
+
+#### `room:player_ready`
+
+> Игрок переключил готовность (broadcast всем в комнате)
+
+```json
+{
+  "user_id": "string",
+  "is_ready": "boolean"
+}
+```
+
+---
+
+#### `room:params_updated`
+
+> Параметры комнаты обновлены (broadcast всем в комнате)
+
+```json
+{
+  "params": {
+    "players_count": "number",
+    "time_per_question": "number",
+    "time_per_turn": "number",
+    "extra_time_per_turn": "number",
+    "game_timer": "number | null",
+    "is_private": "boolean"
+  }
+}
+```
+
+---
+
+#### `room:theme_generation_started`
+
+> Генерация темы через AI запущена (broadcast всем в комнате)
+
+```json
+{
+  "theme_name": "string"
+}
+```
+
+---
+
+#### `room:theme_uploaded`
+
+> Тема загружена из JSON (broadcast всем в комнате)
+
+```json
+{
+  "theme_name": "string"
+}
+```
+
+---
+
+#### `room:theme_deleted`
+
+> Тема удалена из комнаты (broadcast всем в комнате)
+
+```json
+{
+  "theme_name": null
+}
+```
+
+---
+
+#### `room:activated`
+
+> Комната активирована (broadcast всем в комнате)
+
+```json
+{
+  "status": "waiting"
+}
+```
+
+---
+
+#### `room:deactivated`
+
+> Комната деактивирована (broadcast оставшимся в комнате)
+
+```json
+{
+  "status": "inactive"
 }
 ```
 
@@ -807,26 +1429,18 @@ const socket = io('wss://server', {
 
 #### `rooms:list`
 
-> Список публичных комнат в лобби
+> Список публичных комнат в лобби (только WAITING, не заполненные, макс. 50)
 
 ```json
-{
-  "rooms": [
-    {
-      "room_id": "string",
-      "theme_name": "string",
-      "owner_name": "string",
-      "players_count": "number",
-      "current_players": "number",
-      "players": [
-        {
-          "user_id": "string",
-          "name": "string"
-        }
-      ]
-    }
-  ]
-}
+[
+  {
+    "id": "string",
+    "owner_name": "string",
+    "theme_name": "string | null",
+    "players_count": "number",
+    "current_players": "number"
+  }
+]
 ```
 
 ---
@@ -898,7 +1512,9 @@ const socket = io('wss://server', {
 ```json
 {
   "game_id": "string",
+  "theme_id": "string?",
   "theme_name": "string",
+  "is_temp_theme": "boolean",
   "time_per_question": "number",
   "time_per_turn": "number",
   "extra_time_per_turn": "number",
@@ -930,6 +1546,8 @@ const socket = io('wss://server', {
 
 | Поле | Описание |
 |------|----------|
+| `theme_id` | ID темы (null для временных тем) |
+| `is_temp_theme` | true если тема временная (AI/ручная) |
 | `game_timer` | Таймер игры в секундах (null = без ограничения) |
 | `game_end_time` | Unix timestamp окончания игры по таймеру (null = без ограничения) |
 | `turn_deadline` | Unix timestamp окончания хода |
@@ -1133,7 +1751,9 @@ const socket = io('wss://server', {
       "correct_answers": "number"
     }
   ],
-  "theme_id": "string"
+  "theme_id": "string?",
+  "is_temp_theme": "boolean",
+  "theme_name": "string"
 }
 ```
 
@@ -1142,7 +1762,12 @@ const socket = io('wss://server', {
 | `winner_id` | ID победителя (null при ничьей) |
 | `winner_ids` | Массив ID победителей (для ничьей) |
 | `reason` | Причина завершения |
-| `theme_id` | ID темы для возможности оценки |
+| `theme_id` | ID темы (null для временных тем) |
+| `is_temp_theme` | true если тема временная (требуется оценка для сохранения) |
+| `theme_name` | Название темы |
+
+> Если `is_temp_theme=true`, клиент должен показать окно оценки темы.
+> От оценок зависит будет ли тема сохранена (нужен хотя бы 1 лайк).
 
 **Причины завершения:**
 - `conquest` — игрок захватил все территории
@@ -1203,7 +1828,7 @@ const socket = io('wss://server', {
   "message_id": "string",
   "user_id": "string",
   "user_name": "string",
-  "message": "string",
+    "message": "string",
   "timestamp": "number",
   "type": "user | system"
 }
@@ -1332,6 +1957,69 @@ const socket = io('wss://server', {
 
 ---
 
+## AI-генерация (WebSocket)
+
+> События для отслеживания прогресса генерации темы через AI.
+> Используется вместо polling GET /themes/ai/:session_id/status.
+
+### Сервер → Клиент
+
+#### `ai:progress`
+
+> Прогресс генерации (отправляется после каждого батча)
+
+```json
+{
+  "session_id": "string",
+  "status": "generating",
+  "progress": {
+    "generated": 20,
+    "total": 80
+  }
+}
+```
+
+---
+
+#### `ai:ready`
+
+> Генерация завершена успешно
+
+```json
+{
+  "session_id": "string",
+  "status": "ready",
+  "progress": {
+    "generated": 80,
+    "total": 80
+  }
+}
+```
+
+> После этого события клиент может запросить `GET /themes/ai/:session_id/questions`
+
+---
+
+#### `ai:error`
+
+> Ошибка при генерации
+
+```json
+{
+  "session_id": "string",
+  "status": "error",
+  "error": "string",
+  "progress": {
+    "generated": 40,
+    "total": 80
+  }
+}
+```
+
+> При ошибке частично сгенерированные вопросы удаляются.
+
+---
+
 ## Ошибки
 
 #### `error`
@@ -1348,11 +2036,23 @@ const socket = io('wss://server', {
 
 **Коды ошибок:**
 - `unauthorized` — не авторизован / токен истёк
-- `room_not_found` — комната не найдена
-- `room_full` — комната заполнена
-- `room_already_started` — игра уже началась
-- `not_room_owner` — только владелец может выполнить действие
-- `not_in_room` — вы не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `ROOM_FULL` — комната заполнена
+- `ROOM_INACTIVE` — комната в статусе INACTIVE
+- `ROOM_ALREADY_ACTIVE` — действие разрешено только для INACTIVE комнат
+- `ROOM_NOT_INACTIVE` — комната не в статусе INACTIVE
+- `ROOM_NOT_ACTIVE` — комната не в статусе WAITING
+- `INVALID_STATUS` — комната не принимает игроков
+- `NOT_OWNER` — только владелец может выполнить действие
+- `NOT_IN_ROOM` — вы не в комнате
+- `ALREADY_IN_ROOM` — вы уже в комнате
+- `CANNOT_KICK_SELF` — нельзя исключить себя
+- `PLAYER_NOT_IN_ROOM` — игрок не в этой комнате
+- `THEME_EXISTS` — в комнате уже есть тема
+- `NO_THEME` — в комнате нет темы
+- `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
+- `PLAYERS_NOT_READY` — не все игроки готовы
+- `NOT_ENOUGH_PLAYERS` — нужно минимум 2 игрока
 - `game_not_found` — игра не найдена
 - `not_your_turn` — не ваш ход
 - `invalid_cell` — недопустимая ячейка (не соседняя / уже занята)
@@ -1369,7 +2069,9 @@ const socket = io('wss://server', {
 ## Общие принципы
 
 - Чаты игр хранятся в Redis пока игра активна, после завершения удаляются
-- Темы и вопросы создаются админом сайта (статические)
+- Темы создаются пользователями (AI или вручную) или админом
+- Пользовательские темы хранятся временно в Redis, сохраняются в PostgreSQL только после игры с лайком
+- Админские темы сразу сохраняются в PostgreSQL
 - Все временные метки хранятся в формате Unix timestamp (миллисекунды)
 - UUID используется для всех идентификаторов
 
@@ -1472,7 +2174,7 @@ const socket = io('wss://server', {
 
 ### `themes`
 
-> Темы игр (создаются админом сайта)
+> Темы игр (создаются через AI-генерацию или админом)
 
 | Поле | Тип | Описание |
 |------|-----|----------|
@@ -1484,12 +2186,14 @@ const socket = io('wss://server', {
 | `dislikes` | INT | Количество дизлайков |
 | `times_played` | INT | Сколько раз играли |
 | `is_active` | BOOLEAN | Активна ли тема (видна в списке) |
+| `created_by` | UUID | FK → users.id (автор темы, null для админских) |
 | `created_at` | BIGINT | Дата создания |
 
 **Индексы:**
 - `INDEX(likes DESC, created_at DESC)` — для списка популярных
 - `INDEX(name)` — для поиска
 - `INDEX(is_active)` — для фильтрации активных тем
+- `INDEX(created_by)` — для списка "мои темы" (будущее)
 
 ---
 
@@ -1509,7 +2213,7 @@ const socket = io('wss://server', {
 **Индексы:**
 - `INDEX(theme_id)` — для выборки вопросов по теме
 
-> Минимум 50 вопросов на тему для запуска игры
+> Фиксированное количество: 80 вопросов на тему
 
 ---
 
@@ -1583,33 +2287,38 @@ const socket = io('wss://server', {
 
 > Следующие данные хранятся в Redis для быстрого доступа и автоматически удаляются после завершения игры.
 
-### `active_rooms:{room_id}` (Hash)
+### `room:{room_id}` (String, JSON)
 
 ```json
 {
   "id": "uuid",
   "owner_id": "uuid",
-  "theme_id": "uuid",
-  "theme_name": "string",
+  "theme_id": "uuid | null",
+  "theme_name": "string | null",
   "players_count": 2,
   "time_per_question": 20,
   "time_per_turn": 30,
   "extra_time_per_turn": 15,
-  "game_timer": 1800,
+  "game_timer": null,
   "is_private": false,
   "invite_code": "ABC123",
-  "status": "waiting|ready",
+  "status": "inactive|waiting|ready",
   "created_at": 1234567890
 }
 ```
 
-### `room_players:{room_id}` (List)
+> `theme_id` — null до привязки постоянной темы или для временных тем
+> `theme_name` — null пока тема не создана
+> `status: inactive` — комната в настройке (тема, параметры), не видна в лобби
+> `status: waiting` — комната активна, принимает игроков
+
+### `room:{room_id}:players` (List)
 
 > Список хранится как JSON-строки. Порядок = порядок присоединения.
 
 ```json
 [
-  { "user_id": "uuid", "name": "string", "color": "#FF0000", "is_ready": true }
+  { "user_id": "uuid", "name": "string", "color": "#E53935", "is_ready": false }
 ]
 ```
 
@@ -1619,8 +2328,9 @@ const socket = io('wss://server', {
 {
   "id": "uuid",
   "room_id": "uuid",
-  "theme_id": "uuid",
+  "theme_id": "uuid?",
   "theme_name": "string",
+  "is_temp_theme": false,
   "time_per_question": 20,
   "time_per_turn": 30,
   "extra_time_per_turn": 15,
@@ -1633,6 +2343,9 @@ const socket = io('wss://server', {
   "started_at": 1234567890
 }
 ```
+
+> `theme_id` — null для временных тем
+> `is_temp_theme` — true если тема временная (вопросы в temp_theme_questions)
 
 ### `game_cells:{game_id}` (Hash)
 
@@ -1663,6 +2376,14 @@ const socket = io('wss://server', {
 ]
 ```
 
+### `user_room:{user_id}` (String)
+
+> ID комнаты пользователя. TTL: 1 час.
+
+```
+"uuid"
+```
+
 ### `user_session:{user_id}` (Hash)
 
 ```json
@@ -1675,15 +2396,121 @@ const socket = io('wss://server', {
 }
 ```
 
+### `ai_theme_session:{session_id}` (Hash)
+
+> Сессия AI-генерации темы
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "name": "string",
+  "status": "generating|ready|error",
+  "progress_generated": 0,
+  "progress_total": 80,
+  "error": "string?",
+  "created_at": 1234567890
+}
+```
+
+### `ai_theme_questions:{session_id}` (List)
+
+> Сгенерированные вопросы (JSON-строки)
+
+```json
+[
+  {
+    "question": "string",
+    "answers": ["string", "string", "string", "string"],
+    "correct_answer": 0
+  }
+]
+```
+
+### `manual_theme_session:{session_id}` (Hash)
+
+> Сессия ручного создания темы
+
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "name": "string",
+  "status": "ready",
+  "questions_count": 80,
+  "created_at": 1234567890
+}
+```
+
+### `manual_theme_questions:{session_id}` (List)
+
+> Вопросы ручной темы (JSON-строки)
+
+```json
+[
+  {
+    "question": "string",
+    "answers": ["string", "string", "string", "string"],
+    "correct_answer": 0
+  }
+]
+```
+
+### `temp_theme:{room_id}` (Hash)
+
+> Временная тема, привязанная к комнате
+
+```json
+{
+  "name": "string",
+  "created_by": "uuid",
+  "created_at": 1234567890
+}
+```
+
+### `temp_theme_questions:{room_id}` (List)
+
+> Вопросы временной темы
+
+```json
+[
+  {
+    "question": "string",
+    "answers": ["string", "string", "string", "string"],
+    "correct_answer": 0
+  }
+]
+```
+
+### `temp_theme_votes:{game_id}` (Hash)
+
+> Голоса за временную тему после игры
+
+```json
+{
+  "total_players": 2,
+  "votes_count": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "skips": 0,
+  "voted_users": ["uuid1", "uuid2"]
+}
+```
+
+> TTL: 10 минут (время на голосование после игры)
+> После голосования всех игроков или TTL — принимается решение о сохранении
+
 ---
 
 ## Индексы Redis
 
 | Ключ | Тип | Описание |
 |------|-----|----------|
-| `public_rooms` | Sorted Set | Публичные комнаты (score = created_at) |
-| `user:{user_id}:room` | String | ID комнаты пользователя |
+| `public_rooms` | Sorted Set | Публичные WAITING комнаты (score = created_at). Комнаты добавляются только после room:activate. |
+| `user_room:{user_id}` | String | ID комнаты пользователя (TTL: 1 час) |
 | `user:{user_id}:game` | String | ID игры пользователя |
+| `user:{user_id}:ai_session` | String | ID активной AI-генерации |
+| `user:{user_id}:manual_session` | String | ID активной ручной сессии |
 | `online_users` | Set | Онлайн пользователи |
 | `user:{user_id}:friends_online` | Set | Онлайн друзья |
 
@@ -1691,28 +2518,92 @@ const socket = io('wss://server', {
 
 ## Жизненный цикл данных
 
-### Тема
+### Тема (создание админом)
 
 ```
-1. Админ создаёт тему в БД (themes)
-2. Админ добавляет вопросы к теме (questions, минимум 50)
-3. Тема становится активной (is_active = true)
-4. После игры счётчики likes/dislikes/times_played обновляются
-5. Админ может деактивировать тему (is_active = false)
+1. Админ создаёт тему через POST /themes/create
+2. Тема сразу сохраняется в PostgreSQL с is_active = true
+3. После игры счётчики likes/dislikes/times_played обновляются
+4. Админ может деактивировать тему (is_active = false)
 ```
+
+### Тема (AI-генерация пользователем)
+
+```
+1. Пользователь запускает генерацию → ai_theme_session (Redis, TTL 1 час)
+2. AI генерирует вопросы батчами по 20 → ai_theme_questions (Redis)
+3. WebSocket события: ai:progress → ai:ready или ai:error
+4. Пользователь просматривает вопросы (без правильных ответов)
+5. Пользователь может:
+   - Закрыть страницу → данные остаются в Redis до TTL (можно вернуться)
+   - Отменить генерацию → DELETE /session → всё удаляется
+   - Создать комнату → тема переносится в temp_theme, ai_session удаляется
+6. После создания комнаты тема привязана к комнате (temp_theme)
+7. После завершения игры — оценка темы всеми игроками
+```
+
+### Тема (создание внутри INACTIVE комнаты) - НОВАЯ АРХИТЕКТУРА
+
+**Вариант A: AI-генерация**
+```
+1. Пользователь создаёт INACTIVE комнату → WebSocket room:create
+2. Настраивает параметры → WebSocket room:update_params (опционально)
+3. Запускает генерацию темы → WebSocket room:generate_theme
+4. Тема генерируется и сохраняется в Redis с привязкой к room_id
+5. Активирует комнату → WebSocket room:activate (статус INACTIVE → WAITING)
+6. Игроки присоединяются, игра начинается
+7. После завершения игры — оценка темы всеми игроками
+```
+
+**Вариант B: Загрузка JSON**
+```
+1. Пользователь создаёт INACTIVE комнату → WebSocket room:create
+2. Настраивает параметры → WebSocket room:update_params (опционально)
+3. Загружает тему из JSON → WebSocket room:upload_theme (80 вопросов)
+4. Тема сохраняется в Redis с привязкой к room_id
+5. Активирует комнату → WebSocket room:activate (статус INACTIVE → WAITING)
+6. Игроки присоединяются, игра начинается
+7. После завершения игры — оценка темы всеми игроками
+```
+
+### Сохранение темы после игры
+
+```
+1. Игра завершена
+2. Всем игрокам показывается окно оценки темы
+3. Каждый игрок может поставить: лайк, дизлайк или пропустить
+4. Если хотя бы 1 лайк:
+   - Тема сохраняется в PostgreSQL (is_active = true)
+   - likes/dislikes счётчики устанавливаются по результатам голосования
+5. Если 0 лайков (только дизлайки или пропуски):
+   - Тема удаляется из Redis
+6. Временная тема и вопросы удаляются из Redis в любом случае
+```
+
+### Удаление временных данных
+
+| Событие | Действие |
+|---------|----------|
+| TTL истёк (1 час) | Комната и её тема удаляются автоматически (Redis TTL) |
+| Последний игрок покинул комнату | Комната и её данные удаляются |
+| Комната активирована (room:activate) | Статус INACTIVE → WAITING, тема остается в Redis, комната добавляется в public_rooms |
+| Игра завершена | Временная тема удаляется, сохраняется в PostgreSQL если был лайк |
+| Комната удалена без игры | Временная тема удаляется вместе с комнатой |
 
 ### Комната → Игра
 
 ```
-1. Создаётся комната → active_rooms (Redis)
-2. Игроки присоединяются → room_players (Redis)
-3. Создаётся чат комнаты → game_chat (Redis)
-4. Владелец запускает игру:
-   - active_rooms удаляется
+1. Создаётся комната → room:{id} (Redis, status: inactive)
+2. Владелец настраивает параметры → room:update_params
+3. Владелец создаёт тему → room:upload_theme или room:generate_theme
+4. Владелец активирует → room:activate (status: inactive → waiting)
+5. Игроки присоединяются → room:{id}:players (Redis)
+6. Создаётся чат комнаты → chat:room:{id} (Redis)
+7. Владелец запускает игру (room:start):
    - active_games создаётся
    - game_cells, game_players создаются
-   - Случайные вопросы загружаются из questions
-5. Игра завершается:
+   - Вопросы загружаются из temp_theme_questions или questions (PostgreSQL)
+8. Игра завершается:
    - Данные сохраняются в games, game_players (PostgreSQL)
    - Статистика user_stats обновляется
    - Redis-данные удаляются (включая чат)
@@ -1743,10 +2634,17 @@ const socket = io('wss://server', {
 
 | Ключ | TTL | Описание |
 |------|-----|----------|
-| `active_rooms:*` | 1 час | Неактивные комнаты удаляются |
+| `room:*` | 1 час | Комнаты удаляются при неактивности. TTL обновляется при join/leave/update. |
 | `active_games:*` | 2 часа | Максимальная длительность игры |
 | `game_chat:*` | 2 часа | Чат удаляется вместе с игрой |
 | `user_session:*` | 24 часа | Сессии пользователей |
+| `ai_theme_session:*` | 1 час | Сессия AI-генерации |
+| `ai_theme_questions:*` | 1 час | Вопросы AI-генерации |
+| `manual_theme_session:*` | 1 час | Сессия ручного создания |
+| `manual_theme_questions:*` | 1 час | Вопросы ручного создания |
+| `temp_theme:*` | 2 часа | Временная тема (привязана к комнате/игре) |
+| `temp_theme_questions:*` | 2 часа | Вопросы временной темы |
+| `temp_theme_votes:*` | 10 минут | Голоса за временную тему после игры |
 
 ---
 
@@ -1757,21 +2655,21 @@ const socket = io('wss://server', {
 ```sql
 -- Users
 CREATE TABLE users (
-                       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                       email VARCHAR(255) NOT NULL UNIQUE,
-                       name VARCHAR(100) NOT NULL,
-                       password_hash VARCHAR(255) NOT NULL,
-                       created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-                       updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 
 -- Refresh tokens
 CREATE TABLE refresh_tokens (
-                                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                                token_hash VARCHAR(255) NOT NULL,
-                                expires_at BIGINT NOT NULL,
-                                created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at BIGINT NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_hash ON refresh_tokens(token_hash);
@@ -1779,32 +2677,32 @@ CREATE INDEX idx_refresh_tokens_expires ON refresh_tokens(expires_at);
 
 -- User stats
 CREATE TABLE user_stats (
-                            user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-                            games_played INT NOT NULL DEFAULT 0,
-                            games_won INT NOT NULL DEFAULT 0,
-                            total_territories_captured INT NOT NULL DEFAULT 0,
-                            total_questions_answered INT NOT NULL DEFAULT 0,
-                            total_correct_answers INT NOT NULL DEFAULT 0
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    games_played INT NOT NULL DEFAULT 0,
+    games_won INT NOT NULL DEFAULT 0,
+    total_territories_captured INT NOT NULL DEFAULT 0,
+    total_questions_answered INT NOT NULL DEFAULT 0,
+    total_correct_answers INT NOT NULL DEFAULT 0
 );
 
 -- Friendships
 CREATE TABLE friendships (
-                             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                             friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                             created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-                             PRIMARY KEY (user_id, friend_id)
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    PRIMARY KEY (user_id, friend_id)
 );
 CREATE INDEX idx_friendships_reverse ON friendships(friend_id, user_id);
 
 -- Friend requests
 CREATE TYPE friend_request_status AS ENUM ('pending', 'accepted', 'rejected');
 CREATE TABLE friend_requests (
-                                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                 from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                                 to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                                 status friend_request_status NOT NULL DEFAULT 'pending',
-                                 created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-                                 updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status friend_request_status NOT NULL DEFAULT 'pending',
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_friend_requests_to ON friend_requests(to_user_id, status);
 CREATE INDEX idx_friend_requests_pair ON friend_requests(from_user_id, to_user_id);
@@ -1812,78 +2710,146 @@ CREATE INDEX idx_friend_requests_pair ON friend_requests(from_user_id, to_user_i
 -- Themes
 CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard');
 CREATE TABLE themes (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        name VARCHAR(255) NOT NULL,
-                        description TEXT,
-                        difficulty difficulty_level NOT NULL DEFAULT 'medium',
-                        likes INT NOT NULL DEFAULT 0,
-                        dislikes INT NOT NULL DEFAULT 0,
-                        times_played INT NOT NULL DEFAULT 0,
-                        is_active BOOLEAN NOT NULL DEFAULT false,
-                        created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    difficulty difficulty_level NOT NULL DEFAULT 'medium',
+    likes INT NOT NULL DEFAULT 0,
+    dislikes INT NOT NULL DEFAULT 0,
+    times_played INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT false,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_themes_popular ON themes(likes DESC, created_at DESC);
 CREATE INDEX idx_themes_name ON themes(name);
 CREATE INDEX idx_themes_active ON themes(is_active);
+CREATE INDEX idx_themes_created_by ON themes(created_by);
 
 -- Questions
 CREATE TABLE questions (
-                           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                           theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
-                           question TEXT NOT NULL,
-                           answers JSONB NOT NULL,
-                           correct_answer INT NOT NULL CHECK (correct_answer >= 0 AND correct_answer <= 3),
-                           created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    answers JSONB NOT NULL,
+    correct_answer INT NOT NULL CHECK (correct_answer >= 0 AND correct_answer <= 3),
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
 );
 CREATE INDEX idx_questions_theme ON questions(theme_id);
 
 -- Theme ratings
 CREATE TYPE rating_type AS ENUM ('like', 'dislike');
 CREATE TABLE theme_ratings (
-                               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                               theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
-                               user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                               rating rating_type NOT NULL,
-                               difficulty_rating difficulty_level NOT NULL,
-                               game_id UUID NOT NULL,
-                               created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
-                               UNIQUE(theme_id, user_id)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    theme_id UUID NOT NULL REFERENCES themes(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating rating_type NOT NULL,
+    difficulty_rating difficulty_level NOT NULL,
+    game_id UUID NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+    UNIQUE(theme_id, user_id)
 );
 CREATE INDEX idx_theme_ratings_theme ON theme_ratings(theme_id);
 
 -- Games history
 CREATE TYPE game_end_reason AS ENUM ('conquest', 'last_standing', 'game_timer', 'forfeit');
 CREATE TABLE games (
-                       id UUID PRIMARY KEY,
-                       theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
-                       theme_name VARCHAR(255) NOT NULL,
-                       players_count INT NOT NULL,
-                       time_per_question INT NOT NULL,
-                       time_per_turn INT NOT NULL,
-                       game_timer INT,
-                       winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
-                       end_reason game_end_reason NOT NULL,
-                       started_at BIGINT NOT NULL,
-                       ended_at BIGINT NOT NULL
+    id UUID PRIMARY KEY,
+    theme_id UUID REFERENCES themes(id) ON DELETE SET NULL,
+    theme_name VARCHAR(255) NOT NULL,
+    players_count INT NOT NULL,
+    time_per_question INT NOT NULL,
+    time_per_turn INT NOT NULL,
+    game_timer INT,
+    winner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    end_reason game_end_reason NOT NULL,
+    started_at BIGINT NOT NULL,
+    ended_at BIGINT NOT NULL
 );
 CREATE INDEX idx_games_winner ON games(winner_id);
 CREATE INDEX idx_games_ended ON games(ended_at DESC);
 
 -- Game players
 CREATE TABLE game_players (
-                              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                              game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-                              user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                              player_index INT NOT NULL,
-                              place INT NOT NULL,
-                              final_territories INT NOT NULL,
-                              questions_answered INT NOT NULL,
-                              correct_answers INT NOT NULL,
-                              color VARCHAR(20) NOT NULL
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    player_index INT NOT NULL,
+    place INT NOT NULL,
+    final_territories INT NOT NULL,
+    questions_answered INT NOT NULL,
+    correct_answers INT NOT NULL,
+    color VARCHAR(20) NOT NULL
 );
 CREATE INDEX idx_game_players_game ON game_players(game_id);
 CREATE INDEX idx_game_players_user ON game_players(user_id, game_id);
 ```
+
+---
+
+# AI-генерация вопросов
+
+## Шаблон промпта
+
+Файл: `prompts/generate_questions.txt`
+
+```
+Ты — генератор вопросов для интеллектуальной викторины.
+
+Тема: {{THEME_NAME}}
+
+Сгенерируй {{BATCH_SIZE}} уникальных вопросов по указанной теме.
+
+ТРЕБОВАНИЯ К ВОПРОСАМ:
+1. Вопрос должен быть чётким и однозначным
+2. Ровно 4 варианта ответа
+3. Только один правильный ответ
+4. Варианты ответов должны быть правдоподобными (не очевидно неправильными)
+5. Без повторяющихся или очень похожих вопросов
+6. Сложность: средняя (не слишком лёгкие, не слишком сложные)
+7. Без спорных или неоднозначных фактов
+8. Без вопросов на текущие события (могут устареть)
+
+{{#if EXISTING_QUESTIONS}}
+УЖЕ СГЕНЕРИРОВАННЫЕ ВОПРОСЫ (не повторяй их):
+{{EXISTING_QUESTIONS}}
+{{/if}}
+
+ФОРМАТ ОТВЕТА (строго JSON):
+{
+  "questions": [
+    {
+      "question": "Текст вопроса?",
+      "answers": ["Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4"],
+      "correct_answer": 0
+    }
+  ]
+}
+
+correct_answer — индекс правильного ответа (0-3).
+```
+
+## Параметры генерации
+
+| Параметр | Значение |
+|----------|----------|
+| Всего вопросов | 80 |
+| Размер батча | 20 |
+| Количество запросов | 4 |
+| Модель | GigaChat |
+
+## Валидация ответа AI
+
+После каждого запроса к AI проверять:
+1. Ответ — валидный JSON
+2. Массив `questions` содержит ровно `BATCH_SIZE` элементов
+3. Каждый вопрос имеет:
+    - `question` — непустая строка
+    - `answers` — массив из 4 непустых строк
+    - `correct_answer` — число от 0 до 3
+4. Нет дублей вопросов (сравнение по тексту)
+
+При ошибке валидации — retry (макс. 3 попытки), затем ошибка пользователю.
 
 ---
 

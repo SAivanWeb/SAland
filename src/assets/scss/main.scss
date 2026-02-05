@@ -105,3 +105,28 @@ button {
   background-color: $border !important;
 }
 
+.n-tabs-wrapper {
+  margin: 0 auto;
+}
+
+.n-tabs .n-tabs-bar {
+  display: none;
+}
+
+.n-tabs-tab--active .n-tabs-tab__label {
+  color: $primary-purple !important;
+}
+
+.n-tabs-tab__label {
+  font-size: 28px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 36px;
+  transition: 0.2s ease;
+}
+
+.n-tabs-tab:hover {
+  color: $text-dark !important;
+}
+
+

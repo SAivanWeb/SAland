@@ -168,12 +168,13 @@ export interface RoomGetPromptPayload {
 
 export interface RoomPromptEvent {
   prompt: string
+  theme_name: string
 }
 
 // Room upload raw AI text
 export interface RoomUploadThemeRawPayload {
   theme_name?: string
-  raw_text: string
+  raw_text: string | object
 }
 
 export interface RoomThemeRawUploadedEvent {

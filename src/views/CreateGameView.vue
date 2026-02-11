@@ -62,10 +62,14 @@
                   <MainInput name="manualThemeName" placeholder="Название темы" label="Укажите название темы" v-model="manualThemeName"/>
                   <MainButton title="Получить" @click="getPrompt" :disabled="!manualThemeName"/>
                 </div>
-                <div class="create__manual-upload">
+                <div v-if="showProcessUpload" class="create__manual-upload">
                   <h4>Прогресс создания темы</h4>
                   <p>Получено вопросов: <span>{{questionUploaded}}/80</span></p>
                   <MainButton title="Загрузить" @click="uploadQuestions"/>
+                  <div v-if="showPasteError" class="create__manual-fields">
+                    <MainInput name="manualThemeName" placeholder="Вставьте вопросы" label="Сгенерированные вопросы" v-model="questionsArray"/>
+                    <MainButton title="Загрузить" @click="uploadQuestionsManually" :disabled="!questionsArray"/>
+                  </div>
                 </div>
               </div>
             </n-tab-pane>
@@ -97,6 +101,9 @@ const timer =  ref<number>(2400)
 const generateThemeName = ref<string>('')
 const manualThemeName = ref<string>('')
 const questionUploaded = ref<number>(0)
+const questionsArray = ref<string>('')
+const showPasteError = ref<boolean>(false)
+const showProcessUpload = ref<boolean>(false)
 
 const room = ref<RoomState | null>(null)
 
@@ -137,12 +144,31 @@ function updateRoomParams() {
 }
 
 function getPrompt() {
-  ws.rooms.getPrompt({theme_name: manualThemeName.value})
+  try {
+    ws.rooms.getPrompt({theme_name: manualThemeName.value})
+    showProcessUpload.value = true
+  } catch {
+    processingStore.setMessage('error', 'Создание темы', 'Ошибка при получении промпта')
+  }
 }
 
-function uploadQuestions() {
-  const questions = navigator.clipboard.read()
-  if (questions) ws.rooms.uploadThemeRaw({raw_text: String(questions)})
+async function uploadQuestions() {
+  try {
+    const text = await navigator.clipboard.readText()
+    ws.rooms.uploadThemeRaw({raw_text: text})
+  } catch {
+    processingStore.setMessage('error', 'Вставка вопросов', 'Браузер не поддерживает автоматическую вставку. Вставьте ответ от ИИ вручную.')
+    showPasteError.value = true
+  }
+}
+
+async function uploadQuestionsManually() {
+  try {
+    ws.rooms.uploadThemeRaw({raw_text: questionsArray.value})
+    questionsArray.value = ''
+  } catch {
+
+  }
 }
 
 watch(roomParams.value, updateRoomParams)

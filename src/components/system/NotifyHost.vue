@@ -67,12 +67,7 @@ watch(
 
   & .n-notification-main__description {
     font-size: 16px !important;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
     color: $text-dark !important;
-    text-overflow: ellipsis;
   }
 }
 </style>

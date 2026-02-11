@@ -923,6 +923,8 @@ WAITING (после активации)
 ```
 
 > `theme_name`: 2-255 символов. Используется для подстановки в промпт.
+> **Важно:** `theme_name` и `upload_method: 'manual'` сохраняются в комнату сразу при вызове. Это позволяет не передавать `theme_name` повторно в `room:upload_theme_raw`.
+> Для смены названия темы — вызвать `room:clear_uploaded_questions` (сбросит и название, и вопросы, и upload_method), затем `room:get_prompt` с новым названием.
 
 **Ответ:** `room:prompt` отправителю
 
@@ -941,11 +943,12 @@ WAITING (после активации)
 ```json
 {
   "theme_name": "string?",
-  "raw_text": "string"
+  "raw_text": "string | object"
 }
 ```
 
-> `theme_name`: 2-255 символов, обязателен при первой вставке (если тема ещё не создана). `raw_text`: минимум 10 символов, сырой ответ AI.
+> `theme_name`: 2-255 символов, опционально. Если `room:get_prompt` был вызван ранее — название уже сохранено в комнате. Можно передать для переопределения.
+> `raw_text`: принимает **строку** (минимум 10 символов, сырой ответ AI) или **JSON-объект** (например `{"questions": [...]}`).
 > Сервер извлекает JSON из текста (стрипает markdown code blocks, ищет массив вопросов), валидирует и добавляет к уже загруженным.
 > Дедупликация по тексту вопроса. Максимум 80 вопросов — лишние отбрасываются.
 
@@ -957,7 +960,7 @@ WAITING (после активации)
 - `NOT_OWNER` — только владелец может загружать тему
 - `ROOM_ALREADY_ACTIVE` — тему можно загрузить только для INACTIVE комнат
 - `INVALID_FORMAT` — не удалось извлечь валидные вопросы из текста
-- `THEME_NAME_REQUIRED` — theme_name обязателен при первой загрузке
+- `THEME_NAME_REQUIRED` — theme_name обязателен, если не был задан через `room:get_prompt` ранее
 
 ---
 
@@ -1115,8 +1118,6 @@ WAITING (после активации)
 {
   "id": "string",
   "owner_id": "string",
-  "theme_id": null,
-  "theme_name": null,
   "players_count": 2,
   "time_per_question": 20,
   "time_per_turn": 30,
@@ -1133,7 +1134,8 @@ WAITING (после активации)
       "color": "#E53935",
       "is_ready": false
     }
-  ]
+  ],
+  "theme": null
 }
 ```
 
@@ -1147,8 +1149,6 @@ WAITING (после активации)
 {
   "id": "string",
   "owner_id": "string",
-  "theme_id": "string | null",
-  "theme_name": "string | null",
   "players_count": "number",
   "time_per_question": "number",
   "time_per_turn": "number",
@@ -1165,15 +1165,24 @@ WAITING (после активации)
       "color": "string",
       "is_ready": "boolean"
     }
-  ]
+  ],
+  "theme": {
+    "name": "string",
+    "upload_method": "'manual' | 'ai' | null",
+    "questions_loaded": "number",
+    "questions_total": 80
+  }
 }
 ```
 
 | Поле | Описание |
 |------|----------|
 | `id` | UUID комнаты |
-| `theme_id` | ID постоянной темы (null для временных тем и до создания темы) |
-| `theme_name` | Название темы (null пока тема не создана) |
+| `theme` | Информация о теме (null пока тема не создана) |
+| `theme.name` | Название темы |
+| `theme.upload_method` | Способ загрузки: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `null` |
+| `theme.questions_loaded` | Количество загруженных вопросов (0-80) |
+| `theme.questions_total` | Необходимое количество (80) |
 
 **Статусы:**
 - `inactive` — настройка комнаты (создание темы, параметры). Нельзя присоединиться.
@@ -1310,7 +1319,8 @@ WAITING (после активации)
 
 ```json
 {
-  "prompt": "string"
+  "prompt": "string",
+  "theme_name": "string"
 }
 ```
 
@@ -2246,6 +2256,7 @@ WAITING (после активации)
   "owner_id": "uuid",
   "theme_id": "uuid | null",
   "theme_name": "string | null",
+  "upload_method": "'manual' | 'ai' | null",
   "players_count": 2,
   "time_per_question": 20,
   "time_per_turn": 30,
@@ -2260,6 +2271,7 @@ WAITING (после активации)
 
 > `theme_id` — null до привязки постоянной темы или для временных тем
 > `theme_name` — null пока тема не создана
+> `upload_method` — способ загрузки темы: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `null` (не задан)
 > `status: inactive` — комната в настройке (тема, параметры), не видна в лобби
 > `status: waiting` — комната активна, принимает игроков
 

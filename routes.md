@@ -731,7 +731,7 @@ const socket = io('ws://localhost:3000', {
 }
 ```
 
-> **Примечание:** `theme_id` не передаётся при создании. Комната создаётся со статусом `inactive`, `theme_id` и `theme_name` равны `null`.
+> **Примечание:** Тема не передаётся при создании. Комната создаётся со статусом `inactive`, `theme` равен `null`.
 
 **Ответ (room:created):** RoomState (полное состояние комнаты со статусом `inactive`)
 
@@ -968,6 +968,8 @@ const socket = io('ws://localhost:3000', {
 #### `room:get_prompt` (emit)
 Получить промпт для ручной генерации через свой AI (только владелец, только для INACTIVE комнат).
 
+> **Важно:** `theme_name` и `upload_method: 'manual'` сохраняются в комнату сразу при вызове. Это позволяет не передавать `theme_name` повторно в `room:upload_theme_raw`. Для смены названия — `room:clear_uploaded_questions`, затем `room:get_prompt` с новым названием.
+
 **Данные:**
 ```typescript
 {
@@ -979,6 +981,7 @@ const socket = io('ws://localhost:3000', {
 ```typescript
 {
   prompt: string;                // Готовый промпт для вставки в AI
+  theme_name: string;            // Сохранённое название темы
 }
 ```
 
@@ -991,20 +994,20 @@ const socket = io('ws://localhost:3000', {
 ---
 
 #### `room:upload_theme_raw` (emit)
-Загрузить сырой текст ответа AI (только владелец, только для INACTIVE комнат). Поддерживает накопление вопросов порциями.
+Загрузить вопросы (только владелец, только для INACTIVE комнат). Поддерживает накопление вопросов порциями.
 
 > **Flow ручной загрузки через свой AI:**
-> 1. `room:get_prompt` - получить промпт для нужной темы
+> 1. `room:get_prompt` - получить промпт для нужной темы (название темы сохраняется автоматически)
 > 2. Пользователь копирует промпт → вставляет в свой AI → копирует ответ
-> 3. `room:upload_theme_raw` - загрузить сырой ответ AI
+> 3. `room:upload_theme_raw` - загрузить ответ AI (`theme_name` уже сохранён на шаге 1)
 > 4. Если `is_complete: false` — повторить шаги 2-3 (вопросы накапливаются)
 > 5. Когда `is_complete: true` — `room:activate`
 
 **Данные:**
 ```typescript
 {
-  theme_name?: string;           // 2-255 символов, обязателен при первой вставке
-  raw_text: string;              // Минимум 10 символов, сырой ответ AI
+  theme_name?: string;           // 2-255 символов, опционально (уже сохранён через room:get_prompt)
+  raw_text: string | object;     // Строка (сырой ответ AI, мин. 10 символов) или JSON-объект (например {questions: [...]})
 }
 ```
 
@@ -1033,7 +1036,7 @@ const socket = io('ws://localhost:3000', {
 - `NOT_OWNER` - Только владелец комнаты может загружать тему
 - `ROOM_ALREADY_ACTIVE` - Тему можно загрузить только для неактивных комнат
 - `INVALID_FORMAT` - Не удалось извлечь валидные вопросы из текста
-- `THEME_NAME_REQUIRED` - theme_name обязателен при первой загрузке
+- `THEME_NAME_REQUIRED` - theme_name обязателен, если не был задан через `room:get_prompt` ранее
 
 ---
 
@@ -1888,13 +1891,21 @@ interface PlayerAnswer {
 }
 ```
 
+### ThemeInfo
+```typescript
+interface ThemeInfo {
+  name: string;                              // Название темы
+  upload_method: 'manual' | 'ai' | null;    // Способ загрузки темы
+  questions_loaded: number;                  // Количество загруженных вопросов (0-80)
+  questions_total: number;                   // Необходимое количество (80)
+}
+```
+
 ### RoomState
 ```typescript
 interface RoomState {
   id: string;
   owner_id: string;
-  theme_id: string | null;    // null до привязки постоянной темы или для временных тем
-  theme_name: string | null;  // null пока тема не создана
   players_count: number;
   time_per_question: number;
   time_per_turn: number;
@@ -1905,6 +1916,7 @@ interface RoomState {
   status: 'inactive' | 'waiting' | 'ready';
   created_at: number;
   players: RoomPlayer[];
+  theme: ThemeInfo | null;    // null пока тема не создана
 }
 ```
 
@@ -1912,6 +1924,11 @@ interface RoomState {
 > - `inactive` — комната в режиме настройки (создание темы, параметры). Нельзя присоединиться.
 > - `waiting` — активная комната, принимает игроков.
 > - `ready` — зарезервировано (не используется).
+>
+> **theme.upload_method:**
+> - `'manual'` — тема загружена вручную (через `room:get_prompt` + `room:upload_theme_raw` или `room:upload_theme`)
+> - `'ai'` — тема сгенерирована через AI (через `room:generate_theme`)
+> - `null` — способ ещё не определён
 
 ### RoomPlayer
 ```typescript
@@ -1949,7 +1966,7 @@ interface RoomPlayer {
 | `NO_THEME` | В комнате нет темы |
 | `INVALID_QUESTIONS_COUNT` | Тема должна содержать ровно 80 вопросов |
 | `INVALID_FORMAT` | Не удалось извлечь валидные вопросы из текста |
-| `THEME_NAME_REQUIRED` | theme_name обязателен при первой загрузке через raw |
+| `THEME_NAME_REQUIRED` | theme_name обязателен, если не был задан через `room:get_prompt` |
 | `INVALID_PLAYERS_COUNT` | Тема поддерживает другое количество игроков |
 | `ROOM_NOT_FOUND` | Комната не найдена |
 | `ROOM_FULL` | Комната заполнена |

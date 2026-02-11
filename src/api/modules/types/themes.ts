@@ -79,82 +79,19 @@ export interface RateTempThemeResponse {
   theme_id: string | null
 }
 
-// ============= AI Generation =============
+// ============= Admin Theme Creation =============
 
-export interface AIGenerateBody {
-  name: string
-}
-
-export interface AIGenerateProgress {
-  generated: number
-  total: 80
-}
-
-export interface AIGenerateResponse {
-  session_id: string
-  status: 'generating'
-  progress: AIGenerateProgress
-}
-
-export type AISessionStatus = 'generating' | 'ready' | 'error'
-
-export interface AIStatusResponse {
-  session_id: string
-  status: AISessionStatus
-  progress: AIGenerateProgress
-  error: string | null
-}
-
-export interface AIQuestionPreview {
-  question: string
-  answers: string[]
-}
-
-export interface AIQuestionsResponse {
-  name: string
-  questions: AIQuestionPreview[]
-}
-
-export interface AIDeleteResponse {
-  success: true
-}
-
-// ============= Manual Theme Creation =============
-
-export interface ManualQuestionInput {
+export interface QuestionInput {
   question: string
   answers: string[]
   correct_answer: number
 }
 
-export interface ManualCreateBody {
-  name: string
-  questions: ManualQuestionInput[]
-}
-
-export interface ManualCreateResponse {
-  session_id: string
-  name: string
-  questions_count: number
-  status: 'ready'
-}
-
-export interface ManualQuestionsResponse {
-  name: string
-  questions: AIQuestionPreview[]
-}
-
-export interface ManualDeleteResponse {
-  success: true
-}
-
-// ============= Admin Theme Creation =============
-
 export interface AdminCreateBody {
   name: string
   description?: string
   difficulty: Difficulty
-  questions: ManualQuestionInput[]
+  questions: QuestionInput[]
 }
 
 export interface AdminCreateResponse {

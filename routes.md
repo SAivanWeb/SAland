@@ -10,22 +10,22 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-  - [Формат ответа](#формат-ответа)
-  - [Auth](#auth)
-  - [User](#user)
-  - [Friends](#friends)
-  - [Themes](#themes)
-  - [Games](#games)
-  - [Админ](#админ)
-  - [Health](#health)
+    - [Формат ответа](#формат-ответа)
+    - [Auth](#auth)
+    - [User](#user)
+    - [Friends](#friends)
+    - [Themes](#themes)
+    - [Games](#games)
+    - [Админ](#админ)
+    - [Health](#health)
 - [WebSocket API](#websocket-api)
-  - [Подключение](#подключение)
-  - [Rooms](#rooms-events)
-  - [Game](#game-events)
-  - [Chat](#chat-events)
-  - [Notifications](#notifications-events)
-  - [AI Generation](#ai-generation-events)
-  - [Main Gateway](#main-gateway-events)
+    - [Подключение](#подключение)
+    - [Rooms](#rooms-events)
+    - [Game](#game-events)
+    - [Chat](#chat-events)
+    - [Notifications](#notifications-events)
+    - [AI Generation](#ai-generation-events)
+    - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -705,6 +705,11 @@ const socket = io('ws://localhost:3000', {
 - `connect_error` - Ошибка подключения (неверный/истёкший токен)
 - `disconnect` - Отключение. Сервер нотифицирует друзей (`friend:offline`), очищает сессию.
 
+**Поведение при disconnect (комнаты):**
+- **Владелец** комнаты (INACTIVE или WAITING): остаётся в комнате, может переподключиться через `room:get_state`
+- **Обычный игрок** в WAITING комнате: удаляется из комнаты, остальные получают `room:player_left` с `disconnected: true`
+- **В игре**: отдельная reconnect-логика с `reconnect_deadline` (60 сек)
+
 ---
 
 ### Rooms Events
@@ -735,8 +740,9 @@ const socket = io('ws://localhost:3000', {
 
 **Ответ (room:created):** RoomState (полное состояние комнаты со статусом `inactive`)
 
+> **Если пользователь уже в комнате:** старая комната полностью удаляется (вместе с темой и вопросами), другие игроки получают `room:kicked` с причиной `"Room was deleted by owner"`, и создаётся новая комната.
+
 **Ошибки (room:error):**
-- `ALREADY_IN_ROOM` - Вы уже находитесь в комнате
 - `VALIDATION_ERROR` - Невалидные данные
 
 ---
@@ -1151,6 +1157,7 @@ const socket = io('ws://localhost:3000', {
 
 > Используется при переподключении клиента для восстановления состояния комнаты.
 > Сначала клиент получает active_room_id из init endpoint, затем вызывает room:get_state.
+> При вызове сокет автоматически подключается к Socket.IO комнате, что необходимо для получения broadcast-событий после перезагрузки страницы.
 
 ---
 
@@ -1974,7 +1981,7 @@ interface RoomPlayer {
 | `ROOM_NOT_INACTIVE` | Комната не в статусе inactive |
 | `ROOM_NOT_ACTIVE` | Комната не в статусе waiting |
 | `ROOM_ALREADY_ACTIVE` | Действие разрешено только для inactive комнат |
-| `ALREADY_IN_ROOM` | Уже в комнате |
+| `ALREADY_IN_ROOM` | Уже в комнате (только для `room:join`; `room:create` автоматически удаляет старую комнату) |
 | `NOT_IN_ROOM` | Не в комнате |
 | `NOT_OWNER` | Не владелец комнаты |
 | `INVALID_STATUS` | Комната не принимает игроков |

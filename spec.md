@@ -683,6 +683,18 @@ const socket = io('wss://server', {
 - `connect_error` — ошибка (невалидный токен, сервер недоступен)
 - `disconnect` — отключение
 
+### Поведение при disconnect (комнаты)
+
+При отключении WebSocket (перезагрузка страницы, потеря связи):
+
+| Роль | Статус комнаты | Поведение |
+|------|---------------|-----------|
+| **Владелец** | INACTIVE | Остаётся в комнате. При переподключении — `room:get_state` восстанавливает состояние. |
+| **Владелец** | WAITING | Остаётся в комнате. При переподключении — `room:get_state` восстанавливает состояние. |
+| **Обычный игрок** | WAITING | Удаляется из комнаты. Остальные получают `room:player_left` с `disconnected: true`. |
+
+> Для игр (после `room:start`) используется отдельная reconnect-логика с `reconnect_deadline` (60 сек).
+
 ---
 
 ## Комнаты (Lobby)
@@ -745,8 +757,7 @@ WAITING (после активации)
 
 **Ответ:** `room:created` создателю (RoomState), `rooms:list` всем в лобби (если публичная)
 
-**Ошибки (room:error):**
-- `ALREADY_IN_ROOM` — пользователь уже в комнате
+> Если пользователь уже находится в комнате — старая комната полностью удаляется (вместе с темой и вопросами), все другие игроки получают `room:kicked` с причиной `"Room was deleted by owner"`, и создаётся чистая новая комната.
 
 ---
 
@@ -1058,6 +1069,7 @@ WAITING (после активации)
 - `NOT_IN_ROOM` — пользователь не в комнате
 
 > Клиент получает `active_room_id` из init endpoint, затем вызывает `room:get_state`.
+> При вызове сокет автоматически подключается к Socket.IO комнате (`room:{id}`), что необходимо для получения broadcast-событий после переподключения.
 
 ---
 
@@ -1240,7 +1252,7 @@ WAITING (после активации)
 }
 ```
 
-> `reason`: `"You were kicked by the room owner"` или `"Room was deactivated by owner"`
+> `reason`: `"You were kicked by the room owner"`, `"Room was deactivated by owner"` или `"Room was deleted by owner"`
 ```
 
 ---

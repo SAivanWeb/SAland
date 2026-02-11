@@ -47,11 +47,18 @@ export interface PlayerAnswer {
 
 export type RoomStatus = 'inactive' | 'waiting' | 'ready'
 
+export type ThemeUploadMethod = 'manual' | 'ai' | null
+
+export interface ThemeInfo {
+  name: string
+  upload_method: ThemeUploadMethod
+  questions_loaded: number
+  questions_total: number
+}
+
 export interface RoomState {
   id: string
   owner_id: string
-  theme_id: string | null
-  theme_name: string | null
   players_count: number
   time_per_question: number
   time_per_turn: number
@@ -62,6 +69,7 @@ export interface RoomState {
   status: RoomStatus
   created_at: number
   players: RoomPlayer[]
+  theme: ThemeInfo | null
 }
 
 export interface RoomCreatePayload {
@@ -378,11 +386,6 @@ export interface ChatHistoryPayload {
   limit?: number
 }
 
-export interface ChatSystemMessage {
-  content: string
-  timestamp: number
-}
-
 // ============= Notification Types =============
 
 export interface FriendInvitePayload {
@@ -564,10 +567,7 @@ export type WsErrorCode =
   | 'INVITE_FAILED'
   | 'ACCEPT_FAILED'
   | 'REJECT_FAILED'
-  // AI/Session errors
-  | 'SESSION_NOT_FOUND'
-  | 'SESSION_NOT_READY'
-  | 'SESSION_EXISTS'
+  // AI errors
   | 'AI_SERVICE_UNAVAILABLE'
   | 'AI_GENERATION_FAILED'
   // Theme rating errors

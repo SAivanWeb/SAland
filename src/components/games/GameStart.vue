@@ -4,13 +4,16 @@
       Создайте игру <br />
       на тему&nbsp;<span class="typewriter"></span>
     </h1>
-    <MainButton title="Создать игру" size="large" @click="goTo" color="red"/>
+    <MainButton title="Создать игру" size="large" @click="goTo" color="red" />
   </div>
 </template>
 
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useRouter } from 'vue-router'
+import { useWebSocket } from '@/api'
+
+const ws = useWebSocket()
 
 interface Props {
   placement: string
@@ -23,6 +26,7 @@ const goTo = () => {
   if (props.placement === 'home') {
     router.push('/auth')
   } else {
+    ws.rooms.create()
     router.push('/game-create')
   }
 }
@@ -44,7 +48,6 @@ const goTo = () => {
     line-height: 1;
     text-align: center;
   }
-
 }
 
 /* Typewriter effect 1 */

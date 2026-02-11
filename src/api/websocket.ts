@@ -47,7 +47,6 @@ import type {
   ChatSendPayload,
   ChatMessage,
   ChatHistoryPayload,
-  ChatSystemMessage,
   // Notification types
   FriendInvitePayload,
   FriendInviteSentEvent,
@@ -510,6 +509,10 @@ class WebSocketClient {
     onPlayerForfeited: (callback: EventCallback<GamePlayerForfeitedEvent>): EventUnsubscribe => {
       return this.on('game:player_forfeited', callback)
     },
+
+    onError: (callback: EventCallback<WsError>): EventUnsubscribe => {
+      return this.on('game:error', callback)
+    },
   }
 
   // ============= Chat Methods =============
@@ -542,8 +545,8 @@ class WebSocketClient {
       return this.on('chat:history', callback)
     },
 
-    onSystem: (callback: EventCallback<ChatSystemMessage>): EventUnsubscribe => {
-      return this.on('chat:system', callback)
+    onError: (callback: EventCallback<WsError>): EventUnsubscribe => {
+      return this.on('chat:error', callback)
     },
   }
 
@@ -609,6 +612,10 @@ class WebSocketClient {
 
     onFriendOffline: (callback: EventCallback<FriendOfflineEvent>): EventUnsubscribe => {
       return this.on('friend:offline', callback)
+    },
+
+    onInviteError: (callback: EventCallback<WsError>): EventUnsubscribe => {
+      return this.on('friend:invite_error', callback)
     },
   }
 

@@ -16,8 +16,6 @@
   - [Friends](#friends)
   - [Themes](#themes)
   - [Games](#games)
-  - [AI-генерация тем](#ai-генерация-тем)
-  - [Ручное создание тем](#ручное-создание-тем)
   - [Админ](#админ)
   - [Health](#health)
 - [WebSocket API](#websocket-api)
@@ -630,201 +628,6 @@ Array<{
 
 ---
 
-### AI-генерация тем
-
-#### POST `/themes/ai/generate`
-Начать генерацию темы через AI (GigaChat).
-
-**Request Body:**
-```typescript
-{
-  name: string;            // 2-255 символов, название темы
-}
-```
-
-**Response (201):**
-```typescript
-{
-  session_id: string;
-  status: 'generating';
-  progress: {
-    generated: 0;
-    total: 80;
-  };
-}
-```
-
-> После вызова сервер начинает генерацию в фоне. Прогресс приходит через WebSocket события `ai:progress`, `ai:ready`, `ai:error`.
-
-**Ошибки:**
-- `400` - Валидация не пройдена
-- `401` - Отсутствует или невалидный JWT токен
-- `409` - У пользователя уже есть активная сессия генерации
-- `429` - Превышен лимит запросов
-- `503` - AI сервис недоступен
-
----
-
-#### GET `/themes/ai/:session_id/status`
-Статус генерации (альтернатива WebSocket).
-
-**Параметры:**
-- `session_id` - UUID сессии
-
-**Response (200):**
-```typescript
-{
-  session_id: string;
-  status: 'generating' | 'ready' | 'error';
-  progress: {
-    generated: number;
-    total: 80;
-  };
-  error: string | null;
-}
-```
-
-**Ошибки:**
-- `401` - Отсутствует или невалидный JWT токен
-- `403` - Сессия принадлежит другому пользователю
-- `404` - Сессия не найдена
-- `429` - Превышен лимит запросов
-
----
-
-#### GET `/themes/ai/:session_id/questions`
-Получить сгенерированные вопросы для превью.
-
-**Параметры:**
-- `session_id` - UUID сессии
-
-**Response (200):**
-```typescript
-{
-  name: string;
-  questions: Array<{
-    question: string;
-    answers: string[];     // 4 варианта (без correct_answer!)
-  }>;
-}
-```
-
-> **Важно:** Правильный ответ не передаётся клиенту (защита от подглядывания).
-
-**Ошибки:**
-- `401` - Отсутствует или невалидный JWT токен
-- `403` - Сессия принадлежит другому пользователю
-- `404` - Сессия не найдена
-- `409` - Генерация ещё не завершена
-- `429` - Превышен лимит запросов
-
----
-
-#### DELETE `/themes/ai/:session_id`
-Отменить генерацию и удалить все данные.
-
-**Параметры:**
-- `session_id` - UUID сессии
-
-**Response (200):**
-```typescript
-{
-  success: true
-}
-```
-
-**Ошибки:**
-- `401` - Отсутствует или невалидный JWT токен
-- `403` - Сессия принадлежит другому пользователю
-- `404` - Сессия не найдена
-- `429` - Превышен лимит запросов
-
----
-
-### Ручное создание тем
-
-#### POST `/themes/manual/create`
-Создание темы вручную (загрузка готового JSON с вопросами).
-
-**Request Body:**
-```typescript
-{
-  name: string;                 // 2-255 символов
-  questions: Array<{            // Ровно 80 вопросов
-    question: string;           // 1-1000 символов
-    answers: string[];          // Ровно 4 варианта ответа
-    correct_answer: number;     // Индекс правильного ответа (0-3)
-  }>;
-}
-```
-
-**Response (201):**
-```typescript
-{
-  session_id: string;
-  name: string;
-  questions_count: number;
-  status: 'ready';
-}
-```
-
-> **DEPRECATED:** Этот HTTP endpoint используется только для отладки.
-> **В продакшене:** используйте WebSocket события `room:create` → `room:upload_theme` → `room:activate`.
-
-**Ошибки:**
-- `400` - Валидация не пройдена (не 80 вопросов, невалидный формат)
-- `401` - Отсутствует или невалидный JWT токен
-- `409` - У пользователя уже есть активная сессия
-- `429` - Превышен лимит запросов
-
----
-
-#### GET `/themes/manual/:session_id/questions`
-Получить загруженные вопросы для превью.
-
-**Параметры:**
-- `session_id` - UUID сессии
-
-**Response (200):**
-```typescript
-{
-  name: string;
-  questions: Array<{
-    question: string;
-    answers: string[];     // 4 варианта (без correct_answer!)
-  }>;
-}
-```
-
-**Ошибки:**
-- `401` - Отсутствует или невалидный JWT токен
-- `403` - Сессия принадлежит другому пользователю
-- `404` - Сессия не найдена
-- `429` - Превышен лимит запросов
-
----
-
-#### DELETE `/themes/manual/:session_id`
-Отменить и удалить ручную сессию.
-
-**Параметры:**
-- `session_id` - UUID сессии
-
-**Response (200):**
-```typescript
-{
-  success: true
-}
-```
-
-**Ошибки:**
-- `401` - Отсутствует или невалидный JWT токен
-- `403` - Сессия принадлежит другому пользователю
-- `404` - Сессия не найдена
-- `429` - Превышен лимит запросов
-
----
-
 ### Админ
 
 #### POST `/themes/admin/create`
@@ -1159,6 +962,101 @@ const socket = io('ws://localhost:3000', {
 - `ROOM_ALREADY_ACTIVE` - Тему можно создать только для неактивных комнат
 - `THEME_EXISTS` - В комнате уже есть тема
 - `INVALID_QUESTIONS_COUNT` - Тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:get_prompt` (emit)
+Получить промпт для ручной генерации через свой AI (только владелец, только для INACTIVE комнат).
+
+**Данные:**
+```typescript
+{
+  theme_name: string;            // 2-255 символов
+}
+```
+
+**Ответ (room:prompt):**
+```typescript
+{
+  prompt: string;                // Готовый промпт для вставки в AI
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может получить промпт
+- `ROOM_ALREADY_ACTIVE` - Промпт можно получить только для неактивных комнат
+
+---
+
+#### `room:upload_theme_raw` (emit)
+Загрузить сырой текст ответа AI (только владелец, только для INACTIVE комнат). Поддерживает накопление вопросов порциями.
+
+> **Flow ручной загрузки через свой AI:**
+> 1. `room:get_prompt` - получить промпт для нужной темы
+> 2. Пользователь копирует промпт → вставляет в свой AI → копирует ответ
+> 3. `room:upload_theme_raw` - загрузить сырой ответ AI
+> 4. Если `is_complete: false` — повторить шаги 2-3 (вопросы накапливаются)
+> 5. Когда `is_complete: true` — `room:activate`
+
+**Данные:**
+```typescript
+{
+  theme_name?: string;           // 2-255 символов, обязателен при первой вставке
+  raw_text: string;              // Минимум 10 символов, сырой ответ AI
+}
+```
+
+**Ответ (room:theme_raw_uploaded):**
+```typescript
+{
+  loaded: number;                // Общее количество загруженных вопросов
+  total: number;                 // Необходимое количество (80)
+  invalid_count: number;         // Невалидных вопросов в этой порции
+  is_complete: boolean;          // true если набрано >= 80, тема готова
+}
+```
+
+**Broadcast (room:theme_progress):**
+```typescript
+{
+  loaded: number;
+  total: number;
+  is_complete: boolean;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может загружать тему
+- `ROOM_ALREADY_ACTIVE` - Тему можно загрузить только для неактивных комнат
+- `INVALID_FORMAT` - Не удалось извлечь валидные вопросы из текста
+- `THEME_NAME_REQUIRED` - theme_name обязателен при первой загрузке
+
+---
+
+#### `room:clear_uploaded_questions` (emit)
+Очистить накопленные вопросы для начала заново (только владелец, только для INACTIVE комнат).
+
+**Данные:** нет
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:theme_deleted):**
+```typescript
+{
+  theme_name: null;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может очищать вопросы
+- `ROOM_ALREADY_ACTIVE` - Нельзя очистить вопросы активной комнаты
+- `NO_THEME` - В комнате нет темы
 
 ---
 
@@ -1858,8 +1756,8 @@ Array<{
 
 ### AI Generation Events
 
-События для отслеживания прогресса генерации темы через AI.
-Используются вместо polling `GET /themes/ai/:session_id/status`.
+События для отслеживания прогресса генерации темы через AI внутри комнаты.
+Отправляются владельцу комнаты после вызова `room:generate_theme`.
 
 #### `ai:progress` (listen)
 Прогресс генерации (отправляется после каждого батча из 20 вопросов).
@@ -1893,7 +1791,7 @@ Array<{
 }
 ```
 
-> После этого события можно запросить `GET /themes/ai/:session_id/questions`.
+> После этого события генерация завершена, тема привязана к комнате.
 
 ---
 
@@ -2050,6 +1948,8 @@ interface RoomPlayer {
 | `THEME_EXISTS` | В комнате уже есть тема |
 | `NO_THEME` | В комнате нет темы |
 | `INVALID_QUESTIONS_COUNT` | Тема должна содержать ровно 80 вопросов |
+| `INVALID_FORMAT` | Не удалось извлечь валидные вопросы из текста |
+| `THEME_NAME_REQUIRED` | theme_name обязателен при первой загрузке через raw |
 | `INVALID_PLAYERS_COUNT` | Тема поддерживает другое количество игроков |
 | `ROOM_NOT_FOUND` | Комната не найдена |
 | `ROOM_FULL` | Комната заполнена |
@@ -2094,9 +1994,6 @@ interface RoomPlayer {
 | `INVITE_FAILED` | Не удалось отправить приглашение |
 | `ACCEPT_FAILED` | Не удалось принять приглашение |
 | `REJECT_FAILED` | Не удалось отклонить приглашение |
-| `SESSION_NOT_FOUND` | Сессия генерации не найдена |
-| `SESSION_NOT_READY` | Генерация ещё не завершена |
-| `SESSION_EXISTS` | У пользователя уже есть активная сессия |
 | `AI_SERVICE_UNAVAILABLE` | AI сервис недоступен |
 | `AI_GENERATION_FAILED` | Ошибка генерации AI |
 | `NOT_TEMP_THEME` | Игра не с временной темой |

@@ -24,6 +24,11 @@ import type {
   RoomDeactivatedEvent,
   RoomThemeDeletedEvent,
   RoomKickedEvent,
+  RoomGetPromptPayload,
+  RoomPromptEvent,
+  RoomUploadThemeRawPayload,
+  RoomThemeRawUploadedEvent,
+  RoomThemeProgressEvent,
   // Game types
   GameStartedEvent,
   GameTurnEvent,
@@ -274,6 +279,27 @@ class WebSocketClient {
     },
 
     /**
+     * Get prompt for manual AI generation (owner only, INACTIVE rooms only)
+     */
+    getPrompt: (payload: RoomGetPromptPayload): void => {
+      this.emitOnly('room:get_prompt', payload)
+    },
+
+    /**
+     * Upload raw AI text (owner only, INACTIVE rooms only). Supports accumulation.
+     */
+    uploadThemeRaw: (payload: RoomUploadThemeRawPayload): void => {
+      this.emitOnly('room:upload_theme_raw', payload)
+    },
+
+    /**
+     * Clear accumulated questions to start over (owner only, INACTIVE rooms only)
+     */
+    clearUploadedQuestions: (): void => {
+      this.emitOnly('room:clear_uploaded_questions')
+    },
+
+    /**
      * Delete theme from room (owner only, INACTIVE rooms only)
      */
     deleteTheme: (): void => {
@@ -379,6 +405,18 @@ class WebSocketClient {
 
     onKicked: (callback: EventCallback<RoomKickedEvent>): EventUnsubscribe => {
       return this.on('room:kicked', callback)
+    },
+
+    onPrompt: (callback: EventCallback<RoomPromptEvent>): EventUnsubscribe => {
+      return this.on('room:prompt', callback)
+    },
+
+    onThemeRawUploaded: (callback: EventCallback<RoomThemeRawUploadedEvent>): EventUnsubscribe => {
+      return this.on('room:theme_raw_uploaded', callback)
+    },
+
+    onThemeProgress: (callback: EventCallback<RoomThemeProgressEvent>): EventUnsubscribe => {
+      return this.on('room:theme_progress', callback)
     },
   }
 

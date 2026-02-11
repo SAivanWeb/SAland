@@ -58,12 +58,14 @@
             </n-tab-pane>
             <n-tab-pane name="manual" tab="Ручное создание">
               <div class="create__manual">
-                <div class="create__manual-instruction">
-                  <span>Для ручного создания темы необходимо прикрепить файл с вопросами.</span>
-                  <MainButton title="Инструкция" size="medium" @click="showInstructions =  !showInstructions"/>
-                </div>
                 <div class="create__manual-fields">
-                  <MainButton title="Загрузить" size="large" color="red"/>
+                  <MainInput name="manualThemeName" placeholder="Название темы" label="Укажите название темы" v-model="manualThemeName"/>
+                  <MainButton title="Получить" @click="getPrompt" :disabled="!manualThemeName"/>
+                </div>
+                <div class="create__manual-upload">
+                  <h4>Прогресс создания темы</h4>
+                  <p>Получено вопросов: <span>{{questionUploaded}}/80</span></p>
+                  <MainButton title="Загрузить" @click="uploadQuestions"/>
                 </div>
               </div>
             </n-tab-pane>
@@ -72,8 +74,6 @@
       </div>
     </div>
   </div>
-
-  <InstructionModal v-model:show="showInstructions" />
 </template>
 
 <script setup lang="ts">
@@ -85,9 +85,10 @@ import type { RoomState } from '@/api/modules/types'
 import {NTabs, NTabPane} from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
-import InstructionModal from '@/components/modals/InstructionModal.vue'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
 const ws = useWebSocket()
+const processingStore = useProcessingStore()
 
 const gamePlayers = ref<number>(2)
 const answerTime = ref<number>(20)
@@ -95,7 +96,7 @@ const turnTime = ref<number>(20)
 const timer =  ref<number>(2400)
 const generateThemeName = ref<string>('')
 const manualThemeName = ref<string>('')
-const showInstructions = ref<boolean>(false)
+const questionUploaded = ref<number>(0)
 
 const room = ref<RoomState | null>(null)
 
@@ -135,6 +136,15 @@ function updateRoomParams() {
   ws.rooms.updateParams(roomParams.value)
 }
 
+function getPrompt() {
+  ws.rooms.getPrompt({theme_name: manualThemeName.value})
+}
+
+function uploadQuestions() {
+  const questions = navigator.clipboard.read()
+  if (questions) ws.rooms.uploadThemeRaw({raw_text: String(questions)})
+}
+
 watch(roomParams.value, updateRoomParams)
 
 watch([gamePlayers, answerTime], ([players, time]) => {
@@ -157,6 +167,7 @@ onMounted(() => {
     }),
     ws.rooms.onError((err) => {
       console.error('Room error:', err)
+      if (err.code === 'INVALID_FORMAT') processingStore.setMessage('error', 'Загрузка вопросов', 'Невалидный формат вопросов')
     }),
     ws.rooms.onThemeGenerationStarted((data) => {
       console.log('Theme generation started:', data.theme_name)
@@ -172,6 +183,14 @@ onMounted(() => {
     ws.ai.onError((data) => {
       console.error('AI error:', data.error)
     }),
+    ws.rooms.onPrompt((data) => {
+      navigator.clipboard.writeText(data.prompt)
+      processingStore.setMessage('success', 'Промпт', 'Промпт успешно получен')
+    }),
+    ws.rooms.onThemeRawUploaded((data) => {
+      questionUploaded.value = data.loaded
+      processingStore.setMessage('success', 'Вопросы', 'Вопросы загруженны')
+    })
   )
 
   ws.rooms.create()
@@ -263,6 +282,16 @@ onUnmounted(() => {
       display: flex;
       align-items: end;
       gap: 20px;
+    }
+
+    &-upload{
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px;
+      border: 2px solid $border;
+      box-shadow: $box-shadow;
+      border-radius: $border-radius;
     }
   }
 }

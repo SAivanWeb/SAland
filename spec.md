@@ -19,7 +19,8 @@
 > - **Flow:** создание INACTIVE комнаты (WebSocket) → настройка параметров → создание темы внутри комнаты → активация → игроки присоединяются → игра
 > - **Временная тема:** создается внутри INACTIVE комнаты, хранится в Redis привязанной к room_id
 > - **После игры:** если хотя бы 1 лайк → сохраняется в PostgreSQL (is_active=true), иначе удаляется
-> - Темы создаются через AI-генерацию (GigaChat) или загрузку JSON (доступно всем пользователям)
+> - Темы создаются через AI-генерацию (GigaChat), загрузку JSON или ручную загрузку через свой AI (доступно всем пользователям)
+> - **Ручная загрузка через свой AI:** пользователь копирует промпт (`room:get_prompt`) → вставляет в свой ChatGPT/Claude/Gemini → копирует ответ → вставляет обратно (`room:upload_theme_raw`). Поддерживается накопление вопросов порциями (если AI не может выдать 80 за раз).
 > - Админские темы создаются сразу в PostgreSQL через HTTP endpoint
 
 > **WebSocket события для управления комнатой:**
@@ -27,8 +28,8 @@
 > **Создание и настройка (INACTIVE комната):**
 > 1. `room:create` - создать INACTIVE комнату (без темы, статус INACTIVE). Payload: players_count, таймеры, is_private. Без theme_id.
 > 2. `room:update_params` - настроить параметры (players_count, таймеры, приватность). Только для INACTIVE комнат.
-> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) - создать тему внутри комнаты
-> 4. `room:delete_theme` - удалить тему для пересоздания (если нужно изменить)
+> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) или `room:get_prompt` + `room:upload_theme_raw` (ручной AI) - создать тему внутри комнаты
+> 4. `room:delete_theme` или `room:clear_uploaded_questions` - удалить тему для пересоздания (если нужно изменить)
 > 5. `room:activate` - активировать комнату (INACTIVE → WAITING), другие игроки могут присоединиться
 >
 > **Управление активной комнатой (WAITING):**
@@ -622,174 +623,6 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ---
 
-## AI-генерация тем
-
-### POST `themes/ai/generate`
-
-> Начать генерацию темы через AI
-
-**Body:**
-```json
-{
-  "name": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "session_id": "string",
-    "status": "generating",
-    "progress": {
-      "generated": 0,
-      "total": 80
-    }
-  }
-}
-```
-
----
-
-### GET `themes/ai/:session_id/status`
-
-> Статус генерации
-
-**Response:**
-```json
-{
-  "data": {
-    "session_id": "string",
-    "status": "generating | ready | error",
-    "progress": {
-      "generated": "number",
-      "total": 80
-    },
-    "error": "string?"
-  }
-}
-```
-
-**Статусы:**
-- `generating` — генерация в процессе
-- `ready` — генерация завершена, можно просмотреть вопросы
-- `error` — ошибка при генерации
-
----
-
-### GET `themes/ai/:session_id/questions`
-
-> Получить сгенерированные вопросы для превью
-
-**Response:**
-```json
-{
-  "data": {
-    "name": "string",
-    "questions": [
-      {
-        "question": "string",
-        "answers": ["string", "string", "string", "string"]
-      }
-    ]
-  }
-}
-```
-
-> **Важно:** Правильный ответ не передаётся клиенту (защита от подглядывания)
-
----
-
-### DELETE `themes/ai/:session_id`
-
-> Отменить генерацию и удалить все данные
-
-**Response:**
-```json
-{
-  "data": {
-    "success": true
-  }
-}
-```
-
----
-
-### POST `themes/manual/create`
-
-> Создание темы вручную (загрузка готового JSON с вопросами)
-
-**Body:**
-```json
-{
-  "name": "string",
-  "questions": [
-    {
-      "question": "string",
-      "answers": ["string", "string", "string", "string"],
-      "correct_answer": 0
-    }
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "session_id": "string",
-    "name": "string",
-    "questions_count": "number",
-    "status": "ready"
-  }
-}
-```
-
-> **DEPRECATED:** Этот HTTP endpoint используется только для отладки.
-> **В продакшене:** пользователь создает INACTIVE комнату через WebSocket `room:create`,
-> затем загружает тему через `room:upload_theme`.
-> Валидация: ровно 80 вопросов, 4 варианта ответа, correct_answer 0-3.
-
----
-
-### GET `themes/manual/:session_id/questions`
-
-> Получить загруженные вопросы для превью
-
-**Response:**
-```json
-{
-  "data": {
-    "name": "string",
-    "questions": [
-      {
-        "question": "string",
-        "answers": ["string", "string", "string", "string"]
-      }
-    ]
-  }
-}
-```
-
-> Правильный ответ не передаётся клиенту
-
----
-
-### DELETE `themes/manual/:session_id`
-
-> Отменить и удалить ручную сессию
-
-**Response:**
-```json
-{
-  "data": {
-    "success": true
-  }
-}
-```
-
----
-
 ### POST `themes/admin/create`
 
 > Создание темы админом (сразу в PostgreSQL)
@@ -1076,6 +909,74 @@ WAITING (после активации)
 - `ROOM_ALREADY_ACTIVE` — тему можно создать только для INACTIVE комнат
 - `THEME_EXISTS` — в комнате уже есть тема
 - `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
+
+---
+
+#### `room:get_prompt`
+
+> Получить промпт для ручной генерации через свой AI (только владелец, только INACTIVE комнаты)
+
+```json
+{
+  "theme_name": "string"
+}
+```
+
+> `theme_name`: 2-255 символов. Используется для подстановки в промпт.
+
+**Ответ:** `room:prompt` отправителю
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может получить промпт
+- `ROOM_ALREADY_ACTIVE` — промпт можно получить только для INACTIVE комнат
+
+---
+
+#### `room:upload_theme_raw`
+
+> Загрузка сырого текста от AI (только владелец, только INACTIVE комнаты). Поддерживает накопление вопросов порциями.
+
+```json
+{
+  "theme_name": "string?",
+  "raw_text": "string"
+}
+```
+
+> `theme_name`: 2-255 символов, обязателен при первой вставке (если тема ещё не создана). `raw_text`: минимум 10 символов, сырой ответ AI.
+> Сервер извлекает JSON из текста (стрипает markdown code blocks, ищет массив вопросов), валидирует и добавляет к уже загруженным.
+> Дедупликация по тексту вопроса. Максимум 80 вопросов — лишние отбрасываются.
+
+**Ответ:** `room:theme_raw_uploaded` отправителю, `room:theme_progress` broadcast всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может загружать тему
+- `ROOM_ALREADY_ACTIVE` — тему можно загрузить только для INACTIVE комнат
+- `INVALID_FORMAT` — не удалось извлечь валидные вопросы из текста
+- `THEME_NAME_REQUIRED` — theme_name обязателен при первой загрузке
+
+---
+
+#### `room:clear_uploaded_questions`
+
+> Очистить накопленные вопросы для начала заново (только владелец, только INACTIVE комнаты)
+
+```json
+{}
+```
+
+**Ответ:** `room:state` отправителю, `room:theme_deleted` broadcast всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может очищать вопросы
+- `ROOM_ALREADY_ACTIVE` — нельзя очистить вопросы активной комнаты
+- `NO_THEME` — в комнате нет темы
 
 ---
 
@@ -1398,6 +1299,54 @@ WAITING (после активации)
 ```json
 {
   "theme_name": null
+}
+```
+
+---
+
+#### `room:prompt`
+
+> Промпт для ручной генерации через AI (персональное, отправителю)
+
+```json
+{
+  "prompt": "string"
+}
+```
+
+---
+
+#### `room:theme_raw_uploaded`
+
+> Результат загрузки сырого текста AI (персональное, отправителю)
+
+```json
+{
+  "loaded": 25,
+  "total": 80,
+  "invalid_count": 2,
+  "is_complete": false
+}
+```
+
+| Поле | Описание |
+|------|----------|
+| `loaded` | Общее количество загруженных вопросов |
+| `total` | Необходимое количество (80) |
+| `invalid_count` | Количество невалидных вопросов в этой порции |
+| `is_complete` | true если набрано >= 80 вопросов, тема готова к активации |
+
+---
+
+#### `room:theme_progress`
+
+> Прогресс загрузки темы (broadcast всем в комнате)
+
+```json
+{
+  "loaded": 25,
+  "total": 80,
+  "is_complete": false
 }
 ```
 
@@ -1959,8 +1908,8 @@ WAITING (после активации)
 
 ## AI-генерация (WebSocket)
 
-> События для отслеживания прогресса генерации темы через AI.
-> Используется вместо polling GET /themes/ai/:session_id/status.
+> События для отслеживания прогресса генерации темы через AI внутри комнаты.
+> Отправляются владельцу комнаты после вызова `room:generate_theme`.
 
 ### Сервер → Клиент
 
@@ -1996,7 +1945,7 @@ WAITING (после активации)
 }
 ```
 
-> После этого события клиент может запросить `GET /themes/ai/:session_id/questions`
+> После этого события генерация завершена, тема привязана к комнате.
 
 ---
 
@@ -2051,6 +2000,8 @@ WAITING (после активации)
 - `THEME_EXISTS` — в комнате уже есть тема
 - `NO_THEME` — в комнате нет темы
 - `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
+- `INVALID_FORMAT` — не удалось извлечь валидные вопросы из текста
+- `THEME_NAME_REQUIRED` — theme_name обязателен при первой загрузке через raw
 - `PLAYERS_NOT_READY` — не все игроки готовы
 - `NOT_ENOUGH_PLAYERS` — нужно минимум 2 игрока
 - `game_not_found` — игра не найдена
@@ -2396,66 +2347,6 @@ WAITING (после активации)
 }
 ```
 
-### `ai_theme_session:{session_id}` (Hash)
-
-> Сессия AI-генерации темы
-
-```json
-{
-  "id": "uuid",
-  "user_id": "uuid",
-  "name": "string",
-  "status": "generating|ready|error",
-  "progress_generated": 0,
-  "progress_total": 80,
-  "error": "string?",
-  "created_at": 1234567890
-}
-```
-
-### `ai_theme_questions:{session_id}` (List)
-
-> Сгенерированные вопросы (JSON-строки)
-
-```json
-[
-  {
-    "question": "string",
-    "answers": ["string", "string", "string", "string"],
-    "correct_answer": 0
-  }
-]
-```
-
-### `manual_theme_session:{session_id}` (Hash)
-
-> Сессия ручного создания темы
-
-```json
-{
-  "id": "uuid",
-  "user_id": "uuid",
-  "name": "string",
-  "status": "ready",
-  "questions_count": 80,
-  "created_at": 1234567890
-}
-```
-
-### `manual_theme_questions:{session_id}` (List)
-
-> Вопросы ручной темы (JSON-строки)
-
-```json
-[
-  {
-    "question": "string",
-    "answers": ["string", "string", "string", "string"],
-    "correct_answer": 0
-  }
-]
-```
-
 ### `temp_theme:{room_id}` (Hash)
 
 > Временная тема, привязанная к комнате
@@ -2509,8 +2400,6 @@ WAITING (после активации)
 | `public_rooms` | Sorted Set | Публичные WAITING комнаты (score = created_at). Комнаты добавляются только после room:activate. |
 | `user_room:{user_id}` | String | ID комнаты пользователя (TTL: 1 час) |
 | `user:{user_id}:game` | String | ID игры пользователя |
-| `user:{user_id}:ai_session` | String | ID активной AI-генерации |
-| `user:{user_id}:manual_session` | String | ID активной ручной сессии |
 | `online_users` | Set | Онлайн пользователи |
 | `user:{user_id}:friends_online` | Set | Онлайн друзья |
 
@@ -2527,22 +2416,7 @@ WAITING (после активации)
 4. Админ может деактивировать тему (is_active = false)
 ```
 
-### Тема (AI-генерация пользователем)
-
-```
-1. Пользователь запускает генерацию → ai_theme_session (Redis, TTL 1 час)
-2. AI генерирует вопросы батчами по 20 → ai_theme_questions (Redis)
-3. WebSocket события: ai:progress → ai:ready или ai:error
-4. Пользователь просматривает вопросы (без правильных ответов)
-5. Пользователь может:
-   - Закрыть страницу → данные остаются в Redis до TTL (можно вернуться)
-   - Отменить генерацию → DELETE /session → всё удаляется
-   - Создать комнату → тема переносится в temp_theme, ai_session удаляется
-6. После создания комнаты тема привязана к комнате (temp_theme)
-7. После завершения игры — оценка темы всеми игроками
-```
-
-### Тема (создание внутри INACTIVE комнаты) - НОВАЯ АРХИТЕКТУРА
+### Тема (создание внутри INACTIVE комнаты)
 
 **Вариант A: AI-генерация**
 ```
@@ -2638,10 +2512,6 @@ WAITING (после активации)
 | `active_games:*` | 2 часа | Максимальная длительность игры |
 | `game_chat:*` | 2 часа | Чат удаляется вместе с игрой |
 | `user_session:*` | 24 часа | Сессии пользователей |
-| `ai_theme_session:*` | 1 час | Сессия AI-генерации |
-| `ai_theme_questions:*` | 1 час | Вопросы AI-генерации |
-| `manual_theme_session:*` | 1 час | Сессия ручного создания |
-| `manual_theme_questions:*` | 1 час | Вопросы ручного создания |
 | `temp_theme:*` | 2 часа | Временная тема (привязана к комнате/игре) |
 | `temp_theme_questions:*` | 2 часа | Вопросы временной темы |
 | `temp_theme_votes:*` | 10 минут | Голоса за временную тему после игры |
@@ -2791,43 +2661,9 @@ CREATE INDEX idx_game_players_user ON game_players(user_id, game_id);
 
 ## Шаблон промпта
 
-Файл: `prompts/generate_questions.txt`
+Файл: `src/modules/rooms/prompts/generate-questions.prompt.ts`
 
-```
-Ты — генератор вопросов для интеллектуальной викторины.
-
-Тема: {{THEME_NAME}}
-
-Сгенерируй {{BATCH_SIZE}} уникальных вопросов по указанной теме.
-
-ТРЕБОВАНИЯ К ВОПРОСАМ:
-1. Вопрос должен быть чётким и однозначным
-2. Ровно 4 варианта ответа
-3. Только один правильный ответ
-4. Варианты ответов должны быть правдоподобными (не очевидно неправильными)
-5. Без повторяющихся или очень похожих вопросов
-6. Сложность: средняя (не слишком лёгкие, не слишком сложные)
-7. Без спорных или неоднозначных фактов
-8. Без вопросов на текущие события (могут устареть)
-
-{{#if EXISTING_QUESTIONS}}
-УЖЕ СГЕНЕРИРОВАННЫЕ ВОПРОСЫ (не повторяй их):
-{{EXISTING_QUESTIONS}}
-{{/if}}
-
-ФОРМАТ ОТВЕТА (строго JSON):
-{
-  "questions": [
-    {
-      "question": "Текст вопроса?",
-      "answers": ["Вариант 1", "Вариант 2", "Вариант 3", "Вариант 4"],
-      "correct_answer": 0
-    }
-  ]
-}
-
-correct_answer — индекс правильного ответа (0-3).
-```
+Промпт и константы генерации определены в коде. Вызывается через `room:generate_theme` в контексте INACTIVE комнаты.
 
 ## Параметры генерации
 

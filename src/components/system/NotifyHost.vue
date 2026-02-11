@@ -39,14 +39,6 @@ watch(
     border-radius: $border-radius;
   }
 
-  &.notify--error .n-notification {
-    background-color: $primary-red;
-  }
-
-  &.notify--success .n-notification {
-    background-color: $primary-green;
-  }
-
   &.notify--info .n-notification {
     background-color: #fff;
 
@@ -64,13 +56,13 @@ watch(
   }
 
   & .n-notification-main .n-notification-main__header {
-    color: $text-light !important;
+    color: $text-dark !important;
     font-size: 18px !important;
     font-weight: bold !important;
   }
 
   & .n-notification__close {
-    color: $text-light !important;
+    color: $text-dark !important;
   }
 
   & .n-notification-main__description {
@@ -79,7 +71,7 @@ watch(
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    color: $text-light !important;
+    color: $text-dark !important;
     text-overflow: ellipsis;
   }
 }

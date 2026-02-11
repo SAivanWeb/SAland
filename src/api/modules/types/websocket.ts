@@ -161,6 +161,34 @@ export interface RoomThemeUploadedEvent {
   theme_name: string
 }
 
+// Room get prompt (manual AI generation)
+export interface RoomGetPromptPayload {
+  theme_name: string
+}
+
+export interface RoomPromptEvent {
+  prompt: string
+}
+
+// Room upload raw AI text
+export interface RoomUploadThemeRawPayload {
+  theme_name?: string
+  raw_text: string
+}
+
+export interface RoomThemeRawUploadedEvent {
+  loaded: number
+  total: number
+  invalid_count: number
+  is_complete: boolean
+}
+
+export interface RoomThemeProgressEvent {
+  loaded: number
+  total: number
+  is_complete: boolean
+}
+
 // Room activation/deactivation
 export interface RoomActivatedEvent {
   status: 'waiting'
@@ -501,6 +529,8 @@ export type WsErrorCode =
   | 'THEME_EXISTS'
   | 'NO_THEME'
   | 'INVALID_QUESTIONS_COUNT'
+  | 'INVALID_FORMAT'
+  | 'THEME_NAME_REQUIRED'
   // Game errors
   | 'GAME_NOT_FOUND'
   | 'GAME_START_FAILED'

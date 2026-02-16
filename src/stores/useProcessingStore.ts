@@ -1,10 +1,17 @@
 import {defineStore} from 'pinia'
 import { ref } from 'vue'
 type MessageType = 'success' | 'error' | 'warning' | 'info' | ''
+
+interface MessageAction {
+  label: string
+  onClick: () => void
+}
+
 interface Message {
   type: MessageType,
   message: string
   title: string
+  action?: MessageAction | null
 }
 
 export const useProcessingStore = defineStore('useProcessingStore', () => {
@@ -13,6 +20,7 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     type: '',
     title: '',
     message: '',
+    action: null,
   })
   const showNotification = ref<boolean>(false);
 
@@ -24,14 +32,16 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     loading.value = false;
   }
 
-  const setMessage = (type: MessageType, title: string, text: string) => {
+  const setMessage = (type: MessageType, title: string, text: string, action?: MessageAction) => {
     message.value.type = type
     message.value.title = title
     message.value.message = text
+    message.value.action = action ?? null
   }
 
   const clearMessage = () => {
     message.value.message = message.value.title = message.value.type = ''
+    message.value.action = null
   }
 
   return {

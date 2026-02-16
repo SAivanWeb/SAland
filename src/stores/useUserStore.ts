@@ -68,6 +68,19 @@ export const useUserStore = defineStore('UserStore', () => {
       processingStore.startLoading()
       currentUser.value = await api.user.init();
       await ws.connect();
+      if (window.location.pathname !== '/game-create') {
+        if (currentUser.value && currentUser.value.active_room_id) {
+          processingStore.setMessage(
+            'info',
+            'Активная комната',
+            'У вас есть активная комната. Нажмите, чтобы перейти.',
+            {
+              label: 'Подключиться',
+              onClick: () => router.push(`/game-create`),
+            },
+          )
+        }
+      }
     } catch (e) {
       console.log(e)
     } finally {

@@ -67,15 +67,27 @@
                     v-model="generateThemeName"
                     size="large"
                   />
-                  <MainButton title="Сгенерировать" size="large" color="red" :disabled="!generateThemeName" />
+                  <MainButton
+                    title="Сгенерировать"
+                    size="large"
+                    color="blue"
+                    :disabled="!generateThemeName"
+                  />
                 </div>
               </div>
             </n-tab-pane>
             <n-tab-pane name="manual" tab="Ручное создание">
               <div class="create__manual">
                 <div v-if="isThemeComplete && activeTab === 'manual'" class="create__theme-status">
-                  <p>Тема: <strong>{{ room!.theme!.name }}</strong></p>
-                  <p>Вопросов: {{ room!.theme!.questions_loaded }}/{{ room!.theme!.questions_total }}</p>
+                  <p>
+                    Тема: <span>{{ room!.theme!.name }}</span>
+                  </p>
+                  <p>
+                    Вопросов:
+                    <span
+                      >{{ room!.theme!.questions_loaded }}/{{ room!.theme!.questions_total }}</span
+                    >
+                  </p>
                 </div>
                 <template v-else>
                   <div class="create__manual-fields">
@@ -86,14 +98,22 @@
                       v-model="manualThemeName"
                       :disabled="showProcessUpload"
                     />
-                    <MainButton title="Получить" @click="getPrompt" :disabled="!manualThemeName || showProcessUpload" />
+                    <MainButton
+                      title="Получить"
+                      @click="getPrompt"
+                      :disabled="!manualThemeName || showProcessUpload"
+                    />
                   </div>
                   <div v-if="showProcessUpload" class="create__manual-upload">
                     <h4>Прогресс создания темы</h4>
                     <p>
                       Получено вопросов: <span>{{ questionUploaded }}/80</span>
                     </p>
-                    <MainButton title="Загрузить" @click="uploadQuestions" :disabled="isThemeComplete" />
+                    <MainButton
+                      title="Загрузить"
+                      @click="uploadQuestions"
+                      :disabled="isThemeComplete"
+                    />
                     <div v-if="showPasteError" class="create__manual-fields">
                       <MainInput
                         name="questionsInput"
@@ -112,6 +132,27 @@
               </div>
             </n-tab-pane>
           </n-tabs>
+        </div>
+      </div>
+      <div class="create__card">
+        <div class="create__card-header">
+          <h3 class="create__card-title">Запуск</h3>
+        </div>
+        <div class="create__card-content">
+          <div v-if="room" class="create__card-row">
+            <MainButton
+              v-if="room.status === 'inactive'"
+              title="Запустить комнату"
+              color="green"
+              @click="activateRoom"
+            />
+            <MainButton
+              v-else-if="room.status === 'waiting'"
+              title="Остановить"
+              color="red"
+              @click="deactivateRoom"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -230,6 +271,14 @@ function clearTheme() {
   resetThemeState()
 }
 
+function activateRoom() {
+  ws.rooms.activate()
+}
+
+function deactivateRoom() {
+  ws.rooms.deactivate()
+}
+
 watch(roomParams.value, updateRoomParams)
 
 watch([gamePlayers, answerTime, turnTime, timer], ([players, time, turnTime, timer]) => {
@@ -260,7 +309,7 @@ onMounted(() => {
           else generateThemeName.value = data.theme.name
         }
         questionUploaded.value = data.theme.questions_loaded
-        showProcessUpload.value = data.theme.questions_loaded > 0
+        showProcessUpload.value = data.theme.name !== ''
       } else {
         resetThemeState()
       }
@@ -282,6 +331,8 @@ onMounted(() => {
       ) {
         processingStore.setMessage('error', 'Ошибка подключения', 'Комната не существует')
         router.push('/games')
+      } else if (err.code === 'NO_THEME') {
+        processingStore.setMessage('error', 'Ошибка запуска', 'Необходимо создать тему')
       }
     }),
     ws.rooms.onThemeGenerationStarted((data) => {
@@ -300,12 +351,30 @@ onMounted(() => {
     }),
     ws.rooms.onPrompt((data) => {
       navigator.clipboard.writeText(data.prompt)
-      processingStore.setMessage('success', 'Загрузка вопросов', 'Промпт успешно получен')
+      processingStore.setMessage(
+        'success',
+        'Загрузка вопросов',
+        'Промпт успешно скопирован в буфер обмена. Можете вставить его в ИИ.',
+      )
     }),
     ws.rooms.onThemeRawUploaded((data) => {
       questionUploaded.value = data.loaded
       processingStore.setMessage('success', 'Загрузка вопросов', 'Вопросы загруженны')
     }),
+    ws.rooms.onActivated(() => {
+      processingStore.setMessage(
+        'success',
+        'Запуск комнаты',
+        'Комната запущена, идет ожидание игроков.',
+      )
+    }),
+    ws.rooms.onDeactivated(() => {
+      processingStore.setMessage(
+        'success',
+        'Остановка комнаты',
+        'Комната неактивна, ожидание игроков остановлено.',
+      )
+    })
   )
   ws.rooms.getState()
 })
@@ -367,6 +436,11 @@ onUnmounted(() => {
       display: flex;
       gap: 12px;
     }
+
+    &-row {
+      display: flex;
+      justify-content: space-between;
+    }
   }
 
   &__theme-status {
@@ -381,6 +455,10 @@ onUnmounted(() => {
     p {
       @include body-1;
       color: $text-dark;
+    }
+
+    & span {
+      @include body-1-bold;
     }
   }
 

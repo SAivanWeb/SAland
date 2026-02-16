@@ -119,6 +119,10 @@ export interface RoomListItem {
   theme_name: string | null
   players_count: number
   current_players: number
+  players: Array<{
+    user_id: string
+    name: string
+  }>
 }
 
 // Room params update

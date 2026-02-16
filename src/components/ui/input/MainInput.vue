@@ -54,7 +54,7 @@ watch(localValue, (val) => {
   width: 100%;
 
   & label {
-    @include body-1;
+    @include body-2;
     color: $text-dark;
   }
 

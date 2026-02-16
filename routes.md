@@ -1197,6 +1197,10 @@ Array<{
   theme_name: string | null;
   players_count: number;      // Максимум игроков
   current_players: number;    // Текущее количество
+  players: Array<{
+    user_id: string;
+    name: string;
+  }>;
 }>
 ```
 
@@ -1604,11 +1608,11 @@ Array<ChatMessage>
 {
   id: string;
   type: 'friend_request'
-      | 'friend_accepted'
-      | 'game_invite'
-      | 'game_invite_accepted'
-      | 'game_invite_rejected'
-      | 'game_invite_expired';
+  | 'friend_accepted'
+  | 'game_invite'
+  | 'game_invite_accepted'
+  | 'game_invite_rejected'
+  | 'game_invite_expired';
   from_user_id: string;
   from_user_name: string;
   to_user_id: string;
@@ -1854,8 +1858,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-             | 'game_starting' | 'game_started' | 'game_ended'
-             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+    | 'game_starting' | 'game_started' | 'game_ended'
+    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

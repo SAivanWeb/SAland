@@ -1,29 +1,21 @@
 <template>
-  <div class="card">
+  <div v-if="item" class="card">
     <div class="card__info">
-      <h3 class="card__title">География России</h3>
+      <h3 class="card__title">{{ item.theme_name }}</h3>
       <div class="card__meta">
         <div class="card__players-count">
           <n-icon size="18">
             <People />
           </n-icon>
-          <span>2/4</span>
+          <span>{{ item.players.length }}/{{ item.players_count }}</span>
         </div>
       </div>
     </div>
     <div class="card__players">
-      <div class="card__player card__player--filled">
-        <PlayerIcon name="Иван" />
+      <div v-for="player in item.players" :key="player.user_id" class="card__player card__player--filled">
+        <PlayerIcon :name="player.name" />
       </div>
-      <div class="card__player card__player--filled">
-        <PlayerIcon name="Мария" />
-      </div>
-      <div class="card__player card__player--empty">
-        <n-icon size="24" color="#858585">
-          <AddCircle />
-        </n-icon>
-      </div>
-      <div class="card__player card__player--empty">
+      <div v-for="n in emptySlots" :key="'empty-' + n" class="card__player card__player--empty">
         <n-icon size="24" color="#858585">
           <AddCircle />
         </n-icon>
@@ -40,6 +32,14 @@ import { People, AddCircle } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
+import { computed } from 'vue'
+import type { RoomListItem } from '@/api'
+
+const props = defineProps<{
+  item: RoomListItem
+}>()
+
+const emptySlots = computed(() => props.item.players_count - props.item.players.length)
 </script>
 
 <style scoped lang="scss">

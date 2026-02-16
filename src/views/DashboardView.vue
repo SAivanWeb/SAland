@@ -29,12 +29,7 @@
     <div class="games__content">
       <div class="games__active">
         <h2>Ожидают игры</h2>
-        <div class="games__active-list">
-          <ActiveGameCard />
-          <ActiveGameCard />
-          <ActiveGameCard />
-          <ActiveGameCard />
-        </div>
+        <ActiveRoomsList/>
       </div>
     </div>
   </div>
@@ -51,6 +46,7 @@ import { api, type Theme } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { NScrollbar } from 'naive-ui'
 import { isErrorMessage } from '@/utils/error.ts'
+import ActiveRoomsList from '@/components/rooms/ActiveRoomsList.vue'
 
 const processingStore = useProcessingStore()
 const search = ref<string>('')
@@ -128,12 +124,6 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 20px;
-
-    &-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
   }
 }
 

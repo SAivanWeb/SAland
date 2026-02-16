@@ -1409,7 +1409,13 @@ WAITING (после активации)
     "owner_name": "string",
     "theme_name": "string | null",
     "players_count": "number",
-    "current_players": "number"
+    "current_players": "number",
+    "players": [
+      {
+        "user_id": "string",
+        "name": "string"
+      }
+    ]
   }
 ]
 ```

@@ -1,6 +1,6 @@
 <template>
   <div class="rooms">
-    <template v-if="rooms">
+    <template v-if="rooms?.length">
       <ActiveGameCard v-for="item in rooms" :key="item.id" :item="item" />
     </template>
     <div v-else class="rooms__nodata">Нет активных комнат</div>
@@ -20,7 +20,6 @@ onMounted(() => {
   ws.rooms.subscribeLobby()
   unsubs.push(
     ws.rooms.onList((data) => {
-      console.log(data)
       rooms.value = data
     }),
   )

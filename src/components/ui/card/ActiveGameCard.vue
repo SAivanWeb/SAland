@@ -38,6 +38,7 @@ import type { RoomListItem } from '@/api'
 const props = defineProps<{
   item: RoomListItem
 }>()
+const emit = defineEmits()
 
 const emptySlots = computed(() => props.item.players_count - props.item.players.length)
 </script>

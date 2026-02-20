@@ -1,8 +1,39 @@
 <template>
-  <div class="create">
+  <div v-if="room" class="create">
     <div class="create__container">
       <h1>Создание игры</h1>
-      <GameWaiting v-if="0" role="admin" />
+      <div class="create__card">
+        <div class="create__card-header create__card-header_col">
+          <h3 class="create__card-title">{{ room.status === 'inactive' ? 'Запуск комнаты' : 'Ожидание игроков'}}</h3>
+          <p>{{ room.status === 'inactive' ? 'После запуска начнется ожидание игроков' : 'После подключение всех игроков можно начать игру' }}</p>
+        </div>
+        <div class="create__card-content">
+          <div v-if="room.status !== 'inactive'" class="create__card-users">
+            <div v-for="player in room.players" :key="player.user_id" class="create__card-user create__card-user--filled">
+              <PlayerIcon :name="player.name" />
+            </div>
+            <div v-for="n in emptySlots" :key="'empty-' + n" class="create__card-user create__card-user--empty">
+              <n-icon size="24" color="#858585">
+                <AddCircle />
+              </n-icon>
+            </div>
+          </div>
+          <div class="create__card-row">
+            <MainButton
+              v-if="room.status === 'inactive'"
+              title="Запустить"
+              color="green"
+              @click="activateRoom"
+            />
+            <MainButton
+              v-else-if="room.status === 'waiting'"
+              title="Остановить"
+              color="red"
+              @click="deactivateRoom"
+            />
+          </div>
+        </div>
+      </div>
       <div class="create__card">
         <h3 class="create__card-title">Параметры</h3>
         <div class="create__card-content">
@@ -134,27 +165,6 @@
           </n-tabs>
         </div>
       </div>
-      <div class="create__card">
-        <div class="create__card-header">
-          <h3 class="create__card-title">Запуск</h3>
-        </div>
-        <div class="create__card-content">
-          <div v-if="room" class="create__card-row">
-            <MainButton
-              v-if="room.status === 'inactive'"
-              title="Запустить комнату"
-              color="green"
-              @click="activateRoom"
-            />
-            <MainButton
-              v-else-if="room.status === 'waiting'"
-              title="Остановить"
-              color="red"
-              @click="deactivateRoom"
-            />
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -162,14 +172,15 @@
 <script setup lang="ts">
 import MainSelect from '@/components/ui/select/MainSelect.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import GameWaiting from '@/components/games/GameWaiting.vue'
 import { type RoomUpdateParamsPayload, useWebSocket } from '@/api'
 import type { RoomState } from '@/api/modules/types'
-import { NTabs, NTabPane } from 'naive-ui'
+import { NTabs, NTabPane, NIcon } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
+import PlayerIcon from '@/components/games/PlayerIcon.vue'
+import { AddCircle } from '@vicons/ionicons5'
 
 const router = useRouter()
 const ws = useWebSocket()
@@ -186,6 +197,10 @@ const questionsArray = ref<string>('')
 const showPasteError = ref<boolean>(false)
 const showProcessUpload = ref<boolean>(false)
 const activeTab = ref<string>('generate')
+const emptySlots = computed(() => {
+  if (room.value) return gamePlayers.value - room.value.players.length
+  return 0
+})
 
 const room = ref<RoomState | null>(null)
 
@@ -222,19 +237,15 @@ const timerOption = [
   { label: '60 минут', value: 3600 },
 ]
 
-const roomParams = ref<RoomUpdateParamsPayload>({
+const roomParams = computed<RoomUpdateParamsPayload>(() => ({
   players_count: gamePlayers.value,
   time_per_question: answerTime.value,
   time_per_turn: turnTime.value,
   extra_time_per_turn: turnTime.value,
   game_timer: timer.value,
-})
+}))
 
 const unsubs: (() => void)[] = []
-
-function updateRoomParams() {
-  ws.rooms.updateParams(roomParams.value)
-}
 
 function getPrompt() {
   try {
@@ -272,6 +283,18 @@ function clearTheme() {
 }
 
 function activateRoom() {
+  if(!roomParams.value.players_count || !roomParams.value.time_per_turn || !roomParams.value.time_per_question || !roomParams.value.game_timer){
+    processingStore.setMessage('error', 'Запуск комнаты', 'Укажите все игровые параметры')
+    return
+  }
+  if (!room.value?.theme) {
+    processingStore.setMessage('error', 'Запуск комнаты', 'Создайте тему')
+    return
+  }
+  if (room.value?.theme.questions_loaded !== room.value?.theme.questions_total) {
+    processingStore.setMessage('error', 'Запуск комнаты', 'Создайте тему')
+    return
+  }
   ws.rooms.activate()
 }
 
@@ -279,17 +302,9 @@ function deactivateRoom() {
   ws.rooms.deactivate()
 }
 
-watch(roomParams.value, updateRoomParams)
-
-watch([gamePlayers, answerTime, turnTime, timer], ([players, time, turnTime, timer]) => {
-  if (!room.value) return
-  const params: Record<string, number> = {}
-  if (players) params.players_count = players
-  if (time) params.time_per_question = time
-  if (turnTime) params.time_per_turn = turnTime
-  if (timer) params.game_timer = timer
-  if (Object.keys(params).length) {
-    ws.rooms.updateParams(params)
+watch(roomParams, (newParams) => {
+  if (room.value) {
+    ws.rooms.updateParams(newParams)
   }
 })
 
@@ -416,6 +431,12 @@ onUnmounted(() => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+
+      &_col{
+        flex-direction: column;
+        gap: 2px;
+        align-items: start;
+      }
     }
 
     &-title {
@@ -439,7 +460,26 @@ onUnmounted(() => {
 
     &-row {
       display: flex;
-      justify-content: space-between;
+      justify-content: end;
+    }
+
+    &-users {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    &-user {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      &--empty {
+        border-radius: 50%;
+        border: 2px solid $border;
+        background: $background;
+      }
     }
   }
 

@@ -1,10 +1,7 @@
 <template>
   <GameStart placement="games" />
   <div class="games">
-    <!-- Декоративные шестиугольники -->
-
-
-    <div v-if="0" class="games__waiting">
+    <div class="games__waiting">
       <GameWaiting role="user" />
     </div>
     <div class="games__content">
@@ -37,7 +34,6 @@
 
 <script setup lang="ts">
 import PopularGameCard from '@/components/ui/card/PopularGameCard.vue'
-import ActiveGameCard from '@/components/ui/card/ActiveGameCard.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import { onMounted, ref } from 'vue'
 import GameStart from '@/components/games/GameStart.vue'

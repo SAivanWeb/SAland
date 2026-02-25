@@ -10,11 +10,13 @@ import { ws } from '@/api/websocket'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
 import { isErrorMessage } from '@/utils/error'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
 
 export const useUserStore = defineStore('UserStore', () => {
   const currentUser = ref<InitResponse | null>(null)
   const processingStore = useProcessingStore()
   const router = useRouter()
+  const roomStore = useRoomStore()
 
   async function loginUser(data: LoginRequest) {
     try {
@@ -39,13 +41,15 @@ export const useUserStore = defineStore('UserStore', () => {
       await initUser()
       await router.push('/games')
     } catch (e) {
-      if (isErrorMessage(e, 'User with this email already exists'))
+      if (isErrorMessage(e, 'User with this email already exists')) {
         processingStore.setMessage('error', 'Ошибка регистрации', 'Пользователь с таким email уже существует')
-      else         processingStore.setMessage(
-        'error',
-        'Ошибка регистрации',
-        '',
-      )
+      } else {
+        processingStore.setMessage(
+          'error',
+          'Ошибка регистрации',
+          '',
+        )
+      }
       throw e
     } finally {
       processingStore.stopLoading()
@@ -70,15 +74,7 @@ export const useUserStore = defineStore('UserStore', () => {
       await ws.connect();
       if (window.location.pathname !== '/game-create') {
         if (currentUser.value && currentUser.value.active_room_id) {
-          processingStore.setMessage(
-            'info',
-            'Активная комната',
-            'У вас есть активная комната. Нажмите, чтобы перейти.',
-            {
-              label: 'Подключиться',
-              onClick: () => router.push(`/game-create`),
-            },
-          )
+          await roomStore.initRoom()
         }
       }
     } catch (e) {

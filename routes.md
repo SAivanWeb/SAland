@@ -10,22 +10,22 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-    - [Формат ответа](#формат-ответа)
-    - [Auth](#auth)
-    - [User](#user)
-    - [Friends](#friends)
-    - [Themes](#themes)
-    - [Games](#games)
-    - [Админ](#админ)
-    - [Health](#health)
+  - [Формат ответа](#формат-ответа)
+  - [Auth](#auth)
+  - [User](#user)
+  - [Friends](#friends)
+  - [Themes](#themes)
+  - [Games](#games)
+  - [Админ](#админ)
+  - [Health](#health)
 - [WebSocket API](#websocket-api)
-    - [Подключение](#подключение)
-    - [Rooms](#rooms-events)
-    - [Game](#game-events)
-    - [Chat](#chat-events)
-    - [Notifications](#notifications-events)
-    - [AI Generation](#ai-generation-events)
-    - [Main Gateway](#main-gateway-events)
+  - [Подключение](#подключение)
+  - [Rooms](#rooms-events)
+  - [Game](#game-events)
+  - [Chat](#chat-events)
+  - [Notifications](#notifications-events)
+  - [AI Generation](#ai-generation-events)
+  - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -302,7 +302,7 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 ---
 
 #### GET `/user/search`
-Поиск пользователей по имени.
+Поиск пользователей по имени. Текущий пользователь исключается из результатов.
 
 **Query Parameters:**
 ```typescript
@@ -803,6 +803,7 @@ const socket = io('ws://localhost:3000', {
 ```typescript
 {
   user_id: string;
+  name: string | null;        // Имя покинувшего игрока
   new_owner_id?: string;      // Если владелец сменился
   kicked: boolean;
   disconnected: boolean;
@@ -1608,11 +1609,11 @@ Array<ChatMessage>
 {
   id: string;
   type: 'friend_request'
-  | 'friend_accepted'
-  | 'game_invite'
-  | 'game_invite_accepted'
-  | 'game_invite_rejected'
-  | 'game_invite_expired';
+      | 'friend_accepted'
+      | 'game_invite'
+      | 'game_invite_accepted'
+      | 'game_invite_rejected'
+      | 'game_invite_expired';
   from_user_id: string;
   from_user_name: string;
   to_user_id: string;
@@ -1858,8 +1859,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-    | 'game_starting' | 'game_started' | 'game_ended'
-    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+          | 'game_starting' | 'game_started' | 'game_ended'
+          | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

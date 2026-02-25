@@ -15,16 +15,24 @@ interface Message {
 }
 
 export const useProcessingStore = defineStore('useProcessingStore', () => {
+
   const loading = ref<boolean>(false);
+
   const message = ref<Message>({
     type: '',
     title: '',
     message: '',
     action: null,
   })
+
   const showNotification = ref<boolean>(false);
 
-  const startLoading= () => {
+  const activeRoomNotification = ref({
+    name: '',
+    role: ''
+  })
+
+  const startLoading = () => {
     loading.value = true;
   };
 
@@ -44,6 +52,16 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     message.value.action = null
   }
 
+  const setActiveRoom = (name: string, role: string) => {
+    activeRoomNotification.value.name = name
+    activeRoomNotification.value.role = role
+  }
+
+  const clearActiveRoom = () => {
+    activeRoomNotification.value.name = ''
+    activeRoomNotification.value.role = ''
+  }
+
   return {
     showNotification,
     loading,
@@ -52,5 +70,8 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     message,
     setMessage,
     clearMessage,
+    activeRoomNotification,
+    setActiveRoom,
+    clearActiveRoom
   }
 })

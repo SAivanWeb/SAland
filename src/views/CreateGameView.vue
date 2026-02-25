@@ -173,11 +173,11 @@
 import MainSelect from '@/components/ui/select/MainSelect.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { type RoomUpdateParamsPayload, useWebSocket } from '@/api'
-import type { RoomState } from '@/api/modules/types'
 import { NTabs, NTabPane, NIcon } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
 import { useRouter } from 'vue-router'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import { AddCircle } from '@vicons/ionicons5'
@@ -185,6 +185,9 @@ import { AddCircle } from '@vicons/ionicons5'
 const router = useRouter()
 const ws = useWebSocket()
 const processingStore = useProcessingStore()
+const roomStore = useRoomStore()
+
+const room = computed(() => roomStore.room)
 
 const gamePlayers = ref<number>(2)
 const answerTime = ref<number>()
@@ -201,8 +204,6 @@ const emptySlots = computed(() => {
   if (room.value) return gamePlayers.value - room.value.players.length
   return 0
 })
-
-const room = ref<RoomState | null>(null)
 
 const isThemeComplete = computed(() => room.value?.theme?.questions_loaded === 80)
 
@@ -246,6 +247,26 @@ const roomParams = computed<RoomUpdateParamsPayload>(() => ({
 }))
 
 const unsubs: (() => void)[] = []
+
+watch(() => roomStore.room, (data) => {
+  if (!data) return
+  gamePlayers.value = data.players_count
+  answerTime.value = data.time_per_question
+  turnTime.value = data.time_per_turn
+  timer.value = data.game_timer ?? undefined
+  if (data.theme) {
+    if (data.theme.upload_method === 'manual') activeTab.value = 'manual'
+    else if (data.theme.upload_method === 'ai') activeTab.value = 'generate'
+    if (data.theme.name) {
+      if (activeTab.value === 'manual') manualThemeName.value = data.theme.name
+      else generateThemeName.value = data.theme.name
+    }
+    questionUploaded.value = data.theme.questions_loaded
+    showProcessUpload.value = data.theme.name !== ''
+  } else {
+    resetThemeState()
+  }
+}, { immediate: true })
 
 function getPrompt() {
   try {
@@ -310,28 +331,9 @@ watch(roomParams, (newParams) => {
 
 onMounted(() => {
   unsubs.push(
-    ws.rooms.onState((data) => {
-      room.value = data
-      gamePlayers.value = data.players_count
-      answerTime.value = data.time_per_question
-      turnTime.value = data.time_per_turn
-      timer.value = data.game_timer ?? undefined
-      if (data.theme) {
-        if (data.theme.upload_method === 'manual') activeTab.value = 'manual'
-        else if (data.theme.upload_method === 'ai') activeTab.value = 'generate'
-        if (data.theme.name) {
-          if (activeTab.value === 'manual') manualThemeName.value = data.theme.name
-          else generateThemeName.value = data.theme.name
-        }
-        questionUploaded.value = data.theme.questions_loaded
-        showProcessUpload.value = data.theme.name !== ''
-      } else {
-        resetThemeState()
-      }
-    }),
     ws.rooms.onThemeDeleted(() => {
-      if (room.value) {
-        room.value = { ...room.value, theme: null }
+      if (roomStore.room) {
+        roomStore.room = { ...roomStore.room, theme: null }
       }
       resetThemeState()
     }),
@@ -389,9 +391,28 @@ onMounted(() => {
         'Остановка комнаты',
         'Комната неактивна, ожидание игроков остановлено.',
       )
+    }),
+    ws.rooms.onPlayerJoined((data) => {
+      processingStore.setMessage(
+        'info',
+        `${data.player.name}`,
+        `Пользователь присоединился к комнате`,
+      )
+      roomStore.initRoom()
+    }),
+    ws.rooms.onPlayerLeft((data) => {
+      processingStore.setMessage(
+        'info',
+        `${data.name}`,
+        `Пользователь покинул комнату`,
+      )
+      roomStore.initRoom()
+    }),
+    ws.rooms.onThemeProgress(() => {
+      roomStore.initRoom()
     })
   )
-  ws.rooms.getState()
+  roomStore.initRoom()
 })
 
 onUnmounted(() => {

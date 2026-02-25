@@ -1,8 +1,8 @@
 <template>
   <GameStart placement="games" />
   <div class="games">
-    <div class="games__waiting">
-      <GameWaiting role="user" />
+    <div v-if="currentRoom" class="games__waiting">
+      <GameWaiting :room="currentRoom" />
     </div>
     <div class="games__content">
       <div class="games__saved">
@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import PopularGameCard from '@/components/ui/card/PopularGameCard.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import GameStart from '@/components/games/GameStart.vue'
 import GameWaiting from '@/components/games/GameWaiting.vue'
 import { api, type Theme } from '@/api'
@@ -43,9 +43,13 @@ import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { NScrollbar } from 'naive-ui'
 import { isErrorMessage } from '@/utils/error.ts'
 import ActiveRoomsList from '@/components/rooms/ActiveRoomsList.vue'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
 
+const roomStore = useRoomStore()
 const processingStore = useProcessingStore()
 const search = ref<string>('')
+
+const currentRoom = computed(() => roomStore.room)
 
 const popularGames = ref<Theme[]>([])
 

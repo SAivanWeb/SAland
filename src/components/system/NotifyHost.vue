@@ -13,12 +13,12 @@ watch(
   () =>
     [store.message.type, store.message.title, store.message.message, store.message.action] as const,
   ([type, title, text, action]) => {
-    if (!text) return
+    if (!type) return
 
     const options: Record<string, any> = {
       title: title,
       description: text,
-      duration: 3000,
+      duration: 3500,
       keepAliveOnHover: true,
       class: `notify--${type}`,
     }

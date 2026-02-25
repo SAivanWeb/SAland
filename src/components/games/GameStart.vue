@@ -11,22 +11,21 @@
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useRouter } from 'vue-router'
-import { useWebSocket } from '@/api'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
 
-const ws = useWebSocket()
+const roomStore = useRoomStore()
+const router = useRouter()
 
 interface Props {
   placement: string
 }
 const props = defineProps<Props>()
 
-const router = useRouter()
-
 const goTo = () => {
   if (props.placement === 'home') {
     router.push('/auth')
   } else {
-    ws.rooms.create()
+    roomStore.createRoom()
     router.push('/game-create')
   }
 }

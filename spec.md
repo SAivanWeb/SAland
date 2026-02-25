@@ -424,7 +424,7 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 
 ### GET `user/search`
 
-> Поиск пользователей
+> Поиск пользователей. Текущий пользователь исключается из результатов.
 
 **Query params:**
 - `q` — строка поиска (минимум 2 символа)
@@ -1229,12 +1229,14 @@ WAITING (после активации)
 ```json
 {
   "user_id": "string",
+  "name": "string | null",
   "new_owner_id": "string?",
   "kicked": "boolean?",
   "disconnected": "boolean?"
 }
 ```
 
+> `name` — имя игрока, который покинул комнату.
 > `new_owner_id` — если владелец вышел, права передаются **случайному** игроку из оставшихся.
 > `kicked: true` — если игрок был исключён владельцем.
 > `disconnected: true` — если игрок отключился.

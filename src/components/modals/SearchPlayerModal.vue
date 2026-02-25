@@ -51,6 +51,7 @@ import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import ModalContainer from '@/components/template/ModalContainer.vue'
+import { isErrorMessage } from '@/utils/error.ts'
 
 interface Props {
   show: boolean
@@ -90,8 +91,9 @@ async function addFriend(id: string) {
     processingStore.startLoading()
     await api.friends.sendRequest({ user_id: id })
     emit('update:show', false)
+    processingStore.setMessage('success', 'Запрос в друзья', 'Запрос отправлен')
   } catch (e) {
-    console.log(e)
+    if (isErrorMessage(e, 'Friend request already sent')) processingStore.setMessage('error', 'Запрос в друзья', 'Запрос уже был отправлен')
   } finally {
     processingStore.stopLoading()
   }

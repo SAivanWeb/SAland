@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="card__action">
-      <MainButton title="Войти" size="medium" color="yellow" />
+      <MainButton title="Войти" size="medium" color="yellow" @click="join(item.id)"/>
     </div>
   </div>
 </template>
@@ -34,13 +34,18 @@ import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { computed } from 'vue'
 import type { RoomListItem } from '@/api'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
 
 const props = defineProps<{
   item: RoomListItem
 }>()
-const emit = defineEmits()
+const roomStore = useRoomStore()
 
 const emptySlots = computed(() => props.item.players_count - props.item.players.length)
+
+const join = (id: string) => {
+  roomStore.joinRoom(id)
+}
 </script>
 
 <style scoped lang="scss">

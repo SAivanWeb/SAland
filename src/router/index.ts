@@ -30,7 +30,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/game/:id',
+      path: '/game',
       name: 'Game',
       component: () => import('../views/GameView.vue'),
       meta: { requiresAuth: true },

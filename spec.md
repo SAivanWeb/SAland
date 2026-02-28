@@ -34,10 +34,9 @@
 >
 > **Управление активной комнатой (WAITING):**
 > - `room:join` - присоединиться к комнате (по room_id или invite_code)
-> - `room:ready` - переключить статус готовности
 > - `room:kick` - исключить игрока (только владелец)
 > - `room:deactivate` - деактивировать комнату (WAITING → INACTIVE, выгнать всех игроков кроме владельца)
-> - `room:start` - запустить игру (когда все не-владельцы готовы, минимум 2 игрока)
+> - `room:start` - запустить игру (когда набралось players_count игроков)
 >
 > **Утилиты:**
 > - `room:get_state` - получить текущее состояние (для переподключения)
@@ -721,8 +720,7 @@ WAITING (после активации)
   ├─ room:join (разрешено)
   ├─ room:leave (разрешено)
   ├─ room:kick (разрешено)
-  ├─ room:ready (разрешено)
-  ├─ room:start (разрешено) → Игра начинается
+  ├─ room:start (разрешено) → Игра начинается (когда players_count игроков)
   └─ room:deactivate → INACTIVE (все игроки кроме владельца удаляются)
 ```
 
@@ -823,21 +821,6 @@ WAITING (после активации)
 - `NOT_OWNER` — только владелец может исключать
 - `CANNOT_KICK_SELF` — нельзя исключить себя
 - `PLAYER_NOT_IN_ROOM` — целевой игрок не в этой комнате
-
----
-
-#### `room:ready`
-
-> Переключение статуса готовности
-
-```json
-{}
-```
-
-**Ответ:** `room:ready_toggled` отправителю (`{ is_ready: boolean }`), `room:player_ready` всем в комнате
-
-**Ошибки (room:error):**
-- `NOT_IN_ROOM` — пользователь не в комнате
 
 ---
 
@@ -1075,7 +1058,7 @@ WAITING (после активации)
 
 #### `room:start`
 
-> Запуск игры (только владелец, все не-владельцы должны быть готовы, минимум 2 игрока)
+> Запуск игры (только владелец, все слоты должны быть заняты — players_count игроков в комнате)
 
 ```json
 {}
@@ -1087,8 +1070,7 @@ WAITING (после активации)
 - `NOT_IN_ROOM` — пользователь не в комнате
 - `ROOM_NOT_FOUND` — комната не найдена
 - `NOT_OWNER` — только владелец может запустить игру
-- `PLAYERS_NOT_READY` — не все игроки готовы
-- `NOT_ENOUGH_PLAYERS` — нужно минимум 2 игрока
+- `NOT_ENOUGH_PLAYERS` — не набралось players_count игроков
 
 > После `game:starting` асинхронно запускается игра и приходит `game:started`.
 
@@ -1143,8 +1125,7 @@ WAITING (после активации)
     {
       "user_id": "string",
       "name": "string",
-      "color": "#E53935",
-      "is_ready": false
+      "color": "#E53935"
     }
   ],
   "theme": null
@@ -1174,8 +1155,7 @@ WAITING (после активации)
     {
       "user_id": "string",
       "name": "string",
-      "color": "string",
-      "is_ready": "boolean"
+      "color": "string"
     }
   ],
   "theme": {
@@ -1212,8 +1192,7 @@ WAITING (после активации)
   "player": {
     "user_id": "string",
     "name": "string",
-    "color": "string",
-    "is_ready": false
+    "color": "string"
   },
   "current_players": "number",
   "status": "waiting"
@@ -1255,19 +1234,6 @@ WAITING (после активации)
 ```
 
 > `reason`: `"You were kicked by the room owner"`, `"Room was deactivated by owner"` или `"Room was deleted by owner"`
-```
-
----
-
-#### `room:player_ready`
-
-> Игрок переключил готовность (broadcast всем в комнате)
-
-```json
-{
-  "user_id": "string",
-  "is_ready": "boolean"
-}
 ```
 
 ---
@@ -2032,8 +1998,7 @@ WAITING (после активации)
 - `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
 - `INVALID_FORMAT` — не удалось извлечь валидные вопросы из текста
 - `THEME_NAME_REQUIRED` — theme_name обязателен при первой загрузке через raw
-- `PLAYERS_NOT_READY` — не все игроки готовы
-- `NOT_ENOUGH_PLAYERS` — нужно минимум 2 игрока
+- `NOT_ENOUGH_PLAYERS` — не набралось players_count игроков
 - `game_not_found` — игра не найдена
 - `not_your_turn` — не ваш ход
 - `invalid_cell` — недопустимая ячейка (не соседняя / уже занята)
@@ -2301,7 +2266,7 @@ WAITING (после активации)
 
 ```json
 [
-  { "user_id": "uuid", "name": "string", "color": "#E53935", "is_ready": false }
+  { "user_id": "uuid", "name": "string", "color": "#E53935" }
 ]
 ```
 

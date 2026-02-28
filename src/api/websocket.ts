@@ -11,7 +11,6 @@ import type {
   RoomKickPayload,
   RoomPlayerJoinedEvent,
   RoomPlayerLeftEvent,
-  RoomPlayerReadyEvent,
   RoomErrorEvent,
   RoomListItem,
   RoomUpdateParamsPayload,
@@ -236,13 +235,6 @@ class WebSocketClient {
     },
 
     /**
-     * Toggle ready status
-     */
-    toggleReady: (): void => {
-      this.emitOnly('room:ready')
-    },
-
-    /**
      * Start the game (owner only)
      */
     start: (): void => {
@@ -350,20 +342,12 @@ class WebSocketClient {
       return this.on('room:player_left', callback)
     },
 
-    onPlayerReady: (callback: EventCallback<RoomPlayerReadyEvent>): EventUnsubscribe => {
-      return this.on('room:player_ready', callback)
-    },
-
     onLeft: (callback: EventCallback<{ success: true }>): EventUnsubscribe => {
       return this.on('room:left', callback)
     },
 
     onKickSuccess: (callback: EventCallback<{ success: true }>): EventUnsubscribe => {
       return this.on('room:kick_success', callback)
-    },
-
-    onReadyToggled: (callback: EventCallback<{ is_ready: boolean }>): EventUnsubscribe => {
-      return this.on('room:ready_toggled', callback)
     },
 
     onError: (callback: EventCallback<RoomErrorEvent>): EventUnsubscribe => {

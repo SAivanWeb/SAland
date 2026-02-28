@@ -31,7 +31,6 @@ export interface RoomPlayer {
   user_id: string
   name: string
   color: string
-  is_ready: boolean
 }
 
 export interface PlayerAnswer {
@@ -102,11 +101,6 @@ export interface RoomPlayerLeftEvent {
   new_owner_id?: string
   kicked: boolean
   disconnected: boolean
-}
-
-export interface RoomPlayerReadyEvent {
-  user_id: string
-  is_ready: boolean
 }
 
 export interface RoomErrorEvent {
@@ -531,7 +525,6 @@ export type WsErrorCode =
   | 'INVALID_STATUS'
   | 'CANNOT_KICK_SELF'
   | 'PLAYER_NOT_IN_ROOM'
-  | 'PLAYERS_NOT_READY'
   | 'NOT_ENOUGH_PLAYERS'
   | 'ROOM_ALREADY_ACTIVE'
   | 'ROOM_NOT_ACTIVE'

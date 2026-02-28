@@ -98,7 +98,7 @@ export const useRoomStore = defineStore('RoomStore', () => {
   ws.rooms.onKicked((data) => {
     room.value = null
     if (data.reason === 'Room was deactivated by owner' || data.reason === 'Room was deleted by owner') {
-      processingStore.setMessage('info', 'Комната удалена администратором', 'Комната была закрыта владельцем')
+      processingStore.setMessage('info', 'Активвная комната', 'Комната была закрыта владельцем')
     } else {
       processingStore.setMessage('info', 'Вы исключены из комнаты', 'Администратор исключил вас из комнаты')
     }
@@ -109,6 +109,12 @@ export const useRoomStore = defineStore('RoomStore', () => {
       processingStore.setMessage('error', 'Ошибка подключения', 'Вы уже в комнате')
     }
   })
+
+  ws.game.onStarting(() => {
+    processingStore.setMessage('info', 'Запуск игры', 'Игра запускается, ожидайте')
+    router.push('/game')
+  })
+
 
   return { room, createRoom, initRoom, joinRoom, leaveRoom }
 })

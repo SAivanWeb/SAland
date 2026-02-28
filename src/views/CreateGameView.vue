@@ -10,6 +10,11 @@
         <div class="create__card-content">
           <div v-if="room.status !== 'inactive'" class="create__card-users">
             <div v-for="player in room.players" :key="player.user_id" class="create__card-user create__card-user--filled">
+              <div v-if="player.user_id !== room.owner_id" class="create__card-user-kick" @click="kickUser(player.user_id)">
+                <n-icon size="16">
+                  <Close/>
+                </n-icon>
+              </div>
               <PlayerIcon :name="player.name" />
             </div>
             <div v-for="n in emptySlots" :key="'empty-' + n" class="create__card-user create__card-user--empty">
@@ -30,6 +35,12 @@
               title="Остановить"
               color="red"
               @click="deactivateRoom"
+            />
+            <MainButton
+              v-if="room.players_count === room.players.length"
+              title="Начать игру"
+              color="green"
+              @click="startGame"
             />
           </div>
         </div>
@@ -78,6 +89,7 @@
             @click="clearTheme"
             size="small"
             color="red"
+            :disabled="room.status === 'waiting'"
           />
         </div>
         <div class="create__card-content">
@@ -102,7 +114,7 @@
                     title="Сгенерировать"
                     size="large"
                     color="blue"
-                    :disabled="!generateThemeName"
+                    :disabled="!generateThemeName || room.status === 'waiting'"
                   />
                 </div>
               </div>
@@ -181,6 +193,7 @@ import { useRoomStore } from '@/stores/useRoomStore.ts'
 import { useRouter } from 'vue-router'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import { AddCircle } from '@vicons/ionicons5'
+import Close from '@/assets/icons/close.vue'
 
 const router = useRouter()
 const ws = useWebSocket()
@@ -321,6 +334,15 @@ function activateRoom() {
 
 function deactivateRoom() {
   ws.rooms.deactivate()
+}
+
+function kickUser(id: string) {
+  ws.rooms.kick({ user_id: id })
+}
+
+function startGame() {
+  ws.rooms.start()
+  router.push('/game')
 }
 
 watch(roomParams, (newParams) => {
@@ -482,12 +504,14 @@ onUnmounted(() => {
     &-row {
       display: flex;
       justify-content: end;
+      gap: 16px;
     }
 
     &-users {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 16px;
+      margin-top: 8px;
     }
 
     &-user {
@@ -496,10 +520,26 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
       &--empty {
         border-radius: 50%;
         border: 2px solid $border;
         background: $background;
+      }
+
+      &-kick{
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: $primary-red;
+        border-radius: 50%;
+        border:  2px solid $border;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
     }
   }

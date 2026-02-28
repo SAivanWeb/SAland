@@ -767,7 +767,6 @@ const socket = io('ws://localhost:3000', {
     user_id: string;
     name: string;
     color: string;
-    is_ready: boolean;
   };
   current_players: number;
   status: 'waiting' | 'ready';
@@ -835,32 +834,6 @@ const socket = io('ws://localhost:3000', {
 - `NOT_OWNER` - Только владелец комнаты может выгонять игроков
 - `CANNOT_KICK_SELF` - Нельзя выгнать самого себя
 - `PLAYER_NOT_IN_ROOM` - Игрок не находится в этой комнате
-
----
-
-#### `room:ready` (emit)
-Переключить готовность.
-
-**Данные:** нет
-
-**Ответ (room:ready_toggled):**
-```typescript
-{
-  is_ready: boolean
-}
-```
-
-**Broadcast (room:player_ready):**
-```typescript
-{
-  user_id: string;
-  is_ready: boolean;
-}
-```
-
-**Ошибки (room:error):**
-- `NOT_IN_ROOM` - Вы не находитесь в комнате
-- `ROOM_NOT_FOUND` - Комната не найдена
 
 ---
 
@@ -1163,7 +1136,7 @@ const socket = io('ws://localhost:3000', {
 ---
 
 #### `room:start` (emit)
-Начать игру (только владелец, все должны быть готовы).
+Начать игру (только владелец, все слоты должны быть заняты).
 
 **Данные:** нет
 
@@ -1178,8 +1151,7 @@ const socket = io('ws://localhost:3000', {
 - `NOT_IN_ROOM` - Вы не находитесь в комнате
 - `ROOM_NOT_FOUND` - Комната не найдена
 - `NOT_OWNER` - Только владелец комнаты может начать игру
-- `PLAYERS_NOT_READY` - Не все игроки готовы
-- `NOT_ENOUGH_PLAYERS` - Нужно минимум 2 игрока для начала
+- `NOT_ENOUGH_PLAYERS` - Не набралось players_count игроков
 
 После этого придёт событие `game:started`.
 
@@ -1859,8 +1831,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-          | 'game_starting' | 'game_started' | 'game_ended'
-          | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+             | 'game_starting' | 'game_started' | 'game_ended'
+             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```
@@ -1948,7 +1920,6 @@ interface RoomPlayer {
   user_id: string;
   name: string;
   color: string;
-  is_ready: boolean;
 }
 ```
 
@@ -1992,8 +1963,7 @@ interface RoomPlayer {
 | `INVALID_STATUS` | Комната не принимает игроков |
 | `CANNOT_KICK_SELF` | Нельзя выгнать самого себя |
 | `PLAYER_NOT_IN_ROOM` | Игрок не в комнате |
-| `PLAYERS_NOT_READY` | Не все игроки готовы |
-| `NOT_ENOUGH_PLAYERS` | Недостаточно игроков |
+| `NOT_ENOUGH_PLAYERS` | Не набралось players_count игроков |
 | `GAME_NOT_FOUND` | Игра не найдена |
 | `GAME_START_FAILED` | Не удалось запустить игру |
 | `GAME_ENDED` | Игра уже завершена |

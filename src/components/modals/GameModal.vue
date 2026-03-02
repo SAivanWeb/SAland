@@ -52,6 +52,7 @@
             :key="index"
             class="modal__answer"
             :class="getAnswerClass(index)"
+            :style="getAnswerStyle(index)"
             @click="onAnswerClick(index)"
           >
             <div class="modal__answer-header">Ответ {{ index + 1 }}</div>
@@ -86,6 +87,7 @@ interface Props {
   defenderAnswerIndex?: number | null
   defenderAnswerCorrect?: boolean
   isBattle?: boolean
+  canAnswer?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -100,6 +102,7 @@ const props = withDefaults(defineProps<Props>(), {
   defenderAnswerIndex: null,
   defenderAnswerCorrect: undefined,
   isBattle: false,
+  canAnswer: true,
 })
 
 const emit = defineEmits<{
@@ -177,23 +180,35 @@ const closingPercentage = computed(() => {
   return (closingRemaining.value / closingTotal.value) * 100
 })
 
-// --- Флаг: пользователь уже ответил ---
-const answered = ref(false)
+// --- Индекс выбранного ответа (null = ещё не ответил) ---
+const selectedAnswerIndex = ref<number | null>(null)
 
 // --- Подсветка ответов ---
 const getAnswerClass = (index: number) => {
-  if (phase.value !== 'result') return {}
-  if (index === props.correctAnswerIndex) return { 'modal__answer--correct': true }
-  const isPlayerWrong = props.playerAnswerIndex === index && props.playerAnswerCorrect === false
-  const isDefenderWrong = props.defenderAnswerIndex === index && props.defenderAnswerCorrect === false
-  if (isPlayerWrong || isDefenderWrong) return { 'modal__answer--wrong': true }
+  if (phase.value === 'result') {
+    if (index === props.correctAnswerIndex) return { 'modal__answer--correct': true }
+    const isPlayerWrong = props.playerAnswerIndex === index && props.playerAnswerCorrect === false
+    const isDefenderWrong = props.defenderAnswerIndex === index && props.defenderAnswerCorrect === false
+    if (isPlayerWrong || isDefenderWrong) return { 'modal__answer--wrong': true }
+    return {}
+  }
+  if (!props.canAnswer) return { 'modal__answer--inactive': true }
+  return {}
+}
+
+// Цвет выбранного ответа в фазе ожидания (батл: показываем свой выбор)
+const getAnswerStyle = (index: number) => {
+  if (phase.value === 'waiting' && index === selectedAnswerIndex.value && props.players.length > 0) {
+    const color = props.players[0].color
+    return { backgroundColor: `${color}30`, borderColor: color }
+  }
   return {}
 }
 
 // --- Клик по ответу ---
 const onAnswerClick = (answerIndex: number) => {
-  if (answered.value || phase.value !== 'question') return
-  answered.value = true
+  if (selectedAnswerIndex.value !== null || phase.value !== 'question' || !props.canAnswer) return
+  selectedAnswerIndex.value = answerIndex
   emit('answerSelected', answerIndex)
   // Модалка НЕ закрывается — ждём game:answer_result от сервера
 }
@@ -213,7 +228,7 @@ watch(
   () => props.isOpen,
   (newValue) => {
     if (newValue) {
-      answered.value = false
+      selectedAnswerIndex.value = null
       closingRemaining.value = 0
       stopClosingCountdown()
       startQuestionTimer()
@@ -355,6 +370,20 @@ onUnmounted(() => {
 
       &:hover {
         background: #fed7d7 !important;
+      }
+    }
+
+    &--inactive {
+      cursor: default;
+
+      &:hover {
+        background: #fff;
+        border-color: $border;
+      }
+
+      &:active {
+        box-shadow: $box-shadow;
+        transform: none;
       }
     }
 

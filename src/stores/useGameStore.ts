@@ -19,6 +19,7 @@ export const useGameStore = defineStore('useGameStore', () => {
   const router = useRouter()
 
   const currentGame = ref<GameStartedEvent>()
+  const currentGameId = ref<string | null>(null)
   const cells = ref<HexCell[]>([])
   const players = ref<GamePlayer[]>([])
   const currentTurn = ref<GameTurnEvent | null>(null)
@@ -30,6 +31,7 @@ export const useGameStore = defineStore('useGameStore', () => {
 
   ws.game.onStarted((data) => {
     currentGame.value = data
+    currentGameId.value = data.game_id
     cells.value = data.cells
     players.value = data.players
     currentTurn.value = null
@@ -112,10 +114,16 @@ export const useGameStore = defineStore('useGameStore', () => {
 
   const clearGameEnded = () => {
     gameEnded.value = null
+    currentGameId.value = null
+  }
+
+  const reconnect = () => {
+    ws.game.reconnect()
   }
 
   return {
     currentGame,
+    currentGameId,
     cells,
     players,
     currentTurn,
@@ -125,5 +133,6 @@ export const useGameStore = defineStore('useGameStore', () => {
     gameEnded,
     gameTimerEndsAt,
     clearGameEnded,
+    reconnect,
   }
 })

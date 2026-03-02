@@ -11,12 +11,14 @@ import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
 import { isErrorMessage } from '@/utils/error'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
+import { useGameStore } from '@/stores/useGameStore.ts'
 
 export const useUserStore = defineStore('UserStore', () => {
   const currentUser = ref<InitResponse | null>(null)
   const processingStore = useProcessingStore()
   const router = useRouter()
   const roomStore = useRoomStore()
+  const gameStore = useGameStore()
 
   async function loginUser(data: LoginRequest) {
     try {
@@ -75,6 +77,10 @@ export const useUserStore = defineStore('UserStore', () => {
       if (window.location.pathname !== '/game-create') {
         if (currentUser.value && currentUser.value.active_room_id) {
           await roomStore.initRoom()
+        }
+        if (currentUser.value && currentUser.value.active_game_id) {
+          router.push('/game')
+          await gameStore.reconnect();
         }
       }
     } catch (e) {

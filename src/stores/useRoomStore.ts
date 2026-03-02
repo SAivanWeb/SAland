@@ -116,6 +116,7 @@ export const useRoomStore = defineStore('RoomStore', () => {
   })
 
   ws.game.onStarting(() => {
+    room.value = null
     processingStore.setMessage('info', 'Запуск игры', 'Игра запускается, ожидайте')
     router.push('/game')
   })

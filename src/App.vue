@@ -28,7 +28,6 @@
 import { NConfigProvider, NScrollbar, NModalProvider, NNotificationProvider } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
-import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import Preloader from '@/components/system/Preloader.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
@@ -47,11 +46,10 @@ const themeOverrides = {
   },
 }
 
-const route = useRoute()
 const processingStore = useProcessingStore()
 
 const isGame = computed(() => {
-  return route.path.includes('/game/')
+  return window.location.pathname === '/game'
 })
 
 const showPreloader = computed(() => {

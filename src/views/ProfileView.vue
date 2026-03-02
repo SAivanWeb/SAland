@@ -251,6 +251,11 @@ onUnmounted(() => {
       font-style: italic;
       color: $text-grey;
     }
+
+    &-item{
+      width: fit-content;
+      cursor: pointer;
+    }
   }
 }
 </style>

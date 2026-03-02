@@ -114,16 +114,14 @@ const canSubmitRating = computed(() => {
 })
 
 const submitRating = async () => {
-  if (!canSubmitRating.value || !gameStore.currentGame) return
+  if (!canSubmitRating.value || !gameStore.currentGameId) return
   isSubmitting.value = true
   try {
-    await api.games.rateTempTheme(gameStore.currentGame.game_id, {
+    await api.games.rateTempTheme(gameStore.currentGameId, {
       rating: selectedRating.value!,
       difficulty_rating: selectedRating.value !== 'skip' ? selectedDifficulty.value! : undefined,
     })
     rated.value = true
-  } catch {
-    // ignore
   } finally {
     isSubmitting.value = false
   }

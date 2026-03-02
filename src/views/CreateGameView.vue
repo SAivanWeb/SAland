@@ -46,7 +46,10 @@
         </div>
       </div>
       <div class="create__card">
-        <h3 class="create__card-title">Параметры</h3>
+        <div class="create__card-header create__card-header_col">
+          <h3 class="create__card-title">Параметры</h3>
+          <p>Укажите все параметры для начала игры</p>
+        </div>
         <div class="create__card-content">
           <div class="create__card-param">
             <MainSelect
@@ -82,7 +85,10 @@
       </div>
       <div class="create__card">
         <div class="create__card-header">
-          <h3 class="create__card-title">Тема</h3>
+          <div class="create__card-header create__card-header_col">
+            <h3 class="create__card-title">Тема</h3>
+            <p>Создайте тему удобным способом</p>
+          </div>
           <MainButton
             v-if="room && room.theme"
             title="Очистить тему"

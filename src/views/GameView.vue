@@ -139,6 +139,7 @@
       :defender-answer-index="gameStore.answerResult?.result.defender_answer?.answer_index ?? null"
       :defender-answer-correct="gameStore.answerResult?.result.defender_answer?.is_correct"
       :is-battle="!!gameStore.currentQuestion?.is_battle"
+      :can-answer="canAnswer"
       @answer-selected="onAnswerSelected"
       @time-up="onQuestionTimeUp"
     />
@@ -182,6 +183,18 @@ const myPlayerIndex = computed(() => {
   return me?.player_index ?? null
 })
 
+// Могу ли я отвечать на текущий вопрос
+const canAnswer = computed(() => {
+  if (!gameStore.currentQuestion || myPlayerIndex.value === null) return false
+  if (gameStore.currentQuestion.is_battle) {
+    return (
+      myPlayerIndex.value === gameStore.currentTurn?.current_player_index ||
+      myPlayerIndex.value === gameStore.currentQuestion.defender_index
+    )
+  }
+  return myPlayerIndex.value === gameStore.currentTurn?.current_player_index
+})
+
 // Мой ли сейчас ход
 const isMyTurn = computed(
   () =>
@@ -213,20 +226,22 @@ const turnTimerData = computed(() => {
   if (!turn) return null
 
   const elapsed = now.value - turn.started_at * 1000
-  const normalRemaining = turn.time_limit - elapsed
+  const timeLimitMs = turn.time_limit * 1000
+  const extraTimeMs = turn.extra_time_remaining * 1000
+  const normalRemaining = timeLimitMs - elapsed
 
   if (normalRemaining > 0) {
     return {
-      percentage: (normalRemaining / turn.time_limit) * 100,
+      percentage: (normalRemaining / timeLimitMs) * 100,
       isExtra: false,
     }
   }
 
-  if (turn.extra_time_remaining > 0) {
-    const extraElapsed = elapsed - turn.time_limit
-    const extraRemaining = Math.max(0, turn.extra_time_remaining - extraElapsed)
+  if (extraTimeMs > 0) {
+    const extraElapsed = elapsed - timeLimitMs
+    const extraRemaining = Math.max(0, extraTimeMs - extraElapsed)
     return {
-      percentage: (extraRemaining / turn.extra_time_remaining) * 100,
+      percentage: (extraRemaining / extraTimeMs) * 100,
       isExtra: true,
     }
   }
@@ -597,7 +612,7 @@ onUnmounted(() => {
 
   &--available {
     &::before {
-      background: $primary-yellow;
+      background: $primary-red;
       filter: brightness(1.1);
     }
   }

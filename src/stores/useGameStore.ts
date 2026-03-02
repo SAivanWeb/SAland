@@ -100,7 +100,7 @@ export const useGameStore = defineStore('useGameStore', () => {
     if (err.code === 'GAME_START_FAILED') {
       processingStore.setMessage('error', 'Запуск игры', 'Ошибка запуска комнаты')
       router.push('/games')
-    } else if (err.code === 'NOT_IN_GAME') {
+    } else if (err.code === 'NOT_IN_GAME' || err.code === 'GAME_NOT_FOUND') {
       router.push('/games')
     }
   })

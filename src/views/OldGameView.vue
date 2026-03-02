@@ -43,7 +43,6 @@
       </div>
     </div>
 
-    <Chat class="game__chat" />
 
     <GameModal
       :is-open="showGameModal"
@@ -278,11 +277,11 @@ const onCellClick = (cell: HexCell) => {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, $second-background 0%, $background 100%);
+  background: radial-gradient(ellipse at center, $primary-green 0%, $primary-green 100%);
 
   &__user {
     padding: 12px 16px;
-    background: rgba($second-background, 0.95);
+    background: rgba($primary-green, 0.95);
     border-radius: $border-radius;
     border: 2px solid;
     width: fit-content;
@@ -318,17 +317,17 @@ const onCellClick = (cell: HexCell) => {
     &-name {
       font-size: 1rem;
       font-weight: 600;
-      color: $text-primary;
+      color: $text-dark;
     }
 
     &-stat {
       font-size: 0.9rem;
       font-weight: 500;
-      color: $text-secondary;
+      color: $text-grey;
 
       span {
         font-weight: 700;
-        color: $primary;
+        color: $text-dark;
       }
     }
   }
@@ -389,13 +388,13 @@ const onCellClick = (cell: HexCell) => {
 
   &--neutral {
     &::before {
-      background: $third-background;
+      background: $primary-green;
       border: 1px solid $border;
     }
 
     &:hover::before {
-      background: $surface-elevated;
-      box-shadow: 0 0 15px $primary-glow;
+      background: $primary-green;
+      box-shadow: 0 0 15px $primary-green;
     }
   }
 
@@ -417,9 +416,18 @@ const onCellClick = (cell: HexCell) => {
 
   &--start {
     &::before {
-      box-shadow: 0 0 20px var(--player-color),
-                  0 0 40px rgba(var(--player-color), 0.3);
+      box-shadow:
+        0 0 20px var(--player-color),
+        0 0 40px rgba(var(--player-color), 0.3);
     }
+  }
+
+  &--available {
+    &::before {
+      box-shadow: 0 0 20px $primary-yellow;
+      filter: brightness(1.3);
+    }
+    cursor: pointer;
   }
 }
 </style>

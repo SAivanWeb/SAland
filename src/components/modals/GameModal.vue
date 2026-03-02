@@ -24,7 +24,7 @@
             :show-indicator="false"
             :height="8"
             :border-radius="4"
-            color="#FFD166"
+            color="#fed787"
           />
         </div>
         <h2 class="modal__question">{{ question }}</h2>
@@ -172,19 +172,18 @@ onUnmounted(() => {
     padding: 8px 16px;
     border-radius: $border-radius;
     border: 2px solid;
-    background: $third-background;
+    background: $background;
+    box-shadow: $box-shadow;
 
     &-indicator {
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      box-shadow: 0 0 8px currentColor;
     }
 
     &-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: $text-primary;
+      @include body-1-bold;
+      color: $text-dark;
     }
   }
 
@@ -197,9 +196,8 @@ onUnmounted(() => {
     &-time {
       font-size: 2.5rem;
       font-weight: 700;
-      color: $primary;
+      color: $text-dark;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 20px $primary-glow;
     }
   }
 
@@ -208,7 +206,7 @@ onUnmounted(() => {
     font-weight: 700;
     text-align: center;
     margin: 0;
-    color: $text-primary;
+    color: $text-dark;
   }
 
   &__answers {
@@ -224,42 +222,43 @@ onUnmounted(() => {
     gap: 8px;
     padding: 16px;
     border-radius: $border-radius;
-    border: 1px solid $border;
+    border: 2px solid $border;
+    box-shadow: $box-shadow;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background: $third-background;
+    transition:
+      background-color 0.15s ease,
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+    background: #fff;
 
     &:hover {
-      border-color: $primary;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px $primary-glow;
-      background: $surface-elevated;
+      background: $primary-yellow;
+      border-color: $border;
+    }
+
+    &:active {
+      box-shadow: 0px 0px 0px $border;
+      transform: translate(1px, 2px);
     }
 
     &-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: $text-muted;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      @include body-2-up;
+      color: $text-grey;
     }
 
     &-body {
+      @include body-1-bold;
       font-size: 18px;
-      font-weight: 700;
       margin: 0;
-      color: $text-primary;
+      color: $text-dark;
     }
   }
 }
 
-// Переопределение стилей NCard для темной темы
 :deep(.n-card) {
-  background: $second-background !important;
-  border: 1px solid $border !important;
-}
-
-:deep(.n-card-header) {
-  border-bottom: 1px solid $border !important;
+  background: $background !important;
+  border: 2px solid $border !important;
+  box-shadow: $box-shadow !important;
+  border-radius: $border-radius !important;
 }
 </style>

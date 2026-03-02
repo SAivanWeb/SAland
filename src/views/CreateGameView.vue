@@ -37,7 +37,7 @@
               @click="deactivateRoom"
             />
             <MainButton
-              v-if="room.players_count === room.players.length"
+              v-if="room.status === 'waiting' && room.players_count === room.players.length"
               title="Начать игру"
               color="green"
               @click="startGame"
@@ -150,7 +150,7 @@
                   <div v-if="showProcessUpload" class="create__manual-upload">
                     <h4>Прогресс создания темы</h4>
                     <p>
-                      Получено вопросов: <span>{{ questionUploaded }}/80</span>
+                      Получено вопросов: <span>{{ questionUploaded }}/{{ room?.theme?.questions_total ?? 80 }}</span>
                     </p>
                     <MainButton
                       title="Загрузить"
@@ -260,6 +260,7 @@ const roomParams = computed<RoomUpdateParamsPayload>(() => ({
 }))
 
 const unsubs: (() => void)[] = []
+let paramsInitialized = false
 
 watch(() => roomStore.room, (data) => {
   if (!data) return
@@ -279,6 +280,7 @@ watch(() => roomStore.room, (data) => {
   } else {
     resetThemeState()
   }
+  paramsInitialized = true
 }, { immediate: true })
 
 function getPrompt() {
@@ -342,11 +344,10 @@ function kickUser(id: string) {
 
 function startGame() {
   ws.rooms.start()
-  router.push('/game')
 }
 
 watch(roomParams, (newParams) => {
-  if (room.value) {
+  if (room.value && paramsInitialized) {
     ws.rooms.updateParams(newParams)
   }
 })
@@ -420,7 +421,6 @@ onMounted(() => {
         `${data.player.name}`,
         `Пользователь присоединился к комнате`,
       )
-      roomStore.initRoom()
     }),
     ws.rooms.onPlayerLeft((data) => {
       processingStore.setMessage(
@@ -428,7 +428,6 @@ onMounted(() => {
         `${data.name}`,
         `Пользователь покинул комнату`,
       )
-      roomStore.initRoom()
     }),
     ws.rooms.onThemeProgress(() => {
       roomStore.initRoom()

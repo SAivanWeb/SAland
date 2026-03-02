@@ -75,6 +75,11 @@ export const useRoomStore = defineStore('RoomStore', () => {
         )
       }
     }
+    else if (window.location.pathname === '/games') {
+      if (room.value && userStore.currentUser?.user.id === room.value.owner_id) {
+        router.push('/game-create')
+      }
+    }
   })
 
   ws.rooms.onPlayerJoined((data) => {

@@ -1597,23 +1597,36 @@ WAITING (после активации)
 
 #### `game:answer_result`
 
-> Результат раунда
+> Результат раунда. После получения фронтенд показывает правильный ответ и результат хода.
+> Следующий `game:turn` придёт автоматически через **5 сек** (соло-захват) или **7 сек** (батл).
 
 ```json
 {
-  "cell_id": "number",
-  "correct_answer": "number",
-  "cell_owner": "number | null",
-  "results": [
-    {
-      "user_id": "string",
-      "answer_index": "number | null",
-      "time_ms": "number",
-      "is_correct": "boolean"
-    }
-  ]
+  "turn_number": "number",
+  "result": {
+    "type": "solo_capture | battle_won | battle_lost | battle_draw | timeout | skip",
+    "turn_number": "number",
+    "player_index": "number",
+    "cell": { "q": "number", "r": "number" },
+    "question_id": "string?",
+    "player_answer": "PlayerAnswer?",
+    "defender_answer": "PlayerAnswer?",
+    "cell_captured": "boolean",
+    "cell_owner_changed_from": "number | null"
+  },
+  "correct_answer_index": "number?",
+  "updated_cells": ["HexCell"],
+  "updated_players": ["GamePlayer"]
 }
 ```
+
+| Поле | Описание |
+|------|----------|
+| `correct_answer_index` | Индекс правильного ответа (0-3). Отсутствует при `skip` (пропуск хода без вопроса). |
+| `player_answer` | Ответ атакующего (есть при соло-захвате и батле) |
+| `defender_answer` | Ответ защитника (только при батле) |
+| `cell_captured` | Захвачена ли клетка в результате хода |
+| `cell_owner_changed_from` | Предыдущий владелец клетки (null если была свободной) |
 
 ---
 

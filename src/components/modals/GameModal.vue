@@ -17,22 +17,41 @@
         </div>
 
         <div class="modal__timer">
-          <div class="modal__timer-time">{{ formattedTime }}</div>
-          <n-progress
-            type="line"
-            :percentage="percentage"
-            :show-indicator="false"
-            :height="8"
-            :border-radius="4"
-            color="#fed787"
-          />
+          <template v-if="phase === 'result'">
+            <div class="modal__timer-label">Закрывается через {{ closingRemaining }} сек</div>
+            <n-progress
+              type="line"
+              :percentage="closingPercentage"
+              :show-indicator="false"
+              :height="8"
+              :border-radius="4"
+              color="#fed787"
+            />
+          </template>
+          <template v-else-if="phase === 'waiting'">
+            <div class="modal__timer-waiting">Ждём ответа соперника...</div>
+          </template>
+          <template v-else>
+            <div class="modal__timer-time">{{ formattedTime }}</div>
+            <n-progress
+              type="line"
+              :percentage="percentage"
+              :show-indicator="false"
+              :height="8"
+              :border-radius="4"
+              color="#fed787"
+            />
+          </template>
         </div>
+
         <h2 class="modal__question">{{ question }}</h2>
+
         <div class="modal__answers">
           <div
             v-for="(answer, index) in answers"
             :key="index"
             class="modal__answer"
+            :class="getAnswerClass(index)"
             @click="onAnswerClick(index)"
           >
             <div class="modal__answer-header">Ответ {{ index + 1 }}</div>
@@ -60,13 +79,27 @@ interface Props {
   question?: string
   answers?: string[]
   players?: Player[]
+  waitingForOpponent?: boolean
+  correctAnswerIndex?: number | null
+  playerAnswerIndex?: number | null
+  playerAnswerCorrect?: boolean
+  defenderAnswerIndex?: number | null
+  defenderAnswerCorrect?: boolean
+  isBattle?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   seconds: 30,
-  question: 'В каком году на Руси появилась картошка?',
-  answers: () => ['1698', '1750', '1812', '1920'],
+  question: '',
+  answers: () => [],
   players: () => [],
+  waitingForOpponent: false,
+  correctAnswerIndex: null,
+  playerAnswerIndex: null,
+  playerAnswerCorrect: undefined,
+  defenderAnswerIndex: null,
+  defenderAnswerCorrect: undefined,
+  isBattle: false,
 })
 
 const emit = defineEmits<{
@@ -80,67 +113,120 @@ const isVisible = computed({
   set: (value) => emit('update:isOpen', value),
 })
 
-const remainingTime = ref(props.seconds)
-let intervalId: number | null = null
+// --- Фаза модалки ---
+const phase = computed(() => {
+  if (props.correctAnswerIndex != null) return 'result'
+  if (props.waitingForOpponent) return 'waiting'
+  return 'question'
+})
 
-// Форматирование времени в MM:SS
+// --- Таймер вопроса ---
+const remainingTime = ref(props.seconds)
+let questionInterval: number | null = null
+
+const startQuestionTimer = () => {
+  stopQuestionTimer()
+  remainingTime.value = props.seconds
+  questionInterval = window.setInterval(() => {
+    remainingTime.value--
+    if (remainingTime.value <= 0) {
+      stopQuestionTimer()
+      emit('timeUp')
+    }
+  }, 1000)
+}
+
+const stopQuestionTimer = () => {
+  if (questionInterval !== null) {
+    clearInterval(questionInterval)
+    questionInterval = null
+  }
+}
+
 const formattedTime = computed(() => {
   const minutes = Math.floor(remainingTime.value / 60)
   const seconds = remainingTime.value % 60
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 })
 
-// Процент оставшегося времени
-const percentage = computed(() => {
-  return (remainingTime.value / props.seconds) * 100
-})
+const percentage = computed(() => (remainingTime.value / props.seconds) * 100)
 
-// Запуск таймера
-const startTimer = () => {
-  stopTimer()
-  remainingTime.value = props.seconds
+// --- Таймер закрытия (после получения результата) ---
+const closingTotal = computed(() => (props.isBattle ? 7 : 5))
+const closingRemaining = ref(0)
+let closingInterval: number | null = null
 
-  intervalId = window.setInterval(() => {
-    remainingTime.value--
-
-    if (remainingTime.value <= 0) {
-      stopTimer()
-      emit('timeUp')
-      isVisible.value = false
-    }
+const startClosingCountdown = () => {
+  stopClosingCountdown()
+  closingRemaining.value = closingTotal.value
+  closingInterval = window.setInterval(() => {
+    if (closingRemaining.value > 0) closingRemaining.value--
+    if (closingRemaining.value <= 0) stopClosingCountdown()
   }, 1000)
 }
 
-// Остановка таймера
-const stopTimer = () => {
-  if (intervalId !== null) {
-    clearInterval(intervalId)
-    intervalId = null
+const stopClosingCountdown = () => {
+  if (closingInterval !== null) {
+    clearInterval(closingInterval)
+    closingInterval = null
   }
 }
 
-// Обработка выбора ответа
-const onAnswerClick = (answerIndex: number) => {
-  emit('answerSelected', answerIndex)
-  stopTimer()
-  isVisible.value = false
+const closingPercentage = computed(() => {
+  if (closingTotal.value === 0) return 0
+  return (closingRemaining.value / closingTotal.value) * 100
+})
+
+// --- Флаг: пользователь уже ответил ---
+const answered = ref(false)
+
+// --- Подсветка ответов ---
+const getAnswerClass = (index: number) => {
+  if (phase.value !== 'result') return {}
+  if (index === props.correctAnswerIndex) return { 'modal__answer--correct': true }
+  const isPlayerWrong = props.playerAnswerIndex === index && props.playerAnswerCorrect === false
+  const isDefenderWrong = props.defenderAnswerIndex === index && props.defenderAnswerCorrect === false
+  if (isPlayerWrong || isDefenderWrong) return { 'modal__answer--wrong': true }
+  return {}
 }
 
-// Следим за открытием модального окна
+// --- Клик по ответу ---
+const onAnswerClick = (answerIndex: number) => {
+  if (answered.value || phase.value !== 'question') return
+  answered.value = true
+  emit('answerSelected', answerIndex)
+  // Модалка НЕ закрывается — ждём game:answer_result от сервера
+}
+
+// --- Переходы между фазами ---
+watch(phase, (newPhase, oldPhase) => {
+  if (oldPhase === 'question' && newPhase !== 'question') {
+    stopQuestionTimer()
+  }
+  if (newPhase === 'result') {
+    startClosingCountdown()
+  }
+})
+
+// --- Открытие/закрытие модалки ---
 watch(
   () => props.isOpen,
   (newValue) => {
     if (newValue) {
-      startTimer()
+      answered.value = false
+      closingRemaining.value = 0
+      stopClosingCountdown()
+      startQuestionTimer()
     } else {
-      stopTimer()
+      stopQuestionTimer()
+      stopClosingCountdown()
     }
   },
 )
 
-// Очистка при размонтировании
 onUnmounted(() => {
-  stopTimer()
+  stopQuestionTimer()
+  stopClosingCountdown()
 })
 </script>
 
@@ -199,6 +285,17 @@ onUnmounted(() => {
       color: $text-dark;
       font-variant-numeric: tabular-nums;
     }
+
+    &-label {
+      @include body-2;
+      color: $text-grey;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &-waiting {
+      @include body-1-bold;
+      color: $text-grey;
+    }
   }
 
   &__question {
@@ -239,6 +336,26 @@ onUnmounted(() => {
     &:active {
       box-shadow: 0px 0px 0px $border;
       transform: translate(1px, 2px);
+    }
+
+    &--correct {
+      background: #c6f6d5 !important;
+      border-color: #48bb78 !important;
+      cursor: default;
+
+      &:hover {
+        background: #c6f6d5 !important;
+      }
+    }
+
+    &--wrong {
+      background: #fed7d7 !important;
+      border-color: #fc8181 !important;
+      cursor: default;
+
+      &:hover {
+        background: #fed7d7 !important;
+      }
     }
 
     &-header {

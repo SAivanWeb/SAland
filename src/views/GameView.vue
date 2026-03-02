@@ -127,11 +127,18 @@
     </div>
 
     <GameModal
-      :is-open="!!gameStore.currentQuestion && !gameStore.waitingForOpponent"
+      :is-open="!!gameStore.currentQuestion"
       :seconds="questionSeconds"
       :question="gameStore.currentQuestion?.question"
       :answers="gameStore.currentQuestion?.answers"
       :players="questionPlayers"
+      :waiting-for-opponent="gameStore.waitingForOpponent"
+      :correct-answer-index="gameStore.answerResult?.correct_answer_index ?? null"
+      :player-answer-index="gameStore.answerResult?.result.player_answer?.answer_index ?? null"
+      :player-answer-correct="gameStore.answerResult?.result.player_answer?.is_correct"
+      :defender-answer-index="gameStore.answerResult?.result.defender_answer?.answer_index ?? null"
+      :defender-answer-correct="gameStore.answerResult?.result.defender_answer?.is_correct"
+      :is-battle="!!gameStore.currentQuestion?.is_battle"
       @answer-selected="onAnswerSelected"
       @time-up="onQuestionTimeUp"
     />
@@ -230,10 +237,13 @@ const turnTimerData = computed(() => {
 // Глобальный игровой таймер (до конца игры)
 const formattedGameTimer = computed(() => {
   if (!gameStore.gameTimerEndsAt) return null
-  const remaining = Math.max(0, gameStore.gameTimerEndsAt * 1000 - now.value)
-  const minutes = Math.floor(remaining / 60000)
+  const remaining = Math.max(0, gameStore.gameTimerEndsAt - now.value)
+  const hours = Math.floor(remaining / 3600000)
+  const minutes = Math.floor((remaining % 3600000) / 60000)
   const seconds = Math.floor((remaining % 60000) / 1000)
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  if (hours > 0) return `${hours} ч ${minutes} мин`
+  if (minutes > 0) return `${minutes} мин ${seconds} сек`
+  return `${seconds} сек`
 })
 
 // Доступные ходы в виде Set для быстрого поиска

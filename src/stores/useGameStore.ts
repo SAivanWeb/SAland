@@ -5,6 +5,7 @@ import {
   type HexCell,
   type GameTurnEvent,
   type GameQuestionEvent,
+  type GameAnswerResultEvent,
   type GameEndedEvent,
   useWebSocket,
 } from '@/api'
@@ -23,6 +24,7 @@ export const useGameStore = defineStore('useGameStore', () => {
   const currentTurn = ref<GameTurnEvent | null>(null)
   const currentQuestion = ref<GameQuestionEvent | null>(null)
   const waitingForOpponent = ref(false)
+  const answerResult = ref<GameAnswerResultEvent | null>(null)
   const gameEnded = ref<GameEndedEvent | null>(null)
   const gameTimerEndsAt = ref<number | null>(null)
 
@@ -41,6 +43,7 @@ export const useGameStore = defineStore('useGameStore', () => {
   ws.game.onTurn((data) => {
     currentTurn.value = data
     currentQuestion.value = null
+    answerResult.value = null
     waitingForOpponent.value = false
   })
 
@@ -61,9 +64,10 @@ export const useGameStore = defineStore('useGameStore', () => {
       const idx = players.value.findIndex((p) => p.player_index === updated.player_index)
       if (idx !== -1) players.value[idx] = updated
     })
-    currentQuestion.value = null
+    answerResult.value = data
     waitingForOpponent.value = false
     currentTurn.value = null
+    // currentQuestion остаётся — модалка закроется сама когда придёт game:turn
   })
 
   ws.game.onPlayerForfeited((data) => {
@@ -86,6 +90,7 @@ export const useGameStore = defineStore('useGameStore', () => {
     gameEnded.value = data
     currentTurn.value = null
     currentQuestion.value = null
+    answerResult.value = null
   })
 
   ws.game.onState((data) => {
@@ -116,6 +121,7 @@ export const useGameStore = defineStore('useGameStore', () => {
     currentTurn,
     currentQuestion,
     waitingForOpponent,
+    answerResult,
     gameEnded,
     gameTimerEndsAt,
     clearGameEnded,

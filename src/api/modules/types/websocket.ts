@@ -292,6 +292,7 @@ export interface TurnResult {
 export interface GameAnswerResultEvent {
   turn_number: number
   result: TurnResult
+  correct_answer_index?: number
   updated_cells: HexCell[]
   updated_players: GamePlayer[]
 }

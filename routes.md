@@ -10,22 +10,22 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-  - [Формат ответа](#формат-ответа)
-  - [Auth](#auth)
-  - [User](#user)
-  - [Friends](#friends)
-  - [Themes](#themes)
-  - [Games](#games)
-  - [Админ](#админ)
-  - [Health](#health)
+    - [Формат ответа](#формат-ответа)
+    - [Auth](#auth)
+    - [User](#user)
+    - [Friends](#friends)
+    - [Themes](#themes)
+    - [Games](#games)
+    - [Админ](#админ)
+    - [Health](#health)
 - [WebSocket API](#websocket-api)
-  - [Подключение](#подключение)
-  - [Rooms](#rooms-events)
-  - [Game](#game-events)
-  - [Chat](#chat-events)
-  - [Notifications](#notifications-events)
-  - [AI Generation](#ai-generation-events)
-  - [Main Gateway](#main-gateway-events)
+    - [Подключение](#подключение)
+    - [Rooms](#rooms-events)
+    - [Game](#game-events)
+    - [Chat](#chat-events)
+    - [Notifications](#notifications-events)
+    - [AI Generation](#ai-generation-events)
+    - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -1344,7 +1344,9 @@ Array<{
 ---
 
 #### `game:answer_result` (listen)
-Результат хода.
+Результат хода. После получения фронтенд показывает правильный ответ и результат, затем ждёт следующего `game:turn`:
+- **Соло-захват** — 5 секунд до следующего хода
+- **Батл** — 7 секунд до следующего хода
 
 **Данные:**
 ```typescript
@@ -1361,6 +1363,7 @@ Array<{
     cell_captured: boolean;
     cell_owner_changed_from: number | null;
   };
+  correct_answer_index?: number; // Индекс правильного ответа (0-3). Отсутствует при skip.
   updated_cells: Array<HexCell>;
   updated_players: Array<GamePlayer>;
 }

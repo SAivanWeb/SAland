@@ -47,7 +47,6 @@ export const useRoomStore = defineStore('RoomStore', () => {
   ws.rooms.onState((data) => {
     const userStore = useUserStore()
     room.value = data
-    console.log('roomStore', room.value)
     if (window.location.pathname !== '/game-create' && window.location.pathname !== '/games') {
       if (room.value && userStore.currentUser?.user.id === room.value.owner_id) {
         const timer = setTimeout(() => onClickTimeout('admin'), 3500)

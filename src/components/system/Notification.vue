@@ -18,7 +18,7 @@
       </div>
     </template>
     <div class="notification__requests">
-      <div v-if="activeRoom.name" class="notification__item">
+      <div v-if="activeRoom.name && !isGameCreate" class="notification__item">
         <span>Активные комнаты:</span>
         <div class="notification__room">
           <div class="notification__room-name">{{ activeRoom.name }}</div>
@@ -62,8 +62,10 @@ import { api, type FriendRequest, useWebSocket } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useUserStore } from '@/stores/useUserStore.ts'
 import MainButton from '@/components/ui/button/MainButton.vue'
-import router from '@/router'
+import { useRouter, useRoute } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
 const processingStore = useProcessingStore()
 const ws = useWebSocket()
 const userStore = useUserStore()
@@ -72,6 +74,10 @@ let unsubNotification: (() => void) | null = null
 const currentUser = computed(() => userStore.currentUser)
 const showPopover = ref(false);
 const requests = ref<FriendRequest[]>()
+
+const isGameCreate = computed(() => {
+  return route.path === '/game-create'
+})
 
 const hasNotification = computed(() => {
   if(requests.value && requests.value.length > 0) {

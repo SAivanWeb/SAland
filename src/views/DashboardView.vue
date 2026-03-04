@@ -12,13 +12,7 @@
         </div>
         <n-scrollbar x-scrollable trigger="none">
           <div class="games__saved-list">
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
-            <PopularGameCard />
+            <PopularGameCard v-for="item in popularGames" :key="item.id" :theme="item" />
           </div>
         </n-scrollbar>
       </div>
@@ -35,7 +29,7 @@
 <script setup lang="ts">
 import PopularGameCard from '@/components/ui/card/PopularGameCard.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import GameStart from '@/components/games/GameStart.vue'
 import GameWaiting from '@/components/games/GameWaiting.vue'
 import { api, type Theme } from '@/api'
@@ -44,12 +38,28 @@ import { NScrollbar } from 'naive-ui'
 import { isErrorMessage } from '@/utils/error.ts'
 import ActiveRoomsList from '@/components/rooms/ActiveRoomsList.vue'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
+import {useUserStore} from '@/stores/useUserStore.ts'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
+const userStore = useUserStore()
 const roomStore = useRoomStore()
 const processingStore = useProcessingStore()
 const search = ref<string>('')
 
-const currentRoom = computed(() => roomStore.room)
+const currentRoom = computed(() =>
+  roomStore.room?.owner_id === userStore.currentUser?.user.id ? null : roomStore.room,
+)
+
+watch(
+  () => roomStore.room,
+  (room) => {
+    if (room?.owner_id === userStore.currentUser?.user.id) {
+      router.push('/game-create')
+    }
+  },
+  { immediate: true },
+)
 
 const popularGames = ref<Theme[]>([])
 

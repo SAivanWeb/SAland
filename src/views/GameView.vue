@@ -16,7 +16,7 @@
     </div>
 
     <!-- Player panels -->
-    <div class="game__user first" v-if="players.length >= 1">
+    <div class="game__user first" v-if="players.length >= 1" :style="{ borderColor: players[0].color }">
       <div class="game__user-header">
         <div class="game__user-name">{{ players[0]?.name }}</div>
         <template v-if="isMyCard(0)">
@@ -39,7 +39,7 @@
       />
     </div>
 
-    <div class="game__user second" v-if="players.length >= 2">
+    <div class="game__user second" v-if="players.length >= 2" :style="{ borderColor: players[1].color }">
       <div class="game__user-header">
         <div class="game__user-name">{{ players[1]?.name }}</div>
         <template v-if="isMyCard(1)">
@@ -62,7 +62,7 @@
       />
     </div>
 
-    <div class="game__user third" v-if="players.length >= 3">
+    <div class="game__user third" v-if="players.length >= 3" :style="{ borderColor: players[2].color }">
       <div class="game__user-header">
         <div class="game__user-name">{{ players[2]?.name }}</div>
         <template v-if="isMyCard(2)">
@@ -85,7 +85,7 @@
       />
     </div>
 
-    <div class="game__user fourth" v-if="players.length >= 4">
+    <div class="game__user fourth" v-if="players.length >= 4" :style="{ borderColor: players[3].color }">
       <div class="game__user-header">
         <div class="game__user-name">{{ players[3]?.name }}</div>
         <template v-if="isMyCard(3)">
@@ -441,22 +441,18 @@ onUnmounted(() => {
     &.first {
       top: 16px;
       left: 16px;
-      border-color: $player-1;
     }
     &.second {
       right: 16px;
       top: 16px;
-      border-color: $player-2;
     }
     &.third {
       bottom: 16px;
       left: 16px;
-      border-color: $player-3;
     }
     &.fourth {
       right: 16px;
       bottom: 16px;
-      border-color: $player-4;
     }
 
     &-header {
@@ -588,22 +584,6 @@ onUnmounted(() => {
     &:hover::before {
       background: $primary-yellow;
     }
-  }
-
-  &--player-0::before {
-    background: $player-1;
-  }
-
-  &--player-1::before {
-    background: $player-2;
-  }
-
-  &--player-2::before {
-    background: $player-3;
-  }
-
-  &--player-3::before {
-    background: $player-4;
   }
 
   &--start::before {

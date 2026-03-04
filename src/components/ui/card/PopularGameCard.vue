@@ -1,26 +1,26 @@
 <template>
   <div class="card">
     <div class="card__header">
-      <h3 class="card__title">Очень длинное название темы</h3>
+      <h3 class="card__title">{{ theme.name }}</h3>
     </div>
     <div class="card__stats">
       <div class="card__stat card__stat--like">
         <n-icon size="18">
           <Like />
         </n-icon>
-        <span>10</span>
+        <span>{{ theme.likes }}</span>
       </div>
       <div class="card__stat card__stat--dislike">
         <n-icon size="18">
           <Dislike />
         </n-icon>
-        <span>2</span>
+        <span>{{ theme.dislikes }}</span>
       </div>
       <div class="card__stat card__stat--rating">
         <n-icon size="24">
           <Difficult />
         </n-icon>
-        <span>средний</span>
+        <span>{{ themeDifficulty(theme.difficulty) }}</span>
       </div>
     </div>
     <div class="card__footer">
@@ -32,10 +32,26 @@
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { NIcon } from 'naive-ui'
-import { Accessibility, Star } from '@vicons/ionicons5'
 import Like from '@/assets/icons/like.vue'
 import Dislike from '@/assets/icons/dislike.vue'
 import Difficult from '@/assets/icons/difficult.vue'
+import type { Theme } from '@/api'
+
+interface Props {
+  theme: Theme
+}
+
+const props = defineProps<Props>()
+
+const themeDifficulty = (type: string) => {
+  if (type === 'hard') {
+    return 'Тяжелая'
+  } else if (type === 'medium') {
+    return 'Средняя'
+  } else if (type === 'easy') {
+    return 'Легкая'
+  }
+}
 </script>
 
 <style scoped lang="scss">

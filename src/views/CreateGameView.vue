@@ -1,23 +1,46 @@
 <template>
   <div v-if="room" class="create">
     <div class="create__container">
-      <h1>Создание игры</h1>
+      <div class="create__header">
+        <h1>Создание игры</h1>
+        <MainButton title="Удалить комнату" color="red" size="small" @click="leaveRoom" />
+      </div>
       <div class="create__card">
         <div class="create__card-header create__card-header_col">
-          <h3 class="create__card-title">{{ room.status === 'inactive' ? 'Запуск комнаты' : 'Ожидание игроков'}}</h3>
-          <p>{{ room.status === 'inactive' ? 'После запуска начнется ожидание игроков' : 'После подключение всех игроков можно начать игру' }}</p>
+          <h3 class="create__card-title">
+            {{ room.status === 'inactive' ? 'Запуск комнаты' : 'Ожидание игроков' }}
+          </h3>
+          <p>
+            {{
+              room.status === 'inactive'
+                ? 'После запуска начнется ожидание игроков'
+                : 'После подключение всех игроков можно начать игру'
+            }}
+          </p>
         </div>
         <div class="create__card-content">
           <div v-if="room.status !== 'inactive'" class="create__card-users">
-            <div v-for="player in room.players" :key="player.user_id" class="create__card-user create__card-user--filled">
-              <div v-if="player.user_id !== room.owner_id" class="create__card-user-kick" @click="kickUser(player.user_id)">
+            <div
+              v-for="player in room.players"
+              :key="player.user_id"
+              class="create__card-user create__card-user--filled"
+            >
+              <div
+                v-if="player.user_id !== room.owner_id"
+                class="create__card-user-kick"
+                @click="kickUser(player.user_id)"
+              >
                 <n-icon size="16">
-                  <Close/>
+                  <Close />
                 </n-icon>
               </div>
               <PlayerIcon :name="player.name" />
             </div>
-            <div v-for="n in emptySlots" :key="'empty-' + n" class="create__card-user create__card-user--empty">
+            <div
+              v-for="n in emptySlots"
+              :key="'empty-' + n"
+              class="create__card-user create__card-user--empty"
+            >
               <n-icon size="24" color="#858585">
                 <AddCircle />
               </n-icon>
@@ -125,6 +148,17 @@
                 </div>
               </div>
             </n-tab-pane>
+            <n-tab-pane name="existing" tab="Готовая тема">
+              <div v-if="room?.theme" class="create__theme-status">
+                <p>
+                  Тема: <span>{{ room.theme.name }}</span>
+                </p>
+                <p>
+                  Вопросов:
+                  <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span>
+                </p>
+              </div>
+            </n-tab-pane>
             <n-tab-pane name="manual" tab="Ручное создание">
               <div class="create__manual">
                 <div v-if="isThemeComplete && activeTab === 'manual'" class="create__theme-status">
@@ -156,7 +190,8 @@
                   <div v-if="showProcessUpload" class="create__manual-upload">
                     <h4>Прогресс создания темы</h4>
                     <p>
-                      Получено вопросов: <span>{{ questionUploaded }}/{{ room?.theme?.questions_total ?? 80 }}</span>
+                      Получено вопросов:
+                      <span>{{ questionUploaded }}/{{ room?.theme?.questions_total ?? 80 }}</span>
                     </p>
                     <MainButton
                       title="Загрузить"
@@ -196,12 +231,13 @@ import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import { AddCircle } from '@vicons/ionicons5'
 import Close from '@/assets/icons/close.vue'
 
 const router = useRouter()
+const route = useRoute()
 const ws = useWebSocket()
 const processingStore = useProcessingStore()
 const roomStore = useRoomStore()
@@ -267,27 +303,34 @@ const roomParams = computed<RoomUpdateParamsPayload>(() => ({
 
 const unsubs: (() => void)[] = []
 let paramsInitialized = false
+let isLeaving = false
+let themeAutoSelected = false
 
-watch(() => roomStore.room, (data) => {
-  if (!data) return
-  gamePlayers.value = data.players_count
-  answerTime.value = data.time_per_question
-  turnTime.value = data.time_per_turn
-  timer.value = data.game_timer ?? undefined
-  if (data.theme) {
-    if (data.theme.upload_method === 'manual') activeTab.value = 'manual'
-    else if (data.theme.upload_method === 'ai') activeTab.value = 'generate'
-    if (data.theme.name) {
-      if (activeTab.value === 'manual') manualThemeName.value = data.theme.name
-      else generateThemeName.value = data.theme.name
+watch(
+  () => roomStore.room,
+  (data) => {
+    if (!data) return
+    gamePlayers.value = data.players_count
+    answerTime.value = data.time_per_question
+    turnTime.value = data.time_per_turn
+    timer.value = data.game_timer ?? undefined
+    if (data.theme) {
+      if (data.theme.upload_method === 'manual') activeTab.value = 'manual'
+      else if (data.theme.upload_method === 'ai') activeTab.value = 'generate'
+      else if (data.theme.upload_method === 'existing') activeTab.value = 'existing'
+      if (data.theme.name) {
+        if (activeTab.value === 'manual') manualThemeName.value = data.theme.name
+        else if (activeTab.value === 'generate') generateThemeName.value = data.theme.name
+      }
+      questionUploaded.value = data.theme.questions_loaded
+      showProcessUpload.value = data.theme.name !== ''
+    } else {
+      resetThemeState()
     }
-    questionUploaded.value = data.theme.questions_loaded
-    showProcessUpload.value = data.theme.name !== ''
-  } else {
-    resetThemeState()
-  }
-  paramsInitialized = true
-}, { immediate: true })
+    paramsInitialized = true
+  },
+  { immediate: true },
+)
 
 function getPrompt() {
   try {
@@ -325,7 +368,12 @@ function clearTheme() {
 }
 
 function activateRoom() {
-  if(!roomParams.value.players_count || !roomParams.value.time_per_turn || !roomParams.value.time_per_question || !roomParams.value.game_timer){
+  if (
+    !roomParams.value.players_count ||
+    !roomParams.value.time_per_turn ||
+    !roomParams.value.time_per_question ||
+    !roomParams.value.game_timer
+  ) {
     processingStore.setMessage('error', 'Запуск комнаты', 'Укажите все игровые параметры')
     return
   }
@@ -352,6 +400,12 @@ function startGame() {
   ws.rooms.start()
 }
 
+function leaveRoom() {
+  isLeaving = true
+  ws.rooms.leave()
+  router.push({ path: '/games', state: { left: true } })
+}
+
 watch(roomParams, (newParams) => {
   if (room.value && paramsInitialized) {
     ws.rooms.updateParams(newParams)
@@ -367,11 +421,10 @@ onMounted(() => {
       resetThemeState()
     }),
     ws.rooms.onError((err) => {
-      console.error('Room error:', err)
+      if (isLeaving) return
       if (err.code === 'INVALID_FORMAT') {
         processingStore.setMessage('error', 'Загрузка вопросов', 'Невалидный формат вопросов')
       } else if (
-        err.code === 'NOT_IN_ROOM' ||
         err.code === 'ROOM_NOT_FOUND' ||
         err.code === 'ALREADY_IN_ROOM'
       ) {
@@ -379,6 +432,19 @@ onMounted(() => {
         router.push('/games')
       } else if (err.code === 'NO_THEME') {
         processingStore.setMessage('error', 'Ошибка запуска', 'Необходимо создать тему')
+      } else if (err.code === 'THEME_NOT_FOUND') {
+        processingStore.setMessage('error', 'Выбор темы', 'Тема не найдена')
+        themeAutoSelected = false
+      } else if (err.code === 'INVALID_QUESTIONS_COUNT') {
+        processingStore.setMessage(
+          'error',
+          'Выбор темы',
+          'Тема содержит неверное количество вопросов',
+        )
+        themeAutoSelected = false
+      } else if (err.code === 'ROOM_ALREADY_ACTIVE') {
+        processingStore.setMessage('error', 'Выбор темы', 'Нельзя изменить тему в активной комнате')
+        themeAutoSelected = false
       }
     }),
     ws.rooms.onThemeGenerationStarted((data) => {
@@ -429,15 +495,26 @@ onMounted(() => {
       )
     }),
     ws.rooms.onPlayerLeft((data) => {
-      processingStore.setMessage(
-        'info',
-        `${data.name}`,
-        `Пользователь покинул комнату`,
-      )
+      processingStore.setMessage('info', `${data.name}`, `Пользователь покинул комнату`)
     }),
     ws.rooms.onThemeProgress(() => {
       roomStore.initRoom()
-    })
+    }),
+    ws.rooms.onCreated(() => {
+      if (route.query.theme && !themeAutoSelected) {
+        themeAutoSelected = true
+        ws.rooms.selectTheme({ theme_id: route.query.theme as string })
+      }
+    }),
+    ws.rooms.onThemeSelected(() => {
+      router.replace({ query: { ...route.query, theme: undefined } })
+      processingStore.setMessage(
+        'success',
+        'Тема выбрана',
+        'Готовая тема успешно подключена к комнате',
+      )
+      roomStore.initRoom()
+    }),
   )
   roomStore.initRoom()
 })
@@ -450,6 +527,12 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .create {
   padding: 24px $side-padding 64px $side-padding;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
   &__container {
     max-width: 1080px;
@@ -480,7 +563,7 @@ onUnmounted(() => {
       justify-content: space-between;
       align-items: center;
 
-      &_col{
+      &_col {
         flex-direction: column;
         gap: 2px;
         align-items: start;
@@ -532,13 +615,13 @@ onUnmounted(() => {
         background: $background;
       }
 
-      &-kick{
+      &-kick {
         position: absolute;
         top: -8px;
         right: -8px;
         background-color: $primary-red;
         border-radius: 50%;
-        border:  2px solid $border;
+        border: 2px solid $border;
         cursor: pointer;
         width: 24px;
         height: 24px;

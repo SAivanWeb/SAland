@@ -945,6 +945,40 @@ const socket = io('ws://localhost:3000', {
 
 ---
 
+#### `room:select_theme` (emit)
+Привязать существующую тему из PostgreSQL к комнате (только владелец, только для INACTIVE комнат).
+
+> Позволяет выбрать уже созданную тему (админская или сохранённая после игры) без генерации.
+> После привязки тема готова к активации (`room:activate`) без дополнительных шагов.
+
+**Данные:**
+```typescript
+{
+  theme_id: string;              // UUID существующей темы
+}
+```
+
+**Ответ (room:state):** RoomState
+
+**Broadcast (room:theme_selected):**
+```typescript
+{
+  theme_id: string;
+  theme_name: string;
+}
+```
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в комнате
+- `ROOM_NOT_FOUND` - Комната не найдена
+- `NOT_OWNER` - Только владелец комнаты может выбирать тему
+- `ROOM_ALREADY_ACTIVE` - Тему можно выбрать только для неактивных комнат
+- `THEME_EXISTS` - В комнате уже есть тема
+- `THEME_NOT_FOUND` - Тема не найдена или неактивна
+- `INVALID_QUESTIONS_COUNT` - Тема должна содержать ровно 80 вопросов
+
+---
+
 #### `room:get_prompt` (emit)
 Получить промпт для ручной генерации через свой AI (только владелец, только для INACTIVE комнат).
 
@@ -1882,7 +1916,7 @@ interface PlayerAnswer {
 ```typescript
 interface ThemeInfo {
   name: string;                              // Название темы
-  upload_method: 'manual' | 'ai' | null;    // Способ загрузки темы
+  upload_method: 'manual' | 'ai' | 'existing' | null;  // Способ загрузки темы
   questions_loaded: number;                  // Количество загруженных вопросов (0-80)
   questions_total: number;                   // Необходимое количество (80)
 }
@@ -1915,6 +1949,7 @@ interface RoomState {
 > **theme.upload_method:**
 > - `'manual'` — тема загружена вручную (через `room:get_prompt` + `room:upload_theme_raw` или `room:upload_theme`)
 > - `'ai'` — тема сгенерирована через AI (через `room:generate_theme`)
+> - `'existing'` — существующая тема из PostgreSQL (через `room:select_theme`)
 > - `null` — способ ещё не определён
 
 ### RoomPlayer
@@ -1947,7 +1982,7 @@ interface RoomPlayer {
 | `UNAUTHORIZED` | Не авторизован |
 | `VALIDATION_ERROR` | Невалидные данные |
 | `USER_NOT_FOUND` | Пользователь не найден |
-| `THEME_NOT_FOUND` | Тема не найдена |
+| `THEME_NOT_FOUND` | Тема не найдена или неактивна |
 | `THEME_EXISTS` | В комнате уже есть тема |
 | `NO_THEME` | В комнате нет темы |
 | `INVALID_QUESTIONS_COUNT` | Тема должна содержать ровно 80 вопросов |

@@ -28,7 +28,7 @@
 > **Создание и настройка (INACTIVE комната):**
 > 1. `room:create` - создать INACTIVE комнату (без темы, статус INACTIVE). Payload: players_count, таймеры, is_private. Без theme_id.
 > 2. `room:update_params` - настроить параметры (players_count, таймеры, приватность). Только для INACTIVE комнат.
-> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) или `room:get_prompt` + `room:upload_theme_raw` (ручной AI) - создать тему внутри комнаты
+> 3. `room:generate_theme` (AI) или `room:upload_theme` (JSON) или `room:get_prompt` + `room:upload_theme_raw` (ручной AI) или `room:select_theme` (существующая тема по ID) - создать/выбрать тему внутри комнаты
 > 4. `room:delete_theme` или `room:clear_uploaded_questions` - удалить тему для пересоздания (если нужно изменить)
 > 5. `room:activate` - активировать комнату (INACTIVE → WAITING), другие игроки могут присоединиться
 >
@@ -713,6 +713,7 @@ INACTIVE (room:create)
   ├─ room:update_params (разрешено)
   ├─ room:generate_theme (разрешено)
   ├─ room:upload_theme (разрешено)
+  ├─ room:select_theme (разрешено)
   ├─ room:delete_theme (разрешено)
   └─ room:activate → WAITING (если тема есть, 80 вопросов)
 
@@ -872,6 +873,32 @@ WAITING (после активации)
 - `NOT_OWNER` — только владелец может генерировать тему
 - `ROOM_ALREADY_ACTIVE` — тему можно создать только для INACTIVE комнат
 - `THEME_EXISTS` — в комнате уже есть тема (удалите через `room:delete_theme`)
+
+---
+
+#### `room:select_theme`
+
+> Привязка существующей темы из PostgreSQL к комнате (только владелец, только INACTIVE комнаты).
+> Позволяет использовать уже созданную тему без генерации. После выбора тема сразу готова к `room:activate`.
+
+```json
+{
+  "theme_id": "string"
+}
+```
+
+> `theme_id`: UUID существующей активной темы (is_active=true, ровно 80 вопросов).
+
+**Ответ:** `room:state` отправителю, `room:theme_selected` broadcast всем в комнате
+
+**Ошибки (room:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `ROOM_NOT_FOUND` — комната не найдена
+- `NOT_OWNER` — только владелец может выбирать тему
+- `ROOM_ALREADY_ACTIVE` — тему можно выбрать только для INACTIVE комнат
+- `THEME_EXISTS` — в комнате уже есть тема (удалите через `room:delete_theme`)
+- `THEME_NOT_FOUND` — тема не найдена или неактивна
+- `INVALID_QUESTIONS_COUNT` — тема должна содержать ровно 80 вопросов
 
 ---
 
@@ -1172,7 +1199,7 @@ WAITING (после активации)
 | `id` | UUID комнаты |
 | `theme` | Информация о теме (null пока тема не создана) |
 | `theme.name` | Название темы |
-| `theme.upload_method` | Способ загрузки: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `null` |
+| `theme.upload_method` | Способ загрузки: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `'existing'` (существующая тема), `null` |
 | `theme.questions_loaded` | Количество загруженных вопросов (0-80) |
 | `theme.questions_total` | Необходимое количество (80) |
 
@@ -1263,6 +1290,19 @@ WAITING (после активации)
 
 ```json
 {
+  "theme_name": "string"
+}
+```
+
+---
+
+#### `room:theme_selected`
+
+> Существующая тема выбрана (broadcast всем в комнате)
+
+```json
+{
+  "theme_id": "string",
   "theme_name": "string"
 }
 ```
@@ -2269,7 +2309,7 @@ WAITING (после активации)
 
 > `theme_id` — null до привязки постоянной темы или для временных тем
 > `theme_name` — null пока тема не создана
-> `upload_method` — способ загрузки темы: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `null` (не задан)
+> `upload_method` — способ загрузки темы: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `'existing'` (существующая тема), `null` (не задан)
 > `status: inactive` — комната в настройке (тема, параметры), не видна в лобби
 > `status: waiting` — комната активна, принимает игроков
 

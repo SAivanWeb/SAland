@@ -24,7 +24,7 @@
       </div>
     </div>
     <div class="card__footer">
-      <MainButton title="Играть" size="small" color="purple" />
+      <MainButton title="Играть" size="small" color="purple" @click="createRoom(theme.id)"/>
     </div>
   </div>
 </template>
@@ -36,12 +36,16 @@ import Like from '@/assets/icons/like.vue'
 import Dislike from '@/assets/icons/dislike.vue'
 import Difficult from '@/assets/icons/difficult.vue'
 import type { Theme } from '@/api'
+import { useRoomStore } from '@/stores/useRoomStore.ts'
+import {useRouter} from 'vue-router'
 
 interface Props {
   theme: Theme
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
+const roomStore = useRoomStore()
 
 const themeDifficulty = (type: string) => {
   if (type === 'hard') {
@@ -51,6 +55,11 @@ const themeDifficulty = (type: string) => {
   } else if (type === 'easy') {
     return 'Легкая'
   }
+}
+
+const createRoom = (id: string) => {
+  roomStore.createRoom()
+  router.push({ path: '/game-create', query: { theme: id }, state: { fresh: true } })
 }
 </script>
 

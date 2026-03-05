@@ -19,6 +19,8 @@ import type {
   RoomThemeGenerationStartedEvent,
   RoomUploadThemePayload,
   RoomThemeUploadedEvent,
+  RoomSelectThemePayload,
+  RoomThemeSelectedEvent,
   RoomActivatedEvent,
   RoomDeactivatedEvent,
   RoomThemeDeletedEvent,
@@ -263,6 +265,14 @@ class WebSocketClient {
     },
 
     /**
+     * Select existing theme from PostgreSQL (owner only, INACTIVE rooms only)
+     */
+    selectTheme: (payload: RoomSelectThemePayload): void => {
+      console.log('select_theme:', payload)
+      this.emitOnly('room:select_theme', payload)
+    },
+
+    /**
      * Activate room (owner only, INACTIVE rooms with theme only)
      */
     activate: (): void => {
@@ -372,6 +382,10 @@ class WebSocketClient {
 
     onThemeUploaded: (callback: EventCallback<RoomThemeUploadedEvent>): EventUnsubscribe => {
       return this.on('room:theme_uploaded', callback)
+    },
+
+    onThemeSelected: (callback: EventCallback<RoomThemeSelectedEvent>): EventUnsubscribe => {
+      return this.on('room:theme_selected', callback)
     },
 
     onActivated: (callback: EventCallback<RoomActivatedEvent>): EventUnsubscribe => {

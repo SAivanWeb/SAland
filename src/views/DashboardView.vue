@@ -54,7 +54,7 @@ const currentRoom = computed(() =>
 watch(
   () => roomStore.room,
   (room) => {
-    if (room?.owner_id === userStore.currentUser?.user.id) {
+    if (room?.owner_id === userStore.currentUser?.user.id && !history.state?.left) {
       router.push('/game-create')
     }
   },
@@ -79,6 +79,7 @@ async function fetchPopularGames() {
 
 onMounted(() => {
   fetchPopularGames()
+  roomStore.initRoom()
 })
 </script>
 

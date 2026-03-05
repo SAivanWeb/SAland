@@ -44,6 +44,10 @@ export const useRoomStore = defineStore('RoomStore', () => {
     ws.rooms.getState()
   }
 
+  ws.rooms.onCreated((data) => {
+    room.value = data
+  })
+
   ws.rooms.onState((data) => {
     const userStore = useUserStore()
     room.value = data
@@ -96,7 +100,6 @@ export const useRoomStore = defineStore('RoomStore', () => {
 
   ws.rooms.onLeft(() => {
     room.value = null
-    processingStore.setMessage('success', 'Вы покинули комнату', 'Вы успешно вышли из комнаты')
   })
 
   ws.rooms.onKicked((data) => {

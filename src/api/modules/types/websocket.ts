@@ -46,7 +46,7 @@ export interface PlayerAnswer {
 
 export type RoomStatus = 'inactive' | 'waiting' | 'ready'
 
-export type ThemeUploadMethod = 'manual' | 'ai' | null
+export type ThemeUploadMethod = 'manual' | 'ai' | 'existing' | null
 
 export interface ThemeInfo {
   name: string
@@ -165,6 +165,16 @@ export interface RoomUploadThemePayload {
 }
 
 export interface RoomThemeUploadedEvent {
+  theme_name: string
+}
+
+// Room select existing theme
+export interface RoomSelectThemePayload {
+  theme_id: string
+}
+
+export interface RoomThemeSelectedEvent {
+  theme_id: string
   theme_name: string
 }
 

@@ -26,7 +26,7 @@ const goTo = () => {
     router.push('/auth')
   } else {
     roomStore.createRoom()
-    router.push('/game-create')
+    router.push({ path: '/game-create', state: { fresh: true } })
   }
 }
 </script>

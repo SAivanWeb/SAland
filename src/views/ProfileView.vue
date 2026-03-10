@@ -6,7 +6,7 @@
         <div class="profile__user">
           <PersonCircle class="profile__user-avatar" />
           <h2 class="profile__user-name">{{ profile.name }}</h2>
-          <MainButton title="Редактировать" size="large" color="green" />
+          <MainButton title="Редактировать" size="large" color="green" @click="showEditProfile = true" />
         </div>
         <div class="profile__info">
           <div class="profile__stats">
@@ -59,6 +59,7 @@
 
   <SearchPlayerModal v-model:show="showSearch" />
   <UserProfileModal v-if="selectedUser" v-model:show="showProfile" :user="selectedUser" @deleted="fetchFriends" />
+  <EditProfileModal v-model:show="showEditProfile" @updated="fetchProfile" />
 </template>
 
 <script setup lang="ts">
@@ -70,6 +71,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import SearchPlayerModal from '@/components/modals/SearchPlayerModal.vue'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import UserProfileModal from '@/components/modals/UserProfileModal.vue'
+import EditProfileModal from '@/components/modals/EditProfileModal.vue'
 import { useWebSocket } from '@/api'
 
 const ws = useWebSocket()
@@ -78,6 +80,7 @@ const profile = ref<UserProfile>()
 const friends = ref<Friend[]>([])
 const showSearch = ref<boolean>(false)
 const showProfile = ref<boolean>(false)
+const showEditProfile = ref<boolean>(false)
 const selectedUser = ref<PublicUserProfile>()
 
 async function fetchProfile() {

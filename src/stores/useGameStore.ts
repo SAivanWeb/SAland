@@ -28,8 +28,14 @@ export const useGameStore = defineStore('useGameStore', () => {
   const answerResult = ref<GameAnswerResultEvent | null>(null)
   const gameEnded = ref<GameEndedEvent | null>(null)
   const gameTimerEndsAt = ref<number | null>(null)
+  const isStarting = ref(false)
+
+  ws.game.onStarting(() => {
+    isStarting.value = true
+  })
 
   ws.game.onStarted((data) => {
+    isStarting.value = false
     currentGame.value = data
     currentGameId.value = data.game_id
     cells.value = data.cells
@@ -132,6 +138,7 @@ export const useGameStore = defineStore('useGameStore', () => {
     answerResult,
     gameEnded,
     gameTimerEndsAt,
+    isStarting,
     clearGameEnded,
     reconnect,
   }

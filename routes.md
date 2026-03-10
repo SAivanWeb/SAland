@@ -335,6 +335,45 @@ Rate limit: 30 запросов / минуту для всех auth endpoints.
 
 ---
 
+#### DELETE `/user/account`
+Удаление аккаунта текущего пользователя. Каскадно удаляет все связанные данные (refresh токены, статистику, друзей, жалобы). Очищает Redis-ключи активной комнаты и игры.
+
+**Response (204):** No Content
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
+
+---
+
+#### POST `/user/report`
+Пожаловаться на другого пользователя.
+
+**Request Body:**
+```typescript
+{
+  reported_user_id: string;   // UUID пользователя
+  reason: string;             // 10-1000 символов
+}
+```
+
+**Response (201):**
+```typescript
+{
+  report_id: string;
+}
+```
+
+**Ошибки:**
+- `400` - Нельзя пожаловаться на себя / валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `404` - Пользователь не найден
+- `409` - Жалоба на этого пользователя уже была отправлена
+- `429` - Превышен лимит запросов
+
+---
+
 ### Friends
 
 #### GET `/user/friends`
@@ -798,12 +837,13 @@ const socket = io('ws://localhost:3000', {
 **Ошибки (room:error):**
 - `NOT_IN_ROOM` - Вы не находитесь в комнате
 
-**Broadcast (room:player_left):**
+> **Поведение при выходе владельца:** комната **удаляется полностью** (статус INACTIVE или WAITING). Все оставшиеся игроки получают `room:kicked` с причиной `"Room was deleted by owner"`. Событие `room:player_left` в этом случае **не отправляется**.
+
+**Broadcast (room:player_left):** *(только при выходе обычного игрока)*
 ```typescript
 {
   user_id: string;
   name: string | null;        // Имя покинувшего игрока
-  new_owner_id?: string;      // Если владелец сменился
   kicked: boolean;
   disconnected: boolean;
 }
@@ -1868,8 +1908,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-             | 'game_starting' | 'game_started' | 'game_ended'
-             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+    | 'game_starting' | 'game_started' | 'game_ended'
+    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

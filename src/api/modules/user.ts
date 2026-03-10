@@ -1,6 +1,6 @@
 // User module
 
-import { get, put } from '../network'
+import { get, put, post, del } from '../network'
 import type {
   InitResponse,
   UserProfile,
@@ -9,6 +9,8 @@ import type {
   UpdateProfileResponse,
   SearchUsersParams,
   SearchUsersResponse,
+  ReportUserRequest,
+  ReportUserResponse,
 } from './types'
 
 export const user = {
@@ -45,5 +47,19 @@ export const user = {
    */
   async search(params: SearchUsersParams): Promise<SearchUsersResponse> {
     return get<SearchUsersResponse>('/user/search', { params })
+  },
+
+  /**
+   * Report another user
+   */
+  async report(data: ReportUserRequest): Promise<ReportUserResponse> {
+    return post<ReportUserResponse>('/user/report', data)
+  },
+
+  /**
+   * Delete current user's account (cascades all related data)
+   */
+  async deleteAccount(): Promise<void> {
+    return del<void>('/user/account')
   },
 }

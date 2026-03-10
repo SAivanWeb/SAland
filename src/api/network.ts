@@ -103,6 +103,12 @@ export class ApiRequestError extends Error {
   }
 }
 
+function redirectToError(): void {
+  if (window.location.pathname !== '/error') {
+    window.location.href = '/error'
+  }
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return {} as T
@@ -148,7 +154,18 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
     fetchOptions.body = JSON.stringify(body)
   }
 
-  let response = await fetch(url, fetchOptions)
+  let response: Response
+  try {
+    response = await fetch(url, fetchOptions)
+  } catch {
+    redirectToError()
+    throw new ApiRequestError(0, 'Network error')
+  }
+
+  if (response.status >= 500) {
+    redirectToError()
+    throw new ApiRequestError(response.status, 'Server error')
+  }
 
   // Handle 401 - try to refresh token and retry
   if (response.status === 401 && withAuth) {

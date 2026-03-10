@@ -3,12 +3,12 @@
     <n-notification-provider>
       <n-modal-provider>
         <div class="sota">
-          <HeaderBar v-if="!isGame" />
+          <HeaderBar v-if="!isGame && !isError" />
           <n-scrollbar class="scrollbar">
             <div class="main" :class="{ main_game: isGame }">
               <router-view />
             </div>
-            <FooterBar v-if="!isGame" />
+            <FooterBar v-if="!isGame && !isError" />
           </n-scrollbar>
         </div>
         <div class="decorations">
@@ -19,6 +19,8 @@
         </div>
         <Preloader v-show="showPreloader" class="preloader" />
         <NotifyHost />
+
+        <ReportModal v-model:show="showReport" :user="reportedUser" />
       </n-modal-provider>
     </n-notification-provider>
   </n-config-provider>
@@ -28,10 +30,12 @@
 import { NConfigProvider, NScrollbar, NModalProvider, NNotificationProvider } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Preloader from '@/components/system/Preloader.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import NotifyHost from '@/components/system/NotifyHost.vue'
+import ReportModal from '@/components/modals/ReportModal.vue'
+import { useRoute } from 'vue-router'
 
 const themeOverrides = {
   common: {
@@ -47,18 +51,30 @@ const themeOverrides = {
 }
 
 const processingStore = useProcessingStore()
+const route = useRoute()
 
-const isGame = computed(() => {
-  return window.location.pathname === '/game'
-})
+const isGame = computed(() => route.path === '/game')
 
 const showPreloader = computed(() => {
   return processingStore.loading
 })
+
+const showReport = ref<boolean>(false)
+const reportedUser = computed(() => {
+  return processingStore.reportedUser
+})
+
+watch(reportedUser, (newVal) => {
+  if (newVal) {
+    showReport.value = true
+  }
+})
+
+const isError = computed(() => route.path === '/error')
 </script>
 
 <style lang="scss">
-.sota{
+.sota {
   position: relative;
   z-index: 2;
 }

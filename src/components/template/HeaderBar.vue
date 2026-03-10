@@ -1,7 +1,7 @@
 <template>
   <div class="header">
     <div class="header__container">
-      <div class="header__logo"></div>
+      <div class="header__logo" @click="toMain"></div>
       <div class="header__nav">
         <MainButton
           v-if="!isAuth && !isAuthPage"
@@ -10,7 +10,7 @@
           color="green"
           @click="toAuth"
         />
-        <Notification v-if="!isMainPage && !isAuthPage"/>
+        <Notification v-if="!isMainPage && !isAuthPage" />
         <Menu v-if="!isMainPage && !isAuthPage" />
       </div>
     </div>
@@ -45,6 +45,10 @@ const isMainPage = computed(() => {
 const toAuth = () => {
   router.push('/auth')
 }
+
+const toMain = () => {
+  router.push('/')
+}
 </script>
 
 <style lang="scss">
@@ -74,6 +78,14 @@ const toAuth = () => {
     display: flex;
     align-items: center;
     gap: 24px;
+  }
+
+  &__logo{
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    background: $text-dark;
+    border-radius: 50%;
   }
 }
 </style>

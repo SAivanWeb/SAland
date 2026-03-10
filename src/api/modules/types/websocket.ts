@@ -97,8 +97,7 @@ export interface RoomPlayerJoinedEvent {
 
 export interface RoomPlayerLeftEvent {
   user_id: string
-  name: string
-  new_owner_id?: string
+  name: string | null
   kicked: boolean
   disconnected: boolean
 }

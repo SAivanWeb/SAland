@@ -6,11 +6,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/123',
-      name: '123',
-      component: () => import('../views/OldGameView.vue'),
-    },
-    {
       path: '/',
       name: 'Home',
       component: () => import('../views/HomeView.vue'),
@@ -46,12 +41,27 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/instruction',
+      name: 'Instruction',
+      component: () => import('../views/InstructionView.vue'),
+    },
+    {
+      path: '/user-politic',
+      name: 'Politic',
+      component: () => import('../views/UserPoliticView.vue'),
+    },
+    {
+      path: '/error',
+      name: 'Error',
+      component: () => import('../views/ErrorView.vue'),
+    },
   ],
 })
 
 let isInitialized = false
 
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to) => {
   const userStore = useUserStore()
 
   // Инициализация при первом переходе

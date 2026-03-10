@@ -84,6 +84,7 @@ const innerShow = computed({
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+
     &-item {
       width: 100%;
       padding: 8px;
@@ -100,35 +101,6 @@ const innerShow = computed({
         @include body-1-bold;
         text-align: center;
       }
-    }
-  }
-
-  &__instruction{
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    &-divider {
-      margin: 0 auto;
-      width: 90%;
-      border-top: 1px solid $text-grey;
-    }
-
-    &-additional {
-      color: $text-grey;
-    }
-
-    &-fields{
-      display: flex;
-      gap: 12px;
-    }
-
-    & button{
-      width: fit-content;
-    }
-
-    &-save{
-      margin-left: auto;
     }
   }
 }

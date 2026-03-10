@@ -79,3 +79,12 @@ export interface SearchUsersResponse {
   users: SearchUserResult[]
   total: number
 }
+
+export interface ReportUserRequest {
+  reported_user_id: string
+  reason: string
+}
+
+export interface ReportUserResponse {
+  report_id: string
+}

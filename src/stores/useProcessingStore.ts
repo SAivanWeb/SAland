@@ -14,6 +14,11 @@ interface Message {
   action?: MessageAction | null
 }
 
+interface ReportedUser {
+  id: string
+  name: string
+}
+
 export const useProcessingStore = defineStore('useProcessingStore', () => {
 
   const loading = ref<boolean>(false);
@@ -23,6 +28,11 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     title: '',
     message: '',
     action: null,
+  })
+
+  const reportedUser = ref<ReportedUser>({
+    id: '',
+    name: '',
   })
 
   const showNotification = ref<boolean>(false);
@@ -62,6 +72,16 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     activeRoomNotification.value.role = ''
   }
 
+  const setReport = (payload: ReportedUser)=> {
+    reportedUser.value.name = payload.name
+    reportedUser.value.id = payload.id
+  }
+
+  const clearReport = () => {
+    reportedUser.value.name = ''
+    reportedUser.value.id = ''
+  }
+
   return {
     showNotification,
     loading,
@@ -72,6 +92,9 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     clearMessage,
     activeRoomNotification,
     setActiveRoom,
-    clearActiveRoom
+    clearActiveRoom,
+    reportedUser,
+    setReport,
+    clearReport,
   }
 })

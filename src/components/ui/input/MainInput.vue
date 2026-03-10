@@ -1,7 +1,16 @@
 <template>
   <div class="input">
     <label v-if="label" :for="name">{{ label }}</label>
+    <textarea
+      v-if="fieldType === 'textarea'"
+      class="input__field input__field--textarea"
+      v-model="localValue"
+      :name="name"
+      :placeholder="placeholder"
+      :style="height ? { height: `${height}px` } : {}"
+    />
     <input
+      v-else
       class="input__field"
       v-model="localValue"
       :name="name"
@@ -23,7 +32,8 @@ interface Props {
   label?: string
   modelValue: string
   size?: 'small' | 'medium' | 'large'
-  fieldType?: 'text' | 'password'
+  fieldType?: 'text' | 'password' | 'textarea'
+  height?: number
 }
 const props = withDefaults(defineProps<Props>(), {
   size: 'large',
@@ -72,6 +82,11 @@ watch(localValue, (val) => {
 
     &:focus-visible {
       border-color: $text-dark;
+    }
+
+    &--textarea {
+      resize: none;
+      width: 100%;
     }
   }
 

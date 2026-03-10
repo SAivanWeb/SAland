@@ -1,5 +1,7 @@
 <template>
   <div class="game">
+    <Chat class="game__chat" />
+
     <!-- Global game timer -->
     <div v-if="formattedGameTimer !== null" class="game__game-timer">
       До конца: <span>{{ formattedGameTimer }}</span>
@@ -12,22 +14,43 @@
       :style="{ borderColor: currentTurnPlayer.color }"
     >
       <span class="game__turn-label">Ходит:</span>
-      <span class="game__turn-name" :style="{ color: currentTurnPlayer.color }">{{ currentTurnPlayer.name }}</span>
+      <span class="game__turn-name" :style="{ color: currentTurnPlayer.color }">{{
+        currentTurnPlayer.name
+      }}</span>
     </div>
 
     <!-- Player panels -->
-    <div class="game__user first" v-if="players.length >= 1" :style="{ borderColor: players[0].color }">
+    <div
+      class="game__user first"
+      v-if="players.length >= 1"
+      :style="{ borderColor: players[0].color }"
+    >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[0]?.name }}</div>
         <template v-if="isMyCard(0)">
-          <button v-if="!forfeitConfirming" class="game__forfeit-btn" @click="forfeitConfirming = true">Сдаться</button>
+          <button
+            v-if="!forfeitConfirming"
+            class="game__forfeit-btn"
+            @click="forfeitConfirming = true"
+          >
+            Сдаться
+          </button>
           <div v-else class="game__forfeit-confirm">
-            <button class="game__forfeit-btn game__forfeit-btn--cancel" @click="forfeitConfirming = false">Нет</button>
-            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">Да</button>
+            <button
+              class="game__forfeit-btn game__forfeit-btn--cancel"
+              @click="forfeitConfirming = false"
+            >
+              Нет
+            </button>
+            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+              Да
+            </button>
           </div>
         </template>
       </div>
-      <div class="game__user-stat">Захвачено: <span>{{ players[0]?.territories_count }}</span></div>
+      <div class="game__user-stat">
+        Захвачено: <span>{{ players[0]?.territories_count }}</span>
+      </div>
       <n-progress
         v-if="isCurrentTurnPlayer(0)"
         type="line"
@@ -39,18 +62,37 @@
       />
     </div>
 
-    <div class="game__user second" v-if="players.length >= 2" :style="{ borderColor: players[1].color }">
+    <div
+      class="game__user second"
+      v-if="players.length >= 2"
+      :style="{ borderColor: players[1].color }"
+    >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[1]?.name }}</div>
         <template v-if="isMyCard(1)">
-          <button v-if="!forfeitConfirming" class="game__forfeit-btn" @click="forfeitConfirming = true">Сдаться</button>
+          <button
+            v-if="!forfeitConfirming"
+            class="game__forfeit-btn"
+            @click="forfeitConfirming = true"
+          >
+            Сдаться
+          </button>
           <div v-else class="game__forfeit-confirm">
-            <button class="game__forfeit-btn game__forfeit-btn--cancel" @click="forfeitConfirming = false">Нет</button>
-            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">Да</button>
+            <button
+              class="game__forfeit-btn game__forfeit-btn--cancel"
+              @click="forfeitConfirming = false"
+            >
+              Нет
+            </button>
+            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+              Да
+            </button>
           </div>
         </template>
       </div>
-      <div class="game__user-stat">Захвачено: <span>{{ players[1]?.territories_count }}</span></div>
+      <div class="game__user-stat">
+        Захвачено: <span>{{ players[1]?.territories_count }}</span>
+      </div>
       <n-progress
         v-if="isCurrentTurnPlayer(1)"
         type="line"
@@ -62,18 +104,37 @@
       />
     </div>
 
-    <div class="game__user third" v-if="players.length >= 3" :style="{ borderColor: players[2].color }">
+    <div
+      class="game__user third"
+      v-if="players.length >= 3"
+      :style="{ borderColor: players[2].color }"
+    >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[2]?.name }}</div>
         <template v-if="isMyCard(2)">
-          <button v-if="!forfeitConfirming" class="game__forfeit-btn" @click="forfeitConfirming = true">Сдаться</button>
+          <button
+            v-if="!forfeitConfirming"
+            class="game__forfeit-btn"
+            @click="forfeitConfirming = true"
+          >
+            Сдаться
+          </button>
           <div v-else class="game__forfeit-confirm">
-            <button class="game__forfeit-btn game__forfeit-btn--cancel" @click="forfeitConfirming = false">Нет</button>
-            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">Да</button>
+            <button
+              class="game__forfeit-btn game__forfeit-btn--cancel"
+              @click="forfeitConfirming = false"
+            >
+              Нет
+            </button>
+            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+              Да
+            </button>
           </div>
         </template>
       </div>
-      <div class="game__user-stat">Захвачено: <span>{{ players[2]?.territories_count }}</span></div>
+      <div class="game__user-stat">
+        Захвачено: <span>{{ players[2]?.territories_count }}</span>
+      </div>
       <n-progress
         v-if="isCurrentTurnPlayer(2)"
         type="line"
@@ -85,18 +146,37 @@
       />
     </div>
 
-    <div class="game__user fourth" v-if="players.length >= 4" :style="{ borderColor: players[3].color }">
+    <div
+      class="game__user fourth"
+      v-if="players.length >= 4"
+      :style="{ borderColor: players[3].color }"
+    >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[3]?.name }}</div>
         <template v-if="isMyCard(3)">
-          <button v-if="!forfeitConfirming" class="game__forfeit-btn" @click="forfeitConfirming = true">Сдаться</button>
+          <button
+            v-if="!forfeitConfirming"
+            class="game__forfeit-btn"
+            @click="forfeitConfirming = true"
+          >
+            Сдаться
+          </button>
           <div v-else class="game__forfeit-confirm">
-            <button class="game__forfeit-btn game__forfeit-btn--cancel" @click="forfeitConfirming = false">Нет</button>
-            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">Да</button>
+            <button
+              class="game__forfeit-btn game__forfeit-btn--cancel"
+              @click="forfeitConfirming = false"
+            >
+              Нет
+            </button>
+            <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+              Да
+            </button>
           </div>
         </template>
       </div>
-      <div class="game__user-stat">Захвачено: <span>{{ players[3]?.territories_count }}</span></div>
+      <div class="game__user-stat">
+        Захвачено: <span>{{ players[3]?.territories_count }}</span>
+      </div>
       <n-progress
         v-if="isCurrentTurnPlayer(3)"
         type="line"
@@ -158,6 +238,7 @@ import { useUserStore } from '@/stores/useUserStore.ts'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useWebSocket } from '@/api'
 import type { HexCell } from '@/api'
+import Chat from '@/components/template/Chat.vue'
 
 const ws = useWebSocket()
 const gameStore = useGameStore()
@@ -214,9 +295,8 @@ const isCurrentTurnPlayer = (sortedIdx: number) =>
 const currentTurnPlayer = computed(() => {
   if (!gameStore.currentTurn) return null
   return (
-    gameStore.players.find(
-      (p) => p.player_index === gameStore.currentTurn!.current_player_index,
-    ) ?? null
+    gameStore.players.find((p) => p.player_index === gameStore.currentTurn!.current_player_index) ??
+    null
   )
 })
 
@@ -356,7 +436,7 @@ onMounted(() => {
     now.value = Date.now()
   }, 100)
 
-  if (!gameStore.currentGame) {
+  if (!gameStore.currentGame && !gameStore.isStarting) {
     processingStore.startLoading()
     ws.game.reconnect()
   }
@@ -377,6 +457,13 @@ onUnmounted(() => {
   height: 100vh;
   overflow: hidden;
   background: $background;
+
+  &__chat {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+  }
 
   &__game-timer {
     position: absolute;

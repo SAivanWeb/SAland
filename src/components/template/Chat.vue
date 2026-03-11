@@ -1,44 +1,56 @@
 <template>
   <div class="chat">
     <div class="chat__header">
-      <h3>Чат игры</h3>
+      <h4>Чат игры</h4>
     </div>
-    <n-scrollbar style="max-height: 400px">
-      <div v-if="messages && currentUser" class="chat__body">
-        <div v-for="item in messages" :key="item.id" class="chat__message">
+    <n-scrollbar ref="scrollbarRef" style="max-height: 250px">
+      <div class="chat__content">
+        <div v-if="messages && currentUser" class="chat__body">
           <div
-            class="chat__message-user"
-            :class="{ 'chat__message-user_own': item.user_id === currentUser.user.id }"
+            v-for="item in messages.filter((m) => m.type !== 'system')"
+            :key="item.id"
+            class="chat__message"
           >
-            <PlayerIcon
-              class="chat__message-user-icon"
-              v-if="item.user_name"
-              :name="item.user_name"
-            />
-            <div class="chat__message-user-additional">
-              <n-icon size="24">
-                <Dots/>
-              </n-icon>
+            <div
+              class="chat__message-user"
+              :class="{ 'chat__message-user_own': item.user_id === currentUser.user.id }"
+            >
+              <PlayerIcon
+                class="chat__message-user-icon"
+                v-if="item.user_name"
+                :name="item.user_name"
+                no-tooltip
+              />
+              <div class="chat__message-user-additional">
+                <n-icon size="24">
+                  <Dots />
+                </n-icon>
+              </div>
+            </div>
+            <div class="chat__message-content">
+              {{ item.content }}
             </div>
           </div>
-          <div class="chat__message-content">
-            {{ item.content }}
-          </div>
+        </div>
+        <div v-if="!messages" class="chat__nodata">
+          <span>Нет сообщений</span>
         </div>
       </div>
-      <div v-if="!messages" class="chat__nodata">Нет сообщений</div>
     </n-scrollbar>
     <div class="chat__footer">
       <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" />
-      <MainButton title="Отправить" @click="sendMessage" />
+      <div class="chat__send" @click="sendMessage">
+        <n-icon class="chat__send-icon" size="24">
+          <Send />
+        </n-icon>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { type ChatMessage, useWebSocket } from '@/api'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useGameStore } from '@/stores/useGameStore.ts'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { NScrollbar, NIcon } from 'naive-ui'
 import { useUserStore } from '@/stores/useUserStore.ts'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
@@ -46,31 +58,39 @@ import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import Dots from '@/assets/icons/dots.vue'
+import Send from '@/assets/icons/send.vue'
 
+interface Props {
+  gameId: string
+}
+
+const props = defineProps<Props>()
 const processingStore = useProcessingStore()
 const ws = useWebSocket()
-const gameStore = useGameStore()
 const userStore = useUserStore()
 const unsubs: (() => void)[] = []
 
+const scrollbarRef = ref<InstanceType<typeof NScrollbar> | null>(null)
 const messages = ref<ChatMessage[]>()
 const newMessage = ref<string>('')
 
-const currentUser = computed(() => {
-  return userStore.currentUser
-})
+const scrollToBottom = () => {
+  nextTick(() => {
+    scrollbarRef.value?.scrollTo({ top: 999999, behavior: 'smooth' })
+  })
+}
 
-const gameId = computed(() => {
-  return gameStore?.currentGame?.game_id
-})
+watch(messages, scrollToBottom)
+
+const currentUser = computed(() => userStore.currentUser)
 
 const sendMessage = () => {
-  if (gameStore.currentGame) {
-    ws.chat.send({
-      content: newMessage.value,
-      game_id: gameStore.currentGame.game_id,
-    })
-  }
+  if (!newMessage.value.trim()) return
+  ws.chat.send({
+    content: newMessage.value,
+    game_id: props.gameId,
+  })
+  newMessage.value = ''
 }
 
 onMounted(() => {
@@ -79,24 +99,18 @@ onMounted(() => {
       messages.value = data
     }),
     ws.chat.onError((err) => {
-      if (err.message === 'INVALID_TARGET') {
-        processingStore.setMessage('error', 'Чат игры', 'Непредвиденная ошибка')
-      } else if (err.message === 'SEND_FAILED') {
+      if (err.code === 'SEND_FAILED') {
         processingStore.setMessage('error', 'Чат игры', 'Ошибка отправки сообщения')
-      } else if (err.message === 'HISTORY_FAILED') {
+      } else if (err.code === 'HISTORY_FAILED') {
         processingStore.setMessage('error', 'Чат игры', 'Ошибка получения чата')
       }
     }),
     ws.chat.onMessage(() => {
-      ws.chat.getHistory({
-        game_id: gameId.value,
-      })
+      ws.chat.getHistory({ game_id: props.gameId })
     }),
   )
 
-  ws.chat.getHistory({
-    game_id: gameId.value,
-  })
+  ws.chat.getHistory({ game_id: props.gameId })
 })
 
 onUnmounted(() => {
@@ -108,8 +122,8 @@ onUnmounted(() => {
 .chat {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
+  gap: 6px;
+  padding: 16px;
   width: 300px;
   border-radius: $border-radius;
   border: 2px solid $border;
@@ -117,22 +131,28 @@ onUnmounted(() => {
   background: $primary-blue;
 
   &__header {
-    padding-bottom: 16px;
+    padding-bottom: 6px;
     border-bottom: 1px solid $border;
+  }
+
+  &__content {
+    width: 100%;
+    padding: 0 4px;
   }
 
   &__body {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    min-height: 400px;
+    gap: 12px;
+    min-height: 250px;
   }
 
   &__nodata {
+    width: 100%;
+    height: 250px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    min-height: 400px;
+    justify-content: center;
     @include body-1;
     text-align: center;
     color: $text-grey;
@@ -158,7 +178,7 @@ onUnmounted(() => {
         }
       }
 
-      &-additional{
+      &-additional {
         cursor: pointer;
       }
     }
@@ -169,6 +189,37 @@ onUnmounted(() => {
       color: $text-dark;
       background: #fff;
       border: 1px solid $border;
+      overflow: hidden;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    gap: 8px;
+
+    & .input {
+      width: 100%;
+    }
+  }
+
+  &__send {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    background: $primary-yellow;
+    border-radius: 50%;
+    border: 2px solid $border;
+    box-shadow: $box-shadow;
+    cursor: pointer;
+
+    &:active {
+      box-shadow: 0px 0px 0px $border;
+      transform: translate(1px, 2px);
+    }
+    &-icon {
+      transform: translate(2px, -2px) rotate(-45deg);
     }
   }
 }

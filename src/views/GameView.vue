@@ -1,6 +1,6 @@
 <template>
   <div class="game">
-    <Chat class="game__chat" />
+    <Chat v-if="gameId" class="game__chat" :gameId="gameId" />
 
     <!-- Global game timer -->
     <div v-if="formattedGameTimer !== null" class="game__game-timer">
@@ -248,6 +248,8 @@ const processingStore = useProcessingStore()
 const hexSize = 50
 const hexGap = 6
 
+const gameId = computed(() => gameStore.currentGameId ?? gameStore.currentGame?.game_id)
+
 // Tick every 100ms for smooth timer progress
 const now = ref(Date.now())
 let clockInterval: number | null = null
@@ -305,9 +307,9 @@ const turnTimerData = computed(() => {
   const turn = gameStore.currentTurn
   if (!turn) return null
 
-  const elapsed = now.value - turn.started_at * 1000
-  const timeLimitMs = turn.time_limit * 1000
-  const extraTimeMs = turn.extra_time_remaining * 1000
+  const elapsed = now.value - turn.started_at
+  const timeLimitMs = turn.time_limit
+  const extraTimeMs = turn.extra_time_remaining
   const normalRemaining = timeLimitMs - elapsed
 
   if (normalRemaining > 0) {
@@ -344,7 +346,7 @@ const formattedGameTimer = computed(() => {
 // Доступные ходы в виде Set для быстрого поиска
 const availableMoveSet = computed(() => {
   if (!isMyTurn.value || !gameStore.currentTurn) return new Set<string>()
-  return new Set(gameStore.currentTurn.available_moves.map((m) => `${m.q},${m.r}`))
+  return new Set((gameStore.currentTurn.available_moves ?? []).map((m) => `${m.q},${m.r}`))
 })
 
 const isAvailableMove = (cell: HexCell) => availableMoveSet.value.has(`${cell.q},${cell.r}`)

@@ -102,6 +102,7 @@ export const useGameStore = defineStore('useGameStore', () => {
   })
 
   ws.game.onState((data) => {
+    if (data.game_id) currentGameId.value = data.game_id
     cells.value = data.cells
     players.value = data.players
     currentTurn.value = data.current_turn

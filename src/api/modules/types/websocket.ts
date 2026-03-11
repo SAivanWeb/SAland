@@ -318,6 +318,7 @@ export interface TurnState {
 }
 
 export interface GameStateEvent {
+  game_id: string
   phase: GamePhase
   players: GamePlayer[]
   cells: HexCell[]

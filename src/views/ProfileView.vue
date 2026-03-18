@@ -161,7 +161,7 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 16px;
     padding: 20px;
-    background: $primary-yellow;
+    background: $primary-blue;
     border-radius: $border-radius;
     border: 2px solid $border;
     transition: all 0.2s ease;
@@ -187,7 +187,7 @@ onUnmounted(() => {
 
   &__stats {
     padding: 20px;
-    background: $primary-yellow;
+    background: $primary-blue;
     border-radius: $border-radius;
     border: 2px solid $border;
     display: flex;
@@ -206,8 +206,9 @@ onUnmounted(() => {
       flex-direction: column;
       gap: 8px;
       width: 100%;
-      background: $primary-yellow;
-      border: 1px solid $border;
+      background: #fff;
+      border: 2px solid $border;
+      box-shadow: $box-shadow;
       padding: 12px;
       border-radius: $border-radius;
       transition: all 0.2s ease;
@@ -220,14 +221,14 @@ onUnmounted(() => {
         text-align: center;
         font-size: 2rem;
         font-weight: 700;
-        color: $primary-red;
+        color: $primary-purple;
       }
     }
   }
 
   &__friends {
     padding: 20px;
-    background: $primary-yellow;
+    background: $primary-blue;
     border-radius: $border-radius;
     border: 2px solid $border;
     display: flex;

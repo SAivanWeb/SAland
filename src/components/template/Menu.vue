@@ -19,9 +19,9 @@
 <script setup lang="ts">
 import { NPopover, NIcon, NMenu } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
-import { Menu, GameController, Person, Exit } from '@vicons/ionicons5'
+import { Menu, GameController, Person, Exit, Shield } from '@vicons/ionicons5'
 import type { Component } from 'vue'
-import { h } from 'vue'
+import { h, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore.ts'
 
@@ -31,41 +31,67 @@ function renderIcon(icon: Component) {
   return () => h(NIcon, { size: 24, color: '#151515' }, { default: () => h(icon) })
 }
 
-const menuOptions: MenuOption[] = [
-  {
-    label: () =>
-      h(
-        RouterLink,
+const menuOptions = computed(() => {
+  if (userStore.currentUser) {
+    const options: MenuOption[] = [
+      {
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: {
+                path: '/games',
+              },
+            },
+            { default: () => 'Игры' },
+          ),
+        key: 'toGames',
+        icon: renderIcon(GameController),
+      },
+      {
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: {
+                path: '/profile',
+              },
+            },
+            { default: () => 'Профиль' },
+          ),
+        key: 'toProfile',
+        icon: renderIcon(Person),
+      },
+      {
+        label: 'Выход',
+        key: 'logout',
+        icon: renderIcon(Exit),
+      },
+    ]
+
+    if (userStore.currentUser.user.role === 'admin') {
+      options.unshift(
         {
-          to: {
-            path: '/games',
-          },
-        },
-        { default: () => 'Игры' },
-      ),
-    key: 'toGames',
-    icon: renderIcon(GameController),
-  },
-  {
-    label: () =>
-      h(
-        RouterLink,
-        {
-          to: {
-            path: '/profile',
-          },
-        },
-        { default: () => 'Профиль' },
-      ),
-    key: 'toProfile',
-    icon: renderIcon(Person),
-  },
-  {
-    label: 'Выход',
-    key: 'logout',
-    icon: renderIcon(Exit),
-  },
-]
+          label: () =>
+            h(
+              RouterLink,
+              {
+                to: {
+                  path: '/admin',
+                },
+              },
+              { default: () => 'Администрирование' },
+            ),
+          key: 'toAdmin',
+          icon: renderIcon(Shield),
+        }
+      )
+    }
+
+    return options
+  }
+  return null
+})
 
 function logout(key: string) {
   if (key === 'logout') userStore.logout()

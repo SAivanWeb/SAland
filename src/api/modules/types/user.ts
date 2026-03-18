@@ -42,6 +42,7 @@ export interface InitResponse {
     email: string
     name: string
     created_at: number
+    role: string
   }
   pending_requests_count: number
   active_game_id: string | null

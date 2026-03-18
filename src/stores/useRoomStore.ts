@@ -112,8 +112,8 @@ export const useRoomStore = defineStore('RoomStore', () => {
   })
 
   ws.rooms.onError((err) => {
-    if (err.code === 'ALREADY_IN_ROOM') {
-      processingStore.setMessage('error', 'Ошибка подключения', 'Вы уже в комнате')
+    if (err.code === 'NOT_IN_ROOM') {
+      router.push('/games')
     }
   })
 

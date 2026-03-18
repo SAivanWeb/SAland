@@ -62,29 +62,12 @@ import { useUserStore } from '@/stores/useUserStore.ts'
 
 const userStore = useUserStore()
 
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
-
-const validatePassword = (password: string): boolean => {
-  const hasUppercase = /[A-Z]/.test(password)
-  const hasLowercase = /[a-z]/.test(password)
-  const hasNumber = /\d/.test(password)
-  const countSymbols = password.length >= 8
-  return hasUppercase && hasLowercase && hasNumber && countSymbols
-}
-
-const isEmailValid = computed(() => validateEmail(regData.value.email))
-const isPasswordValid = computed(() => validatePassword(regData.value.password))
-const isLoginEmailValid = computed(() => validateEmail(loginData.value.email))
-
 const disableReg = computed(() => {
-  return !regData.value.name || !isEmailValid.value || !isPasswordValid.value
+  return !regData.value.email || !regData.value.password || !regData.value.name
 })
 
 const disableLogin = computed(() => {
-  return !isLoginEmailValid.value || !loginData.value.password
+  return !loginData.value.email || !loginData.value.password
 })
 
 const regData = ref<RegisterRequest>({

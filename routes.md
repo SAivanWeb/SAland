@@ -10,22 +10,23 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-    - [Формат ответа](#формат-ответа)
-    - [Auth](#auth)
-    - [User](#user)
-    - [Friends](#friends)
-    - [Themes](#themes)
-    - [Games](#games)
-    - [Админ](#админ)
-    - [Health](#health)
+  - [Формат ответа](#формат-ответа)
+  - [Auth](#auth)
+  - [User](#user)
+  - [Friends](#friends)
+  - [Themes](#themes)
+  - [Games](#games)
+  - [Админ](#админ)
+  - [Admin Panel](#admin-panel)
+  - [Health](#health)
 - [WebSocket API](#websocket-api)
-    - [Подключение](#подключение)
-    - [Rooms](#rooms-events)
-    - [Game](#game-events)
-    - [Chat](#chat-events)
-    - [Notifications](#notifications-events)
-    - [AI Generation](#ai-generation-events)
-    - [Main Gateway](#main-gateway-events)
+  - [Подключение](#подключение)
+  - [Rooms](#rooms-events)
+  - [Game](#game-events)
+  - [Chat](#chat-events)
+  - [Notifications](#notifications-events)
+  - [AI Generation](#ai-generation-events)
+  - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -668,6 +669,258 @@ Array<{
 ---
 
 ### Админ
+
+> Все эндпоинты `/admin/*` требуют роль `admin` в JWT токене. При отсутствии роли — `403 Forbidden`.
+
+#### GET `/admin/users`
+Список пользователей с пагинацией и поиском по имени или email.
+
+**Query Parameters:**
+```typescript
+{
+  q?: string;       // Поиск по имени или email (опционально)
+  page?: number;    // Номер страницы, по умолчанию 1
+  size?: number;    // 1-100, по умолчанию 20
+}
+```
+
+**Response (200):**
+```typescript
+{
+  users: Array<{
+    id: string;
+    email: string;
+    name: string;
+    role: 'user' | 'admin';
+    status: 'active' | 'blocked';
+    blocked_at: number | null;
+    block_reason: string | null;
+    created_at: number;
+    reports_count: number;
+  }>;
+  pagination: {
+    page: number;
+    size: number;
+    total_elements: number;
+    total_pages: number;
+  };
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/admin/users/:user_id`
+Детальная информация о пользователе.
+
+**Параметры:**
+- `user_id` - UUID пользователя
+
+**Response (200):**
+```typescript
+{
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  status: 'active' | 'blocked';
+  blocked_at: number | null;
+  block_reason: string | null;
+  created_at: number;
+  reports_count: number;
+  stats: {
+    games_played: number;
+    games_won: number;
+    total_territories_captured: number;
+    total_questions_answered: number;
+    total_correct_answers: number;
+  } | null;
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
+
+---
+
+#### PATCH `/admin/users/:user_id`
+Редактирование пользователя (имя, email).
+
+**Параметры:**
+- `user_id` - UUID пользователя
+
+**Request Body:**
+```typescript
+{
+  name?: string;    // 2-100 символов
+  email?: string;   // Валидный email, макс. 255 символов
+}
+```
+
+**Response (200):**
+```typescript
+{
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  status: 'active' | 'blocked';
+  created_at: number;
+}
+```
+
+**Ошибки:**
+- `400` - Валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Пользователь не найден
+- `409` - Email уже используется
+- `429` - Превышен лимит запросов
+
+---
+
+#### DELETE `/admin/users/:user_id`
+Удаление пользователя. Нельзя удалить свой аккаунт.
+
+**Параметры:**
+- `user_id` - UUID пользователя
+
+**Response (204):** No Content
+
+**Ошибки:**
+- `400` - Нельзя удалить свой аккаунт
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
+
+---
+
+#### PATCH `/admin/users/:user_id/status`
+Блокировка или разблокировка пользователя. Нельзя изменить статус своего аккаунта.
+
+**Параметры:**
+- `user_id` - UUID пользователя
+
+**Request Body:**
+```typescript
+{
+  status: 'active' | 'blocked';
+  reason?: string;    // Причина блокировки (до 1000 символов, опционально)
+}
+```
+
+**Response (200):**
+```typescript
+{
+  id: string;
+  status: 'active' | 'blocked';
+  blocked_at: number | null;
+  block_reason: string | null;
+}
+```
+
+**Ошибки:**
+- `400` - Нельзя изменить статус своего аккаунта / валидация не пройдена
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Пользователь не найден
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/admin/reports`
+Список жалоб с пагинацией, поиском и фильтрацией по статусу.
+
+**Query Parameters:**
+```typescript
+{
+  q?: string;                          // Поиск по имени нарушителя (опционально)
+  status?: 'pending' | 'resolved';     // Фильтр по статусу (опционально)
+  page?: number;                       // Номер страницы, по умолчанию 1
+  size?: number;                       // 1-100, по умолчанию 20
+}
+```
+
+**Response (200):**
+```typescript
+{
+  reports: Array<{
+    id: string;
+    reason: string;
+    status: 'pending' | 'resolved';
+    resolved_at: number | null;
+    resolved_comment: string | null;
+    created_at: number;
+    reporter: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    reported_user: {
+      id: string;
+      name: string;
+      email: string;
+      status: 'active' | 'blocked';
+    };
+    resolver: {
+      id: string;
+      name: string;
+    } | null;
+  }>;
+  pagination: {
+    page: number;
+    size: number;
+    total_elements: number;
+    total_pages: number;
+  };
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
+
+---
+
+#### PATCH `/admin/reports/:report_id/resolve`
+Обработка жалобы. Опционально блокирует нарушителя.
+
+**Параметры:**
+- `report_id` - UUID жалобы
+
+**Request Body:**
+```typescript
+{
+  comment?: string;       // Комментарий администратора (до 1000 символов)
+  block_user?: boolean;   // Заблокировать нарушителя (по умолчанию false)
+  block_reason?: string;  // Причина блокировки (до 1000 символов, если block_user=true)
+}
+```
+
+**Response (200):**
+```typescript
+{
+  success: true
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Жалоба не найдена
+- `409` - Жалоба уже обработана
+- `429` - Превышен лимит запросов
+
+---
 
 #### POST `/themes/admin/create`
 Создание темы админом (сразу в PostgreSQL).
@@ -1908,8 +2161,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-    | 'game_starting' | 'game_started' | 'game_ended'
-    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+             | 'game_starting' | 'game_started' | 'game_ended'
+             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

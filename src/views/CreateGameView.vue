@@ -232,6 +232,7 @@ import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/useUserStore.ts'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import { AddCircle } from '@vicons/ionicons5'
 import Close from '@/assets/icons/close.vue'
@@ -241,6 +242,7 @@ const route = useRoute()
 const ws = useWebSocket()
 const processingStore = useProcessingStore()
 const roomStore = useRoomStore()
+const userStore = useUserStore()
 
 const room = computed(() => roomStore.room)
 
@@ -310,6 +312,10 @@ watch(
   () => roomStore.room,
   (data) => {
     if (!data) return
+    if (data.owner_id !== userStore.currentUser?.user.id) {
+      router.push('/games')
+      return
+    }
     gamePlayers.value = data.players_count
     answerTime.value = data.time_per_question
     turnTime.value = data.time_per_turn
@@ -326,6 +332,10 @@ watch(
       showProcessUpload.value = data.theme.name !== ''
     } else {
       resetThemeState()
+      if (route.query.theme && !themeAutoSelected) {
+        themeAutoSelected = true
+        ws.rooms.selectTheme({ theme_id: route.query.theme as string })
+      }
     }
     paramsInitialized = true
   },
@@ -414,6 +424,11 @@ watch(roomParams, (newParams) => {
 
 onMounted(() => {
   unsubs.push(
+    ws.rooms.onState((data) => {
+      if (!data && !isLeaving) {
+        router.push('/games')
+      }
+    }),
     ws.rooms.onThemeDeleted(() => {
       if (roomStore.room) {
         roomStore.room = { ...roomStore.room, theme: null }
@@ -424,12 +439,6 @@ onMounted(() => {
       if (isLeaving) return
       if (err.code === 'INVALID_FORMAT') {
         processingStore.setMessage('error', 'Загрузка вопросов', 'Невалидный формат вопросов')
-      } else if (
-        err.code === 'ROOM_NOT_FOUND' ||
-        err.code === 'ALREADY_IN_ROOM'
-      ) {
-        processingStore.setMessage('error', 'Ошибка подключения', 'Комната не существует')
-        router.push('/games')
       } else if (err.code === 'NO_THEME') {
         processingStore.setMessage('error', 'Ошибка запуска', 'Необходимо создать тему')
       } else if (err.code === 'THEME_NOT_FOUND') {

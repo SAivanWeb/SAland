@@ -107,7 +107,7 @@ onUnmounted(() => {
   }
 
   &__field {
-    padding: 12px 20px;
+    padding: 7px 20px;
     border: 2px solid $border;
     border-radius: $border-radius;
     box-shadow: $box-shadow;

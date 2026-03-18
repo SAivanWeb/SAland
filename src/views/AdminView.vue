@@ -5,11 +5,13 @@
       <div class="admin__content">
         <n-tabs default-value="users" type="segment" size="medium" justify-content="space-evenly">
           <n-tab-pane name="users" tab="Пользователи">
-            <MainTable :headers="usersHeaders" :items="userData" itemKey="id"/>
+            <UsersTab/>
           </n-tab-pane>
           <n-tab-pane name="themes" tab="Темы"></n-tab-pane>
           <n-tab-pane name="games" tab="Игры"></n-tab-pane>
-          <n-tab-pane name="reports" tab="Жалобы"></n-tab-pane>
+          <n-tab-pane name="reports" tab="Жалобы">
+            <ReportsTab/>
+          </n-tab-pane>
         </n-tabs>
       </div>
     </div>
@@ -18,35 +20,9 @@
 
 <script setup lang="ts">
 import { NTabs, NTabPane } from 'naive-ui'
-import MainTable from '@/components/ui/table/MainTable.vue'
+import UsersTab from '@/components/admin/UsersTab.vue'
+import ReportsTab from '@/components/admin/ReportsTab.vue'
 
-const usersHeaders = [
-  {
-    display_name: 'ID',
-    value: 'id',
-  },
-  {
-    display_name: 'Имя',
-    value: 'name',
-  },
-  {
-    display_name: 'Создан',
-    value: 'created_at',
-  },
-  {
-    display_name: 'Статус',
-    value: 'status',
-  }
-]
-
-const userData = [
-  {
-    id: 1,
-    name: 'user1',
-    created_at: '2021-05-01',
-    status: 'active'
-  }
-]
 </script>
 
 <style scoped lang="scss">

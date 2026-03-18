@@ -56,6 +56,11 @@ const router = createRouter({
       name: 'Error',
       component: () => import('../views/ErrorView.vue'),
     },
+    {
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('../views/AdminView.vue'),
+    }
   ],
 })
 

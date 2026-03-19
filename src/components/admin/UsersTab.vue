@@ -2,10 +2,16 @@
   <div class="users">
     <div class="users__header">
       <h2>Пользователи</h2>
-      <MainInput name="search" placeholder="Поиск пользователя" v-model="searchQuery"/>
+      <MainInput name="search" placeholder="Поиск пользователя" v-model="searchQuery" />
     </div>
 
-    <MainTable :headers="usersHeaders" :items="usersData" :loading="loading"/>
+    <MainTable
+      :headers="usersHeaders"
+      :items="usersData"
+      :loading="loading"
+      action-users
+      @action="onAction"
+    />
 
     <div class="users__footer" v-if="pagination">
       <n-pagination
@@ -19,14 +25,19 @@
       />
     </div>
   </div>
+
+  <AcceptModal v-model:show="showUserDelete" :user="selectedUser" type="admin-delete" @action="fetchUsers"/>
+  <EditRowModal v-if="selectedUserFull" v-model:show="showUserEdit" :user="selectedUserFull" type="user-edit" @action="fetchUsers"/>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { NPagination } from 'naive-ui'
+import { logDark, NPagination } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
 import { type AdminUser, type AdminUsersParams, type AdminUsersPagination, useApi } from '@/api'
+import AcceptModal from '@/components/modals/AcceptModal.vue'
+import EditRowModal from '@/components/modals/EditRowModal.vue'
 
 function formatDate(timestamp: number | null): string {
   if (!timestamp) return '—'
@@ -47,6 +58,13 @@ const searchQuery = ref('')
 const loading = ref(false)
 const usersData = ref<AdminUser[]>([])
 const pagination = ref<AdminUsersPagination | null>(null)
+const showUserDelete = ref(false)
+const showUserEdit = ref(false)
+const selectedUser = ref({
+  userId: '',
+  name: '',
+})
+const selectedUserFull = ref<AdminUser | null>(null)
 
 const params = ref<AdminUsersParams>({
   q: '',
@@ -61,9 +79,19 @@ const usersHeaders = [
   { title: 'Роль', key: 'role', minWidth: 100 },
   { title: 'Статус', key: 'status', minWidth: 110 },
   { title: 'Жалобы', key: 'reports_count', minWidth: 100 },
-  { title: 'Заблокирован', key: 'blocked_at', minWidth: 170, render: (row: AdminUser) => formatDate(row.blocked_at) },
+  {
+    title: 'Заблокирован',
+    key: 'blocked_at',
+    minWidth: 170,
+    render: (row: AdminUser) => formatDate(row.blocked_at),
+  },
   { title: 'Причина блока', key: 'block_reason', minWidth: 200, ellipsis: { tooltip: true } },
-  { title: 'Создан', key: 'created_at', minWidth: 170, render: (row: AdminUser) => formatDate(row.created_at) },
+  {
+    title: 'Создан',
+    key: 'created_at',
+    minWidth: 170,
+    render: (row: AdminUser) => formatDate(row.created_at),
+  },
 ]
 
 async function fetchUsers() {
@@ -95,6 +123,25 @@ watch(searchQuery, (val) => {
     fetchUsers()
   }, 400)
 })
+
+function onAction(id: string | number, action: 'edit' | 'delete') {
+  if (action === 'edit') {
+    const userToEdit = usersData.value.find((user) => user.id === id)
+    if (userToEdit) {
+      selectedUserFull.value = userToEdit
+      showUserEdit.value = true
+    }
+  } else if (action === 'delete') {
+    const selectedUserData = usersData.value.filter((user) => user.id === id)[0]
+    if (selectedUserData) {
+      selectedUser.value = {
+        userId: selectedUserData.id,
+        name: selectedUserData.name,
+      }
+      showUserDelete.value = true
+    }
+  }
+}
 
 fetchUsers()
 </script>

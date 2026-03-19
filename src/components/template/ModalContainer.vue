@@ -103,5 +103,11 @@ const innerShow = computed({
       }
     }
   }
+
+  & span{
+    &.bold{
+      @include body-1-bold;
+    }
+  }
 }
 </style>

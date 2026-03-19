@@ -122,3 +122,79 @@ export interface AdminResolveReportRequest {
 export interface AdminResolveReportResponse {
   success: true
 }
+
+// ============= Themes =============
+
+export interface AdminTheme {
+  id: string
+  name: string
+  questions_count: number
+  check: boolean
+}
+
+export interface AdminThemeQuestion {
+  id: string
+  question: string
+  answers: string[]
+  correct_answer: number
+}
+
+export interface AdminThemeDetail {
+  id: string
+  name: string
+  questions: AdminThemeQuestion[]
+}
+
+export interface AdminThemesParams {
+  q?: string
+  page?: number
+  size?: number
+}
+
+export interface AdminThemesPagination {
+  page: number
+  size: number
+  total: number
+  total_pages: number
+}
+
+export interface AdminThemesResponse {
+  themes: AdminTheme[]
+  pagination: AdminThemesPagination
+}
+
+export interface AdminCheckThemeRequest {
+  check: boolean
+}
+
+export interface AdminCheckThemeResponse {
+  id: string
+  name: string
+  check: boolean
+}
+
+// ============= Games =============
+
+export interface AdminGame {
+  id: string
+  theme_name: string
+  players_count: number
+}
+
+export interface AdminGamesParams {
+  q?: string
+  page?: number
+  size?: number
+}
+
+export interface AdminGamesPagination {
+  page: number
+  size: number
+  total: number
+  total_pages: number
+}
+
+export interface AdminGamesResponse {
+  games: AdminGame[]
+  pagination: AdminGamesPagination
+}

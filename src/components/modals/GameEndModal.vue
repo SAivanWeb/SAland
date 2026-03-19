@@ -27,10 +27,10 @@
           </div>
         </div>
 
-        <!-- Temp theme rating -->
-        <template v-if="gameEnded?.is_temp_theme">
+        <!-- Theme rating -->
+        <template v-if="canRate">
           <div v-if="!rated" class="end-modal__rating">
-            <div class="end-modal__rating-title">Оцените тему «{{ gameEnded.theme_name }}»</div>
+            <div class="end-modal__rating-title">Оцените тему «{{ gameEnded!.theme_name }}»</div>
             <div class="end-modal__rating-options">
               <button
                 v-for="opt in ratingOptions"
@@ -55,6 +55,16 @@
                   {{ opt.label }}
                 </button>
               </div>
+            </div>
+            <div v-if="selectedRating === 'dislike'" class="end-modal__reason">
+              <div class="end-modal__reason-label">Причина (необязательно):</div>
+              <textarea
+                v-model="dislikeReason"
+                class="end-modal__reason-input"
+                placeholder="Что не понравилось в теме?"
+                rows="3"
+                maxlength="1000"
+              />
             </div>
             <button
               class="end-modal__submit-btn"
@@ -83,23 +93,39 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import { useGameStore } from '@/stores/useGameStore.ts'
-import type { TempThemeRating, Difficulty } from '@/api'
+import type { TempThemeRating, ThemeRating, Difficulty } from '@/api'
 
 const gameStore = useGameStore()
 const router = useRouter()
 
 const gameEnded = computed(() => gameStore.gameEnded)
 
-const selectedRating = ref<TempThemeRating | null>(null)
+// Ratable when there's a temp theme OR a permanent theme (theme_id not null)
+const canRate = computed(() =>
+  !!gameEnded.value && (gameEnded.value.is_temp_theme || !!gameEnded.value.theme_id),
+)
+
+const isTempTheme = computed(() => !!gameEnded.value?.is_temp_theme)
+
+type AnyRating = TempThemeRating | ThemeRating
+
+const selectedRating = ref<AnyRating | null>(null)
 const selectedDifficulty = ref<Difficulty | null>(null)
+const dislikeReason = ref('')
 const isSubmitting = ref(false)
 const rated = ref(false)
 
-const ratingOptions: { label: string; value: TempThemeRating }[] = [
-  { label: 'Нравится', value: 'like' },
-  { label: 'Не нравится', value: 'dislike' },
-  { label: 'Пропустить', value: 'skip' },
-]
+// Temp themes allow 'skip', permanent themes don't
+const ratingOptions = computed<{ label: string; value: AnyRating }[]>(() => {
+  const base = [
+    { label: 'Нравится', value: 'like' as const },
+    { label: 'Не нравится', value: 'dislike' as const },
+  ]
+  if (isTempTheme.value) {
+    base.push({ label: 'Пропустить', value: 'skip' as const })
+  }
+  return base
+})
 
 const difficultyOptions: { label: string; value: Difficulty }[] = [
   { label: 'Лёгкая', value: 'easy' },
@@ -117,10 +143,21 @@ const submitRating = async () => {
   if (!canSubmitRating.value || !gameStore.currentGameId) return
   isSubmitting.value = true
   try {
-    await api.games.rateTempTheme(gameStore.currentGameId, {
-      rating: selectedRating.value!,
-      difficulty_rating: selectedRating.value !== 'skip' ? selectedDifficulty.value! : undefined,
-    })
+    if (isTempTheme.value) {
+      await api.games.rateTempTheme(gameStore.currentGameId, {
+        rating: selectedRating.value as TempThemeRating,
+        difficulty_rating: selectedRating.value !== 'skip' ? selectedDifficulty.value! : undefined,
+      })
+    } else {
+      await api.themes.rate(gameEnded.value!.theme_id!, {
+        game_id: gameStore.currentGameId,
+        rating: selectedRating.value as ThemeRating,
+        difficulty_rating: selectedDifficulty.value ?? undefined,
+        reason: selectedRating.value === 'dislike' && dislikeReason.value.trim()
+          ? dislikeReason.value.trim()
+          : undefined,
+      })
+    }
     rated.value = true
   } finally {
     isSubmitting.value = false
@@ -291,6 +328,36 @@ const goToLobby = () => {
 
       &--active {
         background: $primary-green;
+      }
+    }
+  }
+
+  &__reason {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &-label {
+      @include body-2;
+      color: $text-grey;
+    }
+
+    &-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: $border-radius;
+      border: 2px solid $border;
+      background: #fff;
+      box-shadow: $box-shadow;
+      resize: vertical;
+      font-family: inherit;
+      @include body-2;
+      color: $text-dark;
+      outline: none;
+      box-sizing: border-box;
+
+      &:focus {
+        border-color: darken($border, 15%);
       }
     }
   }

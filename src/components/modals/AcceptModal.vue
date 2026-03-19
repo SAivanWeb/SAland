@@ -1,11 +1,30 @@
 <template>
   <ModalContainer v-model:show="show" modalWidth="500px">
     <template #header>
-      <h3>Подтвердите удаление</h3>
+      <h3 v-if="type === 'own-delete' || type === 'admin-delete'">Подтвердите удаление</h3>
     </template>
     <template #body>
-      <p>При подтверждении удаления аккаунта доступ к нему станет невозможным, а так же удалится вся статистика. Вы уверены что хотите удалить свой аккаунт? </p>
-      <MainButton title="Подтвердить" color="red" @click="deleteAccount"/>
+      <p v-if="type === 'own-delete'">
+        При подтверждении удаления аккаунта доступ к нему станет невозможным, а так же удалится вся
+        статистика. Вы уверены что хотите удалить свой аккаунт?
+      </p>
+      <p v-if="type === 'admin-delete'">
+        При подтверждении удаления аккаунта доступ к нему станет невозможным, а так же удалится вся
+        статистика. Вы уверены что хотите удалить аккаунт пользователя <span class="bold">{{ user.name }}</span
+        >?
+      </p>
+      <MainButton
+        v-if="type === 'own-delete'"
+        title="Подтвердить"
+        color="red"
+        @click="deleteAccount"
+      />
+      <MainButton
+        v-if="type === 'admin-delete'"
+        title="Подтвердить"
+        color="red"
+        @click="adminDelete"
+      />
     </template>
   </ModalContainer>
 </template>
@@ -20,7 +39,11 @@ import { useUserStore } from '@/stores/useUserStore.ts'
 
 interface Props {
   show: boolean
-  userId: string
+  user: {
+    userId: string
+    name?: string
+  }
+  type: string
 }
 
 const api = useApi()
@@ -30,7 +53,7 @@ const userStore = useUserStore()
 
 const emit = defineEmits<{
   (e: 'update:show', value: boolean): void
-  (e: 'deleted'): void
+  (e: 'action'): void
 }>()
 const show = computed({
   get: () => props.show,
@@ -41,7 +64,22 @@ async function deleteAccount() {
   try {
     processingStore.startLoading()
     await api.user.deleteAccount()
+    emit('update:show', false)
     await userStore.logout()
+  } catch {
+    processingStore.setMessage('error', 'Удаление аккаунта', 'Ошибка удаления аккаунта')
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function adminDelete() {
+  try {
+    processingStore.startLoading()
+    await api.admin.users.delete(props.user.userId)
+    emit('action')
+    emit('update:show', false)
+    processingStore.setMessage('success', 'Удаление аккаунта', 'Пользователь удален')
   } catch {
     processingStore.setMessage('error', 'Удаление аккаунта', 'Ошибка удаления аккаунта')
   } finally {

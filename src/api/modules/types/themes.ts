@@ -59,7 +59,8 @@ export interface ThemesListResponse {
 export interface RateThemeBody {
   game_id: string
   rating: ThemeRating
-  difficulty_rating: Difficulty
+  difficulty_rating?: Difficulty
+  reason?: string
 }
 
 export interface RateThemeResponse {

@@ -7,8 +7,6 @@ import type {
   ThemeDetail,
   RateThemeBody,
   RateThemeResponse,
-  AdminCreateBody,
-  AdminCreateResponse,
 } from './types'
 
 export const themes = {
@@ -31,17 +29,5 @@ export const themes = {
    */
   async rate(themeId: string, data: RateThemeBody): Promise<RateThemeResponse> {
     return post<RateThemeResponse>(`/themes/${themeId}/rate`, data)
-  },
-
-  // ============= Admin =============
-
-  admin: {
-    /**
-     * Create theme as admin (saves directly to PostgreSQL)
-     * Requires admin role
-     */
-    async create(data: AdminCreateBody): Promise<AdminCreateResponse> {
-      return post<AdminCreateResponse>('/themes/admin/create', data)
-    },
   },
 }

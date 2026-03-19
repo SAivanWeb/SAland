@@ -10,23 +10,23 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-  - [Формат ответа](#формат-ответа)
-  - [Auth](#auth)
-  - [User](#user)
-  - [Friends](#friends)
-  - [Themes](#themes)
-  - [Games](#games)
-  - [Админ](#админ)
-  - [Admin Panel](#admin-panel)
-  - [Health](#health)
+    - [Формат ответа](#формат-ответа)
+    - [Auth](#auth)
+    - [User](#user)
+    - [Friends](#friends)
+    - [Themes](#themes)
+    - [Games](#games)
+    - [Админ](#админ)
+    - [Admin Panel](#admin-panel)
+    - [Health](#health)
 - [WebSocket API](#websocket-api)
-  - [Подключение](#подключение)
-  - [Rooms](#rooms-events)
-  - [Game](#game-events)
-  - [Chat](#chat-events)
-  - [Notifications](#notifications-events)
-  - [AI Generation](#ai-generation-events)
-  - [Main Gateway](#main-gateway-events)
+    - [Подключение](#подключение)
+    - [Rooms](#rooms-events)
+    - [Game](#game-events)
+    - [Chat](#chat-events)
+    - [Notifications](#notifications-events)
+    - [AI Generation](#ai-generation-events)
+    - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -613,7 +613,8 @@ Array<{
 {
   game_id: string;         // UUID игры (обязательно)
   rating: 'like' | 'dislike';
-  difficulty_rating: 'easy' | 'medium' | 'hard';
+  difficulty_rating?: 'easy' | 'medium' | 'hard';
+  reason?: string;         // Причина дизлайка (до 1000 символов, опционально)
 }
 ```
 
@@ -948,12 +949,175 @@ Array<{
 }
 ```
 
-> Требуется роль админа. Тема сразу сохраняется с `is_active=true`.
+> Требуется роль админа. Тема сразу сохраняется с `is_active=true`, `is_checked=true`.
 
 **Ошибки:**
 - `400` - Валидация не пройдена
 - `401` - Отсутствует или невалидный JWT токен
 - `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/admin/themes`
+Список всех постоянных тем с поиском и пагинацией.
+
+**Query Parameters:**
+```typescript
+{
+  q?: string;       // Поиск по названию (опционально)
+  page?: number;    // Номер страницы, по умолчанию 1
+  size?: number;    // 1-100, по умолчанию 20
+}
+```
+
+**Response (200):**
+```typescript
+{
+  themes: Array<{
+    id: string;
+    name: string;
+    questions_count: number;
+    check: boolean;          // true = проверена админом
+  }>;
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    total_pages: number;
+  };
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/admin/themes/:theme_id`
+Тема по ID с полным списком вопросов.
+
+**Параметры:**
+- `theme_id` - UUID темы
+
+**Response (200):**
+```typescript
+{
+  id: string;
+  name: string;
+  questions: Array<{
+    id: string;
+    question: string;
+    answers: string[];
+    correct_answer: number;
+  }>;
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Тема не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+#### DELETE `/admin/themes/:theme_id`
+Удаление темы вместе с вопросами.
+
+**Параметры:**
+- `theme_id` - UUID темы
+
+**Response (204):** No Content
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Тема не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+#### PATCH `/admin/themes/:theme_id/check`
+Изменить флаг проверки темы.
+
+**Параметры:**
+- `theme_id` - UUID темы
+
+**Request Body:**
+```typescript
+{
+  check: boolean;
+}
+```
+
+**Response (200):**
+```typescript
+{
+  id: string;
+  name: string;
+  check: boolean;
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Тема не найдена
+- `429` - Превышен лимит запросов
+
+---
+
+#### GET `/admin/games`
+Список активных игр (только те, что сейчас идут, хранятся в Redis).
+
+**Query Parameters:**
+```typescript
+{
+  q?: string;       // Поиск по названию темы (опционально)
+  page?: number;    // Номер страницы, по умолчанию 1
+  size?: number;    // 1-100, по умолчанию 20
+}
+```
+
+**Response (200):**
+```typescript
+{
+  games: Array<{
+    id: string;
+    theme_name: string;
+    players_count: number;
+  }>;
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    total_pages: number;
+  };
+}
+```
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `429` - Превышен лимит запросов
+
+---
+
+#### DELETE `/admin/games/:game_id`
+Принудительное удаление активной игры. Игроки получают событие `game:ended`. Redis-данные игры и voting-данные временной темы очищаются. Если игра использовала постоянную тему — с темой ничего не происходит.
+
+**Параметры:**
+- `game_id` - UUID игры
+
+**Response (204):** No Content
+
+**Ошибки:**
+- `401` - Отсутствует или невалидный JWT токен
+- `403` - Требуется роль админа
+- `404` - Активная игра не найдена
 - `429` - Превышен лимит запросов
 
 ---
@@ -1911,11 +2075,11 @@ Array<ChatMessage>
 {
   id: string;
   type: 'friend_request'
-      | 'friend_accepted'
-      | 'game_invite'
-      | 'game_invite_accepted'
-      | 'game_invite_rejected'
-      | 'game_invite_expired';
+  | 'friend_accepted'
+  | 'game_invite'
+  | 'game_invite_accepted'
+  | 'game_invite_rejected'
+  | 'game_invite_expired';
   from_user_id: string;
   from_user_name: string;
   to_user_id: string;
@@ -2161,8 +2325,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-             | 'game_starting' | 'game_started' | 'game_ended'
-             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+    | 'game_starting' | 'game_started' | 'game_ended'
+    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

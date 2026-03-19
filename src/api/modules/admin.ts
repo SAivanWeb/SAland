@@ -1,6 +1,6 @@
 // Admin module
 
-import { get, del, request } from '../network'
+import { get, del, post, request } from '../network'
 import type {
   AdminUsersParams,
   AdminUsersResponse,
@@ -13,6 +13,15 @@ import type {
   AdminReportsResponse,
   AdminResolveReportRequest,
   AdminResolveReportResponse,
+  AdminThemesParams,
+  AdminThemesResponse,
+  AdminThemeDetail,
+  AdminCheckThemeRequest,
+  AdminCheckThemeResponse,
+  AdminGamesParams,
+  AdminGamesResponse,
+  AdminCreateBody,
+  AdminCreateResponse,
 } from './types'
 
 export const admin = {
@@ -73,6 +82,66 @@ export const admin = {
      */
     async resolve(reportId: string, data?: AdminResolveReportRequest): Promise<AdminResolveReportResponse> {
       return request<AdminResolveReportResponse>(`/admin/reports/${reportId}/resolve`, { method: 'PATCH', body: data })
+    },
+  },
+
+  themes: {
+    /**
+     * Get list of all permanent themes with search and pagination
+     * Requires admin role
+     */
+    async list(params?: AdminThemesParams): Promise<AdminThemesResponse> {
+      return get<AdminThemesResponse>('/admin/themes', { params })
+    },
+
+    /**
+     * Get theme by ID with full question list
+     * Requires admin role
+     */
+    async getById(themeId: string): Promise<AdminThemeDetail> {
+      return get<AdminThemeDetail>(`/admin/themes/${themeId}`)
+    },
+
+    /**
+     * Delete theme with all its questions
+     * Requires admin role
+     */
+    async delete(themeId: string): Promise<void> {
+      return del<void>(`/admin/themes/${themeId}`)
+    },
+
+    /**
+     * Set or unset theme check flag
+     * Requires admin role
+     */
+    async setCheck(themeId: string, data: AdminCheckThemeRequest): Promise<AdminCheckThemeResponse> {
+      return request<AdminCheckThemeResponse>(`/admin/themes/${themeId}/check`, { method: 'PATCH', body: data })
+    },
+
+    /**
+     * Create theme as admin (saves directly to PostgreSQL)
+     * Requires admin role
+     */
+    async create(data: AdminCreateBody): Promise<AdminCreateResponse> {
+      return post<AdminCreateResponse>('/themes/admin/create', data)
+    },
+  },
+
+  games: {
+    /**
+     * Get list of active games (currently running, stored in Redis)
+     * Requires admin role
+     */
+    async list(params?: AdminGamesParams): Promise<AdminGamesResponse> {
+      return get<AdminGamesResponse>('/admin/games', { params })
+    },
+
+    /**
+     * Force delete an active game. Players receive game:ended event.
+     * Requires admin role
+     */
+    async delete(gameId: string): Promise<void> {
+      return del<void>(`/admin/games/${gameId}`)
     },
   },
 }

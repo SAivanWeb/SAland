@@ -615,9 +615,12 @@ refresh_token=string; Path=/; HttpOnly; Secure; SameSite=Strict
 {
   "game_id": "string",
   "rating": "like | dislike",
-  "difficulty_rating": "easy | medium | hard"
+  "difficulty_rating": "easy | medium | hard",
+  "reason": "string?"
 }
 ```
+
+> `reason` — необязательное поле, описание причины дизлайка (макс. 1000 символов).
 
 **Response:**
 ```json

@@ -24,12 +24,16 @@ interface Props {
   loading?: boolean
   actionUsers?: boolean
   itemKey?: string
+  actionGames?: boolean
+  actionThemes?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   actionUsers: false,
   itemKey: 'id',
+  actionGames: false,
+  actionThemes: false
 })
 
 const emit = defineEmits<{
@@ -75,6 +79,88 @@ const columns = computed<DataTableColumns>(() => {
               },
             }, 'Редактировать'),
 
+            h('div', {
+              class: 'table-popover__item table-popover__item--danger',
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                openPopoverRowId.value = null
+                emit('action', rowId, 'delete')
+              },
+            }, [
+              'Удалить',
+            ]),
+          ]),
+        })
+      },
+    } as any)
+  }
+
+  if (props.actionGames) {
+    cols.push({
+      title: '',
+      key: '_actions',
+      width: 60,
+      render: (row: any) => {
+        const rowId = row[props.itemKey]
+
+        return h(NPopover, {
+          trigger: 'manual',
+          show: openPopoverRowId.value === rowId,
+          placement: 'bottom-end',
+          showArrow: false,
+          style: 'padding: 8px; min-width: 180px',
+          onClickoutside: () => { openPopoverRowId.value = null },
+        }, {
+          trigger: () => h('div', {
+            class: 'table-action-trigger',
+            onClick: (e: Event) => {
+              e.stopPropagation()
+              openPopoverRowId.value = openPopoverRowId.value === rowId ? null : rowId
+            },
+          }, [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })]),
+
+          default: () => h('div', { class: 'table-popover' }, [
+            h('div', {
+              class: 'table-popover__item table-popover__item--danger',
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                openPopoverRowId.value = null
+                emit('action', rowId, 'delete')
+              },
+            }, [
+              'Удалить',
+            ]),
+          ]),
+        })
+      },
+    } as any)
+  }
+
+  if (props.actionThemes) {
+    cols.push({
+      title: '',
+      key: '_actions',
+      width: 60,
+      render: (row: any) => {
+        const rowId = row[props.itemKey]
+
+        return h(NPopover, {
+          trigger: 'manual',
+          show: openPopoverRowId.value === rowId,
+          placement: 'bottom-end',
+          showArrow: false,
+          style: 'padding: 8px; min-width: 180px',
+          onClickoutside: () => { openPopoverRowId.value = null },
+        }, {
+          trigger: () => h('div', {
+            class: 'table-action-trigger',
+            onClick: (e: Event) => {
+              e.stopPropagation()
+              openPopoverRowId.value = openPopoverRowId.value === rowId ? null : rowId
+            },
+          }, [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })]),
+
+          default: () => h('div', { class: 'table-popover' }, [
             h('div', {
               class: 'table-popover__item table-popover__item--danger',
               onClick: (e: Event) => {

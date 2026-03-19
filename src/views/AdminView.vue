@@ -7,8 +7,12 @@
           <n-tab-pane name="users" tab="Пользователи">
             <UsersTab/>
           </n-tab-pane>
-          <n-tab-pane name="themes" tab="Темы"></n-tab-pane>
-          <n-tab-pane name="games" tab="Игры"></n-tab-pane>
+          <n-tab-pane name="themes" tab="Темы">
+            <ThemesTab/>
+          </n-tab-pane>
+          <n-tab-pane name="games" tab="Игры">
+            <GamesTab/>
+          </n-tab-pane>
           <n-tab-pane name="reports" tab="Жалобы">
             <ReportsTab/>
           </n-tab-pane>
@@ -22,6 +26,8 @@
 import { NTabs, NTabPane } from 'naive-ui'
 import UsersTab from '@/components/admin/UsersTab.vue'
 import ReportsTab from '@/components/admin/ReportsTab.vue'
+import GamesTab from '@/components/admin/GamesTab.vue'
+import ThemesTab from '@/components/admin/ThemesTab.vue'
 
 </script>
 

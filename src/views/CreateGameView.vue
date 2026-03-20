@@ -1,222 +1,228 @@
 <template>
-  <div v-if="room" class="create">
+  <div class="create">
     <div class="create__container">
-      <div class="create__header">
-        <h1>Создание игры</h1>
-        <MainButton title="Удалить комнату" color="red" size="small" @click="leaveRoom" />
-      </div>
-      <div class="create__card">
-        <div class="create__card-header create__card-header_col">
-          <h3 class="create__card-title">
-            {{ room.status === 'inactive' ? 'Запуск комнаты' : 'Ожидание игроков' }}
-          </h3>
-          <p>
-            {{
-              room.status === 'inactive'
-                ? 'После запуска начнется ожидание игроков'
-                : 'После подключение всех игроков можно начать игру'
-            }}
-          </p>
+      <template v-if="room">
+        <div class="create__header">
+          <h1>Создание игры</h1>
+          <MainButton title="Удалить комнату" color="red" size="small" @click="leaveRoom" />
         </div>
-        <div class="create__card-content">
-          <div v-if="room.status !== 'inactive'" class="create__card-users">
-            <div
-              v-for="player in room.players"
-              :key="player.user_id"
-              class="create__card-user create__card-user--filled"
-            >
+        <div class="create__card">
+          <div class="create__card-header create__card-header_col">
+            <h3 class="create__card-title">
+              {{ room.status === 'inactive' ? 'Запуск комнаты' : 'Ожидание игроков' }}
+            </h3>
+            <p>
+              {{
+                room.status === 'inactive'
+                  ? 'После запуска начнется ожидание игроков'
+                  : 'После подключение всех игроков можно начать игру'
+              }}
+            </p>
+          </div>
+          <div class="create__card-content">
+            <div v-if="room.status !== 'inactive'" class="create__card-users">
               <div
-                v-if="player.user_id !== room.owner_id"
-                class="create__card-user-kick"
-                @click="kickUser(player.user_id)"
+                v-for="player in room.players"
+                :key="player.user_id"
+                class="create__card-user create__card-user--filled"
               >
-                <n-icon size="16">
-                  <Close />
+                <div
+                  v-if="player.user_id !== room.owner_id"
+                  class="create__card-user-kick"
+                  @click="kickUser(player.user_id)"
+                >
+                  <n-icon size="16">
+                    <Close />
+                  </n-icon>
+                </div>
+                <PlayerIcon :name="player.name" />
+              </div>
+              <div
+                v-for="n in emptySlots"
+                :key="'empty-' + n"
+                class="create__card-user create__card-user--empty"
+              >
+                <n-icon size="24" color="#858585">
+                  <AddCircle />
                 </n-icon>
               </div>
-              <PlayerIcon :name="player.name" />
             </div>
-            <div
-              v-for="n in emptySlots"
-              :key="'empty-' + n"
-              class="create__card-user create__card-user--empty"
-            >
-              <n-icon size="24" color="#858585">
-                <AddCircle />
-              </n-icon>
+            <div class="create__card-row">
+              <MainButton
+                v-if="room.status === 'inactive'"
+                title="Запустить"
+                color="green"
+                @click="activateRoom"
+              />
+              <MainButton
+                v-else-if="room.status === 'waiting'"
+                title="Остановить"
+                color="red"
+                @click="deactivateRoom"
+              />
+              <MainButton
+                v-if="room.status === 'waiting' && room.players_count === room.players.length"
+                title="Начать игру"
+                color="green"
+                @click="startGame"
+              />
             </div>
           </div>
-          <div class="create__card-row">
-            <MainButton
-              v-if="room.status === 'inactive'"
-              title="Запустить"
-              color="green"
-              @click="activateRoom"
-            />
-            <MainButton
-              v-else-if="room.status === 'waiting'"
-              title="Остановить"
-              color="red"
-              @click="deactivateRoom"
-            />
-            <MainButton
-              v-if="room.status === 'waiting' && room.players_count === room.players.length"
-              title="Начать игру"
-              color="green"
-              @click="startGame"
-            />
-          </div>
         </div>
-      </div>
-      <div class="create__card">
-        <div class="create__card-header create__card-header_col">
-          <h3 class="create__card-title">Параметры</h3>
-          <p>Укажите все параметры для начала игры</p>
-        </div>
-        <div class="create__card-content">
-          <div class="create__card-param">
-            <MainSelect
-              name="players"
-              :options="playersOption"
-              v-model="gamePlayers"
-              placeholder="Количество игроков"
-              label="Количество игроков"
-            />
-            <MainSelect
-              name="time"
-              :options="timeQuestionOption"
-              v-model="answerTime"
-              placeholder="Время для ответа"
-              label="Время для ответа"
-            />
-            <MainSelect
-              name="time"
-              :options="timeTurnOption"
-              v-model="turnTime"
-              placeholder="Время для хода"
-              label="Время для хода"
-            />
-            <MainSelect
-              name="time"
-              :options="timerOption"
-              v-model="timer"
-              placeholder="Таймер игры"
-              label="Таймер игры"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="create__card">
-        <div class="create__card-header">
+        <div class="create__card">
           <div class="create__card-header create__card-header_col">
-            <h3 class="create__card-title">Тема</h3>
-            <p>Создайте тему удобным способом</p>
+            <h3 class="create__card-title">Параметры</h3>
+            <p>Укажите все параметры для начала игры</p>
           </div>
-          <MainButton
-            v-if="room && room.theme"
-            title="Очистить тему"
-            @click="clearTheme"
-            size="small"
-            color="red"
-            :disabled="room.status === 'waiting'"
-          />
+          <div class="create__card-content">
+            <div class="create__card-param">
+              <MainSelect
+                name="players"
+                :options="playersOption"
+                v-model="gamePlayers"
+                placeholder="Количество игроков"
+                label="Количество игроков"
+              />
+              <MainSelect
+                name="time"
+                :options="timeQuestionOption"
+                v-model="answerTime"
+                placeholder="Время для ответа"
+                label="Время для ответа"
+              />
+              <MainSelect
+                name="time"
+                :options="timeTurnOption"
+                v-model="turnTime"
+                placeholder="Время для хода"
+                label="Время для хода"
+              />
+              <MainSelect
+                name="time"
+                :options="timerOption"
+                v-model="timer"
+                placeholder="Таймер игры"
+                label="Таймер игры"
+              />
+            </div>
+          </div>
         </div>
-        <div class="create__card-content">
-          <n-tabs
-            default-value="generate"
-            type="segment"
-            size="medium"
-            justify-content="space-evenly"
-            v-model:value="activeTab"
-          >
-            <n-tab-pane name="generate" tab="ИИ генерация">
-              <div class="create__generate">
-                <div class="create__generate-header">
-                  <MainInput
-                    name="generateThemeName"
-                    label="Название темы"
-                    placeholder="Спорт, CS 2, история Руси и т.д."
-                    v-model="generateThemeName"
-                    size="large"
-                  />
-                  <MainButton
-                    title="Сгенерировать"
-                    size="large"
-                    color="blue"
-                    :disabled="!generateThemeName || room.status === 'waiting'"
-                  />
+        <div class="create__card">
+          <div class="create__card-header">
+            <div class="create__card-header create__card-header_col">
+              <h3 class="create__card-title">Тема</h3>
+              <p>Создайте тему удобным способом</p>
+            </div>
+            <MainButton
+              v-if="room && room.theme"
+              title="Очистить тему"
+              @click="clearTheme"
+              size="small"
+              color="red"
+              :disabled="room.status === 'waiting'"
+            />
+          </div>
+          <div class="create__card-content">
+            <n-tabs
+              default-value="generate"
+              type="segment"
+              size="medium"
+              justify-content="space-evenly"
+              v-model:value="activeTab"
+            >
+              <n-tab-pane name="generate" tab="ИИ генерация">
+                <div class="create__generate">
+                  <div class="create__generate-header">
+                    <MainInput
+                      name="generateThemeName"
+                      label="Название темы"
+                      placeholder="Спорт, CS 2, история Руси и т.д."
+                      v-model="generateThemeName"
+                      size="large"
+                    />
+                    <MainButton
+                      title="Сгенерировать"
+                      size="large"
+                      color="blue"
+                      :disabled="!generateThemeName || room.status === 'waiting'"
+                    />
+                  </div>
                 </div>
-              </div>
-            </n-tab-pane>
-            <n-tab-pane name="existing" tab="Готовая тема">
-              <div v-if="room?.theme" class="create__theme-status">
-                <p>
-                  Тема: <span>{{ room.theme.name }}</span>
-                </p>
-                <p>
-                  Вопросов:
-                  <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span>
-                </p>
-              </div>
-            </n-tab-pane>
-            <n-tab-pane name="manual" tab="Ручное создание">
-              <div class="create__manual">
-                <div v-if="isThemeComplete && activeTab === 'manual'" class="create__theme-status">
+              </n-tab-pane>
+              <n-tab-pane name="existing" tab="Готовая тема">
+                <div v-if="room?.theme" class="create__theme-status">
                   <p>
-                    Тема: <span>{{ room!.theme!.name }}</span>
+                    Тема: <span>{{ room.theme.name }}</span>
                   </p>
                   <p>
                     Вопросов:
-                    <span
-                      >{{ room!.theme!.questions_loaded }}/{{ room!.theme!.questions_total }}</span
-                    >
+                    <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span>
                   </p>
                 </div>
-                <template v-else>
-                  <div class="create__manual-fields">
-                    <MainInput
-                      name="manualThemeName"
-                      placeholder="Название темы"
-                      label="Укажите название темы"
-                      v-model="manualThemeName"
-                      :disabled="showProcessUpload"
-                    />
-                    <MainButton
-                      title="Получить"
-                      @click="getPrompt"
-                      :disabled="!manualThemeName || showProcessUpload"
-                    />
-                  </div>
-                  <div v-if="showProcessUpload" class="create__manual-upload">
-                    <h4>Прогресс создания темы</h4>
+              </n-tab-pane>
+              <n-tab-pane name="manual" tab="Ручное создание">
+                <div class="create__manual">
+                  <div v-if="isThemeComplete && activeTab === 'manual'" class="create__theme-status">
                     <p>
-                      Получено вопросов:
-                      <span>{{ questionUploaded }}/{{ room?.theme?.questions_total ?? 80 }}</span>
+                      Тема: <span>{{ room!.theme!.name }}</span>
                     </p>
-                    <MainButton
-                      title="Загрузить"
-                      @click="uploadQuestions"
-                      :disabled="isThemeComplete"
-                    />
-                    <div v-if="showPasteError" class="create__manual-fields">
+                    <p>
+                      Вопросов:
+                      <span
+                        >{{ room!.theme!.questions_loaded }}/{{ room!.theme!.questions_total }}</span
+                      >
+                    </p>
+                  </div>
+                  <template v-else>
+                    <div class="create__manual-fields">
                       <MainInput
-                        name="questionsInput"
-                        placeholder="Вставьте вопросы"
-                        label="Сгенерированные вопросы"
-                        v-model="questionsArray"
+                        name="manualThemeName"
+                        placeholder="Название темы"
+                        label="Укажите название темы"
+                        v-model="manualThemeName"
+                        :disabled="showProcessUpload"
                       />
                       <MainButton
-                        title="Загрузить"
-                        @click="uploadQuestionsManually"
-                        :disabled="!questionsArray || isThemeComplete"
+                        title="Получить"
+                        @click="getPrompt"
+                        :disabled="!manualThemeName || showProcessUpload"
                       />
                     </div>
-                  </div>
-                </template>
-              </div>
-            </n-tab-pane>
-          </n-tabs>
+                    <div v-if="showProcessUpload" class="create__manual-upload">
+                      <h4>Прогресс создания темы</h4>
+                      <p>
+                        Получено вопросов:
+                        <span>{{ questionUploaded }}/{{ room?.theme?.questions_total ?? 80 }}</span>
+                      </p>
+                      <MainButton
+                        title="Загрузить"
+                        @click="uploadQuestions"
+                        :disabled="isThemeComplete"
+                      />
+                      <div v-if="showPasteError" class="create__manual-fields">
+                        <MainInput
+                          name="questionsInput"
+                          placeholder="Вставьте вопросы"
+                          label="Сгенерированные вопросы"
+                          v-model="questionsArray"
+                        />
+                        <MainButton
+                          title="Загрузить"
+                          @click="uploadQuestionsManually"
+                          :disabled="!questionsArray || isThemeComplete"
+                        />
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </n-tab-pane>
+            </n-tabs>
+          </div>
         </div>
+      </template>
+      <div v-else class="create__noroom">
+        <h3>Нет активной комнаты</h3>
+        <MainButton title="На главную" color="red" @click="router.push('/games')" size="medium"/>
       </div>
     </div>
   </div>
@@ -525,7 +531,9 @@ onMounted(() => {
       roomStore.initRoom()
     }),
   )
-  roomStore.initRoom()
+  if (!window.history.state?.fresh) {
+    roomStore.initRoom()
+  }
 })
 
 onUnmounted(() => {
@@ -550,6 +558,16 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-height: calc(100vh - $footer-height - $header-height - 88px);
+  }
+
+  &__noroom{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+    margin: auto 0;
   }
 
   h1 {

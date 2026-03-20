@@ -46,6 +46,7 @@ const userStore = useUserStore()
 const roomStore = useRoomStore()
 const processingStore = useProcessingStore()
 const search = ref<string>('')
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
 const currentRoom = computed(() =>
   roomStore.room?.owner_id === userStore.currentUser?.user.id ? null : roomStore.room,
@@ -63,19 +64,23 @@ watch(
 
 const popularGames = ref<Theme[]>([])
 
-async function fetchPopularGames() {
+async function fetchPopularGames(q?: string) {
   try {
     processingStore.startLoading()
-    const res = await api.themes.popular()
+    const res = await api.themes.popular({ q })
     popularGames.value = res.themes
-    console.log(res.themes)
   } catch (e) {
     if (isErrorMessage(e, 'error'))
-      processingStore.setMessage('error', 'Ошбка', 'Ошибка получения сохраненных тем')
+      processingStore.setMessage('error', 'Ошибка', 'Ошибка получения сохраненных тем')
   } finally {
     processingStore.stopLoading()
   }
 }
+
+watch(search, (val) => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => fetchPopularGames(val), 400)
+})
 
 onMounted(() => {
   fetchPopularGames()

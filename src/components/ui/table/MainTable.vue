@@ -38,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   action: [id: string | number, action: 'edit' | 'delete']
+  click: [id: string | number]
 }>()
 
 const openPopoverRowId = ref<string | number | null>(null)
@@ -177,7 +178,28 @@ const columns = computed<DataTableColumns>(() => {
     } as any)
   }
 
-  return cols
+  return cols.map((col) => {
+    if ((col as any).clickable) {
+      const originalRender = (col as any).render
+      return {
+        ...col,
+        render: (row: any) => {
+          const content = originalRender
+            ? originalRender(row, 0)
+            : row[(col as any).key]
+          return h(
+            'div',
+            {
+              class: 'table-cell-clickable',
+              onClick: () => emit('click', row[props.itemKey]),
+            },
+            [content],
+          )
+        },
+      }
+    }
+    return col
+  })
 })
 </script>
 
@@ -235,6 +257,17 @@ const columns = computed<DataTableColumns>(() => {
   padding: 40px 20px;
   text-align: center;
   @include body-1;
+}
+
+.table-cell-clickable {
+  cursor: pointer;
+  color: $primary-purple;
+  font-weight: 600;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.7;
+  }
 }
 
 .table-action-trigger {

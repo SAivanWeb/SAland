@@ -21,11 +21,33 @@
                 :name="item.user_name"
                 no-tooltip
               />
-              <div class="chat__message-user-additional">
-                <n-icon size="24">
-                  <Dots />
-                </n-icon>
-              </div>
+              <n-popover
+                trigger="manual"
+                :show="openPopoverUserId === item.user_id"
+                placement="bottom-start"
+                :show-arrow="false"
+                style="padding: 8px; min-width: 160px"
+                @clickoutside="openPopoverUserId = null"
+              >
+                <template #trigger>
+                  <div
+                    class="chat__message-user-additional"
+                    @click.stop="openPopoverUserId = openPopoverUserId === item.user_id ? null : item.user_id"
+                  >
+                    <n-icon size="24">
+                      <Dots />
+                    </n-icon>
+                  </div>
+                </template>
+                <div class="chat__popover">
+                  <div class="chat__popover-item" @click="openReport(item.user_id, item.user_name)">
+                    Пожаловаться
+                  </div>
+                  <div class="chat__popover-item" @click="addFriend(item.user_id)">
+                    Добавить в друзья
+                  </div>
+                </div>
+              </n-popover>
             </div>
             <div class="chat__message-content">
               {{ item.content }}
@@ -49,9 +71,9 @@
 </template>
 
 <script setup lang="ts">
-import { type ChatMessage, useWebSocket } from '@/api'
+import { type ChatMessage, useWebSocket, useApi } from '@/api'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { NScrollbar, NIcon } from 'naive-ui'
+import { NScrollbar, NIcon, NPopover } from 'naive-ui'
 import { useUserStore } from '@/stores/useUserStore.ts'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
@@ -65,10 +87,12 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const api = useApi()
 const processingStore = useProcessingStore()
 const ws = useWebSocket()
 const userStore = useUserStore()
 const unsubs: (() => void)[] = []
+const openPopoverUserId = ref<string | null>(null)
 
 const scrollbarRef = ref<InstanceType<typeof NScrollbar> | null>(null)
 const messages = ref<ChatMessage[]>()
@@ -83,6 +107,21 @@ const scrollToBottom = () => {
 watch(messages, scrollToBottom)
 
 const currentUser = computed(() => userStore.currentUser)
+
+function openReport(userId: string, userName: string) {
+  openPopoverUserId.value = null
+  processingStore.setReport({ id: userId, name: userName })
+}
+
+async function addFriend(userId: string) {
+  openPopoverUserId.value = null
+  try {
+    await api.friends.sendRequest({ user_id: userId })
+    processingStore.setMessage('success', 'Друзья', 'Запрос на дружбу отправлен')
+  } catch {
+    processingStore.setMessage('error', 'Друзья', 'Ошибка отправки запроса')
+  }
+}
 
 const sendMessage = () => {
   if (!newMessage.value.trim()) return
@@ -199,6 +238,29 @@ onUnmounted(() => {
 
     & .input {
       width: 100%;
+    }
+  }
+
+  &__popover {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      @include body-2;
+      white-space: nowrap;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: $primary-blue;
+      }
+
+      &:first-child:hover {
+        background-color: $primary-red;
+      }
     }
   }
 

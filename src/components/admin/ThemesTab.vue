@@ -11,6 +11,7 @@
       :loading="loading"
       action-themes
       @action="onAction"
+      @click="onRowClick"
     />
 
     <div class="themes__footer" v-if="pagination">
@@ -27,6 +28,12 @@
   </div>
 
   <AcceptModal v-model:show="showThemeDelete" :theme-id="selectedThemeId" type="theme-delete" @action="fetchThemes"/>
+  <ThemeViewModal
+    v-model:show="showThemeView"
+    :theme-id="selectedThemeId?.toString() ?? null"
+    :checked="selectedThemeChecked"
+    @check-updated="fetchThemes"
+  />
 </template>
 
 <script setup lang="ts">
@@ -36,6 +43,7 @@ import MainInput from '@/components/ui/input/MainInput.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
 import { type AdminUsersPagination, useApi, type AdminThemesParams, type AdminTheme } from '@/api'
 import AcceptModal from '@/components/modals/AcceptModal.vue'
+import ThemeViewModal from '@/components/modals/ThemeViewModal.vue'
 
 const api = useApi()
 
@@ -44,7 +52,9 @@ const loading = ref(false)
 const themesData = ref<AdminTheme[]>([])
 const pagination = ref<AdminUsersPagination | null>(null)
 const showThemeDelete = ref(false)
+const showThemeView = ref(false)
 const selectedThemeId = ref<string | number>()
+const selectedThemeChecked = ref(false)
 
 const params = ref<AdminThemesParams>({
   q: '',
@@ -54,9 +64,9 @@ const params = ref<AdminThemesParams>({
 
 const themesHeaders = [
   { title: 'ID', key: 'id', minWidth: 280, ellipsis: { tooltip: true } },
-  { title: 'Название', key: 'name', minWidth: 280, ellipsis: { tooltip: true } },
+  { title: 'Название', key: 'name', minWidth: 280, ellipsis: { tooltip: true }, clickable: true },
   { title: 'Кол-во вопросов', key: 'questions_count'},
-  { title: 'Проверена', key: 'check'},
+  { title: 'Проверена', key: 'check', render: (row: any) => row.check ? 'Да' : 'Нет' },
 ]
 
 async function fetchThemes() {
@@ -93,6 +103,15 @@ function onAction(id: string | number) {
   if (id) {
     selectedThemeId.value = id
     showThemeDelete.value = true
+  }
+}
+
+function onRowClick(id: string | number) {
+  const theme = themesData.value.find((t) => t.id === id)
+  if (theme) {
+    selectedThemeId.value = id
+    selectedThemeChecked.value = theme.check
+    showThemeView.value = true
   }
 }
 

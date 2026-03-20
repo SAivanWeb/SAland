@@ -2,6 +2,7 @@
   <ModalContainer v-model:show="show" modalWidth="500px">
     <template #header>
       <h3 v-if="type === 'user-edit'">Редактирование пользователя</h3>
+      <h3 v-if="type === 'profile-edit'">Редактировать профиль</h3>
     </template>
     <template #body>
       <template v-if="type === 'user-edit'">
@@ -13,6 +14,10 @@
           v-model="statusValue"
         />
         <MainButton title="Сохранить" @click="saveUser" />
+      </template>
+      <template v-if="type === 'profile-edit'">
+        <MainInput name="name" placeholder="Введите новое имя" v-model="nameValue" />
+        <MainButton title="Сохранить" :disabled="!nameValue" @click="saveProfile" />
       </template>
     </template>
   </ModalContainer>
@@ -29,7 +34,7 @@ import MainSelect from '@/components/ui/select/MainSelect.vue'
 
 interface Props {
   show: boolean
-  user: AdminUser
+  user?: AdminUser
   type: string
 }
 
@@ -47,14 +52,23 @@ const show = computed({
   set: (value: boolean) => emit('update:show', value),
 })
 
-const nameValue = ref(props.user.name)
-const statusValue = ref(props.user.status)
+const nameValue = ref(props.user?.name ?? '')
+const statusValue = ref(props.user?.status ?? '')
 
 watch(
   () => props.user,
   (user) => {
-    nameValue.value = user.name
-    statusValue.value = user.status
+    nameValue.value = user?.name ?? ''
+    statusValue.value = user?.status ?? ''
+  },
+)
+
+watch(
+  () => props.show,
+  (value) => {
+    if (value && props.type === 'profile-edit') {
+      nameValue.value = ''
+    }
   },
 )
 
@@ -75,6 +89,21 @@ async function saveUser() {
     processingStore.setMessage('success', 'Редактирование пользователя', 'Данные сохранены')
   } catch {
     processingStore.setMessage('error', 'Редактирование пользователя', 'Ошибка сохранения')
+  } finally {
+    processingStore.stopLoading()
+  }
+}
+
+async function saveProfile() {
+  try {
+    processingStore.startLoading()
+    await api.user.updateProfile({ name: nameValue.value })
+    processingStore.setMessage('success', 'Редактирование профиля', 'Профиль обновлён')
+    emit('action')
+    emit('update:show', false)
+    nameValue.value = ''
+  } catch {
+    processingStore.setMessage('error', 'Редактирование профиля', 'Ошибка обновления профиля')
   } finally {
     processingStore.stopLoading()
   }

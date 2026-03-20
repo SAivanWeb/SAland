@@ -59,7 +59,7 @@
 
   <SearchPlayerModal v-model:show="showSearch" />
   <UserProfileModal v-if="selectedUser" v-model:show="showProfile" :user="selectedUser" @deleted="fetchFriends" />
-  <EditProfileModal v-model:show="showEditProfile" @updated="fetchProfile" />
+  <EditRowModal v-model:show="showEditProfile" type="profile-edit" @action="fetchProfile" />
 </template>
 
 <script setup lang="ts">
@@ -71,7 +71,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import SearchPlayerModal from '@/components/modals/SearchPlayerModal.vue'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import UserProfileModal from '@/components/modals/UserProfileModal.vue'
-import EditProfileModal from '@/components/modals/EditProfileModal.vue'
+import EditRowModal from '@/components/modals/EditRowModal.vue'
 import { useWebSocket } from '@/api'
 
 const ws = useWebSocket()

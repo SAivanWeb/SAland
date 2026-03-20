@@ -4,6 +4,7 @@
     trigger="click"
     placement="bottom-end"
     :show-arrow="false"
+    v-model:show="showMenu"
   >
     <template #trigger>
       <div class="menu__button">
@@ -21,7 +22,7 @@ import { NPopover, NIcon, NMenu } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import { Menu, GameController, Person, Exit, Shield } from '@vicons/ionicons5'
 import type { Component } from 'vue'
-import { h, computed } from 'vue'
+import { h, computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore.ts'
 
@@ -30,6 +31,8 @@ const userStore = useUserStore()
 function renderIcon(icon: Component) {
   return () => h(NIcon, { size: 24, color: '#151515' }, { default: () => h(icon) })
 }
+
+const showMenu = ref<boolean>(false)
 
 const menuOptions = computed(() => {
   if (userStore.currentUser) {
@@ -94,6 +97,7 @@ const menuOptions = computed(() => {
 })
 
 function logout(key: string) {
+  showMenu.value = false
   if (key === 'logout') userStore.logout()
 }
 </script>

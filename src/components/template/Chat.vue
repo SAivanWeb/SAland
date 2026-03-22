@@ -60,7 +60,7 @@
       </div>
     </n-scrollbar>
     <div class="chat__footer">
-      <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" />
+      <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" @keydown.enter="sendMessage" />
       <div class="chat__send" @click="sendMessage">
         <n-icon class="chat__send-icon" size="24">
           <Send />

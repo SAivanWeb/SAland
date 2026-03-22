@@ -3,17 +3,75 @@
     <n-card style="width: 800px" :bordered="false" size="huge" role="dialog" aria-modal="true">
       <div class="modal">
         <div class="modal__players" v-if="players && players.length > 0">
-          <div class="modal__players-list">
-            <div
-              v-for="player in players"
-              :key="player.id"
-              class="modal__player"
-              :style="{ borderColor: player.color, backgroundColor: `${player.color}15` }"
-            >
-              <div class="modal__player-indicator" :style="{ backgroundColor: player.color }" />
-              <div class="modal__player-name">{{ player.name }}</div>
-            </div>
-          </div>
+          <!-- Result phase -->
+          <template v-if="phase === 'result'">
+            <template v-if="isBattle">
+              <div class="modal__players-result">
+                <div class="modal__players-result-label">Победитель</div>
+                <div
+                  v-if="winner"
+                  class="modal__player modal__player--winner"
+                  :style="{ borderColor: winner.color, backgroundColor: `${winner.color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: winner.color }" />
+                  <div class="modal__player-name">{{ winner.name }}</div>
+                </div>
+                <div v-else class="modal__players-result-label">Никто не ответил правильно</div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="modal__players-solo">
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
+                  <div class="modal__player-name">{{ players[0].name }}</div>
+                </div>
+                <div
+                  class="modal__players-solo-verdict"
+                  :class="playerAnswerCorrect ? 'modal__players-solo-verdict--correct' : 'modal__players-solo-verdict--wrong'"
+                >
+                  {{ playerAnswerCorrect ? 'Правильно' : 'Неправильно' }}
+                </div>
+              </div>
+            </template>
+          </template>
+
+          <!-- Question / waiting phase -->
+          <template v-else>
+            <template v-if="isBattle && players.length >= 2">
+              <div class="modal__players-battle">
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
+                  <div class="modal__player-name">{{ players[0].name }}</div>
+                </div>
+                <div class="modal__players-battle-label">атакует</div>
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[1].color, backgroundColor: `${players[1].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[1].color }" />
+                  <div class="modal__player-name">{{ players[1].name }}</div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="modal__players-solo">
+                <div class="modal__players-solo-label">Отвечает на вопрос</div>
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
+                  <div class="modal__player-name">{{ players[0].name }}</div>
+                </div>
+              </div>
+            </template>
+          </template>
         </div>
 
         <div class="modal__timer">
@@ -180,6 +238,14 @@ const closingPercentage = computed(() => {
   return (closingRemaining.value / closingTotal.value) * 100
 })
 
+// --- Победитель в батле ---
+const winner = computed(() => {
+  if (!props.isBattle || props.players.length < 2) return null
+  if (props.playerAnswerCorrect === true) return props.players[0]
+  if (props.defenderAnswerCorrect === true) return props.players[1]
+  return null
+})
+
 // --- Индекс выбранного ответа (null = ещё не ответил) ---
 const selectedAnswerIndex = ref<number | null>(null)
 
@@ -257,12 +323,62 @@ onUnmounted(() => {
     gap: 12px;
     align-items: center;
 
-    &-list {
+    &-battle {
       display: flex;
-      gap: 12px;
+      align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
       width: 100%;
+      gap: 12px;
+
+      &-label {
+        @include body-1-bold;
+        color: $text-grey;
+        white-space: nowrap;
+      }
+    }
+
+    &-solo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      &-label {
+        @include body-1;
+        color: $text-grey;
+        white-space: nowrap;
+      }
+
+      &-verdict {
+        @include body-1-bold;
+        padding: 6px 16px;
+        border-radius: $border-radius;
+        white-space: nowrap;
+
+        &--correct {
+          color: #276749;
+          background: #c6f6d5;
+          border: 2px solid #48bb78;
+        }
+
+        &--wrong {
+          color: #9b2c2c;
+          background: #fed7d7;
+          border: 2px solid #fc8181;
+        }
+      }
+    }
+
+    &-result {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+
+      &-label {
+        @include body-1;
+        color: $text-grey;
+      }
     }
   }
 
@@ -285,6 +401,11 @@ onUnmounted(() => {
     &-name {
       @include body-1-bold;
       color: $text-dark;
+    }
+
+    &--winner {
+      padding: 10px 20px;
+      font-size: 1.1rem;
     }
   }
 

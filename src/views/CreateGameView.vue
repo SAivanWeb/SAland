@@ -199,6 +199,21 @@
                         @click="uploadQuestions"
                         :disabled="isThemeComplete"
                       />
+                      <div v-if="promptText" class="create__manual-prompt">
+                        <p>Если промпт не скопировался автоматически — нажмите кнопку ниже:</p>
+                        <MainButton
+                          title="Показать / скопировать промпт"
+                          size="small"
+                          @click="showPrompt = !showPrompt"
+                        />
+                        <textarea
+                          v-if="showPrompt"
+                          class="create__manual-prompt-text"
+                          readonly
+                          :value="promptText"
+                          @click="($event.target as HTMLTextAreaElement).select()"
+                        />
+                      </div>
                       <div v-if="showPasteError" class="create__manual-fields">
                         <MainInput
                           name="questionsInput"
@@ -262,6 +277,8 @@ const questionUploaded = ref<number>(0)
 const questionsArray = ref<string>('')
 const showPasteError = ref<boolean>(false)
 const showProcessUpload = ref<boolean>(false)
+const promptText = ref<string>('')
+const showPrompt = ref<boolean>(false)
 const activeTab = ref<string>('generate')
 const emptySlots = computed(() => {
   if (room.value) return gamePlayers.value - room.value.players.length
@@ -277,6 +294,8 @@ function resetThemeState() {
   questionsArray.value = ''
   showPasteError.value = false
   showProcessUpload.value = false
+  promptText.value = ''
+  showPrompt.value = false
 }
 
 const playersOption = [
@@ -477,12 +496,20 @@ onMounted(() => {
       console.error('AI error:', data.error)
     }),
     ws.rooms.onPrompt((data) => {
-      navigator.clipboard.writeText(data.prompt)
-      processingStore.setMessage(
-        'success',
-        'Загрузка вопросов',
-        'Промпт успешно скопирован в буфер обмена. Можете вставить его в ИИ.',
-      )
+      promptText.value = data.prompt
+      navigator.clipboard?.writeText(data.prompt).then(() => {
+        processingStore.setMessage(
+          'success',
+          'Загрузка вопросов',
+          'Промпт успешно скопирован в буфер обмена. Можете вставить его в ИИ.',
+        )
+      }).catch(() => {
+        processingStore.setMessage(
+          'warning',
+          'Загрузка вопросов',
+          'Не удалось скопировать автоматически. Нажмите кнопку для копирования вручную.',
+        )
+      })
     }),
     ws.rooms.onThemeRawUploaded((data) => {
       questionUploaded.value = data.loaded
@@ -721,6 +748,31 @@ onUnmounted(() => {
       border: 2px solid $border;
       box-shadow: $box-shadow;
       border-radius: $border-radius;
+    }
+
+    &-prompt {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      p {
+        @include body-1;
+        color: $text-dark;
+      }
+
+      &-text {
+        width: 100%;
+        min-height: 160px;
+        padding: 12px;
+        border: 2px solid $border;
+        border-radius: $border-radius;
+        font-size: 13px;
+        font-family: monospace;
+        resize: vertical;
+        background: #f9f9f9;
+        color: $text-dark;
+        cursor: text;
+      }
     }
   }
 }

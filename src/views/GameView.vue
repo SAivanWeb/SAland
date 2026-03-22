@@ -52,7 +52,7 @@
         Захвачено: <span>{{ players[0]?.territories_count }}</span>
       </div>
       <n-progress
-        v-if="isCurrentTurnPlayer(0)"
+        v-if="isCurrentTurnPlayer(0) && !gameStore.currentQuestion"
         type="line"
         :percentage="turnTimerData?.percentage ?? 0"
         :show-indicator="false"
@@ -94,7 +94,7 @@
         Захвачено: <span>{{ players[1]?.territories_count }}</span>
       </div>
       <n-progress
-        v-if="isCurrentTurnPlayer(1)"
+        v-if="isCurrentTurnPlayer(1) && !gameStore.currentQuestion"
         type="line"
         :percentage="turnTimerData?.percentage ?? 0"
         :show-indicator="false"
@@ -136,7 +136,7 @@
         Захвачено: <span>{{ players[2]?.territories_count }}</span>
       </div>
       <n-progress
-        v-if="isCurrentTurnPlayer(2)"
+        v-if="isCurrentTurnPlayer(2) && !gameStore.currentQuestion"
         type="line"
         :percentage="turnTimerData?.percentage ?? 0"
         :show-indicator="false"
@@ -178,7 +178,7 @@
         Захвачено: <span>{{ players[3]?.territories_count }}</span>
       </div>
       <n-progress
-        v-if="isCurrentTurnPlayer(3)"
+        v-if="isCurrentTurnPlayer(3) && !gameStore.currentQuestion"
         type="line"
         :percentage="turnTimerData?.percentage ?? 0"
         :show-indicator="false"

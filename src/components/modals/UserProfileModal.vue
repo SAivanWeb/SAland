@@ -23,7 +23,7 @@
           <span>{{ user.stats.total_questions_answered }}</span>
         </div>
       </div>
-      <MainButton title="Удалить" color="red" @click="deleteFriend()"/>
+      <MainButton title="Удалить из друзей" color="red" @click="deleteFriend()"/>
     </template>
   </ModalContainer>
 </template>

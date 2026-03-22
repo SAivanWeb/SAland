@@ -7,15 +7,13 @@
           <template v-if="phase === 'result'">
             <template v-if="isBattle">
               <div class="modal__players-result">
-                <div class="modal__players-result-label">Победитель</div>
-                <div
-                  v-if="winner"
-                  class="modal__player modal__player--winner"
-                  :style="{ borderColor: winner.color, backgroundColor: `${winner.color}15` }"
-                >
-                  <div class="modal__player-indicator" :style="{ backgroundColor: winner.color }" />
-                  <div class="modal__player-name">{{ winner.name }}</div>
-                </div>
+                <template v-if="winner">
+                  <div class="modal__players-result-battle">
+                    <span class="modal__players-result-battle-name" :style="{ color: winner.color }">{{ winner.name }}</span>
+                    <span class="modal__players-result-battle-verb">победил</span>
+                    <span class="modal__players-result-battle-name" :style="{ color: loser!.color }">{{ loser!.name }}</span>
+                  </div>
+                </template>
                 <div v-else class="modal__players-result-label">Никто не ответил правильно</div>
               </div>
             </template>
@@ -246,6 +244,11 @@ const winner = computed(() => {
   return null
 })
 
+const loser = computed(() => {
+  if (!winner.value || props.players.length < 2) return null
+  return winner.value === props.players[0] ? props.players[1] : props.players[0]
+})
+
 // --- Индекс выбранного ответа (null = ещё не ответил) ---
 const selectedAnswerIndex = ref<number | null>(null)
 
@@ -378,6 +381,22 @@ onUnmounted(() => {
       &-label {
         @include body-1;
         color: $text-grey;
+      }
+
+      &-battle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        &-name {
+          @include body-1-bold;
+          font-size: 1.2rem;
+        }
+
+        &-verb {
+          @include body-1;
+          color: $text-grey;
+        }
       }
     }
   }

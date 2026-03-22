@@ -400,14 +400,15 @@ const questionPlayers = computed(() => {
   if (!gameStore.currentQuestion) return []
   const result: { id: number; name: string; color: string }[] = []
 
-  if (myPlayerIndex.value !== null) {
-    const me = gameStore.players.find((p) => p.player_index === myPlayerIndex.value)
-    if (me) result.push({ id: me.player_index, name: me.name, color: me.color })
+  const attackerIndex = gameStore.currentTurn?.current_player_index ?? null
+  if (attackerIndex !== null) {
+    const attacker = gameStore.players.find((p) => p.player_index === attackerIndex)
+    if (attacker) result.push({ id: attacker.player_index, name: attacker.name, color: attacker.color })
   }
 
   if (gameStore.currentQuestion.is_battle && gameStore.currentQuestion.defender_index !== null) {
     const defIdx = gameStore.currentQuestion.defender_index
-    if (defIdx !== myPlayerIndex.value) {
+    if (defIdx !== attackerIndex) {
       const defender = gameStore.players.find((p) => p.player_index === defIdx)
       if (defender)
         result.push({ id: defender.player_index, name: defender.name, color: defender.color })

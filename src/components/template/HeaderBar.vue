@@ -10,8 +10,8 @@
           color="green"
           @click="toAuth"
         />
-        <Notification v-if="!isMainPage && !isAuthPage" />
-        <Menu v-if="!isMainPage && !isAuthPage" />
+        <Notification v-if="show" />
+        <Menu v-if="show" />
       </div>
     </div>
   </div>
@@ -38,8 +38,13 @@ const isAuthPage = computed(() => {
   return route.path === '/auth'
 })
 
-const isMainPage = computed(() => {
-  return route.path === '/'
+const show = computed(() => {
+  return !(
+    route.path === '/auth' ||
+    route.path === '/' ||
+    route.path === '/instruction' ||
+    route.path === '/user-politic'
+  )
 })
 
 const toAuth = () => {
@@ -80,7 +85,7 @@ const toMain = () => {
     gap: 24px;
   }
 
-  &__logo{
+  &__logo {
     width: 34px;
     height: 34px;
     cursor: pointer;

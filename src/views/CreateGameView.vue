@@ -31,9 +31,6 @@
                   class="create__card-user-kick"
                   @click="kickUser(player.user_id)"
                 >
-                  <n-icon size="16">
-                    <Close />
-                  </n-icon>
                 </div>
                 <PlayerIcon :name="player.name" />
               </div>

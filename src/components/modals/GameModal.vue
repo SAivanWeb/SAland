@@ -7,7 +7,10 @@
           <template v-if="phase === 'result'">
             <template v-if="isBattle">
               <div class="modal__players-result">
-                <template v-if="winner">
+                <template v-if="resultType === 'battle_draw'">
+                  <div class="modal__players-result-label modal__players-result-label--draw">Ничья</div>
+                </template>
+                <template v-else-if="winner">
                   <div class="modal__players-result-battle">
                     <span class="modal__players-result-battle-name" :style="{ color: winner.color }">{{ winner.name }}</span>
                     <span class="modal__players-result-battle-verb">победил</span>
@@ -144,6 +147,7 @@ interface Props {
   defenderAnswerCorrect?: boolean
   isBattle?: boolean
   canAnswer?: boolean
+  resultType?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -159,6 +163,7 @@ const props = withDefaults(defineProps<Props>(), {
   defenderAnswerCorrect: undefined,
   isBattle: false,
   canAnswer: true,
+  resultType: null,
 })
 
 const emit = defineEmits<{
@@ -239,6 +244,10 @@ const closingPercentage = computed(() => {
 // --- Победитель в батле ---
 const winner = computed(() => {
   if (!props.isBattle || props.players.length < 2) return null
+  if (props.resultType === 'battle_draw') return null
+  if (props.resultType === 'battle_won') return props.players[0]
+  if (props.resultType === 'battle_lost') return props.players[1]
+  // fallback to answer flags when resultType not provided
   if (props.playerAnswerCorrect === true) return props.players[0]
   if (props.defenderAnswerCorrect === true) return props.players[1]
   return null
@@ -381,6 +390,11 @@ onUnmounted(() => {
       &-label {
         @include body-1;
         color: $text-grey;
+
+        &--draw {
+          @include body-1-bold;
+          color: $text-dark;
+        }
       }
 
       &-battle {

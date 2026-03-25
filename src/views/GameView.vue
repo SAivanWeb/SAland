@@ -220,6 +220,7 @@
       :defender-answer-correct="gameStore.answerResult?.result.defender_answer?.is_correct"
       :is-battle="!!gameStore.currentQuestion?.is_battle"
       :can-answer="canAnswer"
+      :result-type="gameStore.answerResult?.result.type ?? null"
       @answer-selected="onAnswerSelected"
       @time-up="onQuestionTimeUp"
     />

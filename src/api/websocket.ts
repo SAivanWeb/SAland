@@ -68,7 +68,7 @@ import type {
   WsError,
 } from './modules/types'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000'
+const WS_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:3000'
 
 type EventCallback<T> = (data: T) => void
 type EventUnsubscribe = () => void

@@ -179,10 +179,18 @@
                         v-model="manualThemeName"
                         :disabled="showProcessUpload"
                       />
+                      <MainSelect
+                        name="manualDifficulty"
+                        :options="difficultyOption"
+                        v-model="manualDifficulty"
+                        placeholder="Сложность"
+                        label="Сложность вопросов"
+                        :disabled="showProcessUpload"
+                      />
                       <MainButton
                         title="Получить"
                         @click="getPrompt"
-                        :disabled="!manualThemeName || showProcessUpload"
+                        :disabled="!manualThemeName || !manualDifficulty || showProcessUpload"
                       />
                     </div>
                     <div v-if="showProcessUpload" class="create__manual-upload">
@@ -270,6 +278,7 @@ const turnTime = ref<number>()
 const timer = ref<number>()
 const generateThemeName = ref<string>('')
 const manualThemeName = ref<string>('')
+const manualDifficulty = ref<'easy' | 'medium' | 'hard' | undefined>(undefined)
 const questionUploaded = ref<number>(0)
 const questionsArray = ref<string>('')
 const showPasteError = ref<boolean>(false)
@@ -287,6 +296,7 @@ const isThemeComplete = computed(() => room.value?.theme?.questions_loaded === 8
 function resetThemeState() {
   generateThemeName.value = ''
   manualThemeName.value = ''
+  manualDifficulty.value = undefined
   questionUploaded.value = 0
   questionsArray.value = ''
   showPasteError.value = false
@@ -306,6 +316,12 @@ const timeQuestionOption = [
   { label: '30 секунд', value: 30 },
   { label: '40 секунд', value: 40 },
 ]
+const difficultyOption = [
+  { label: 'Лёгкий', value: 'easy' },
+  { label: 'Средний', value: 'medium' },
+  { label: 'Сложный', value: 'hard' },
+]
+
 const timeTurnOption = [
   { label: '15 секунд', value: 15 },
   { label: '20 секунд', value: 20 },
@@ -366,7 +382,7 @@ watch(
 
 function getPrompt() {
   try {
-    ws.rooms.getPrompt({ theme_name: manualThemeName.value })
+    ws.rooms.getPrompt({ theme_name: manualThemeName.value, difficulty: manualDifficulty.value })
     showProcessUpload.value = true
   } catch {
     processingStore.setMessage('error', 'Создание темы', 'Ошибка при получении промпта')
@@ -494,6 +510,7 @@ onMounted(() => {
     }),
     ws.rooms.onPrompt((data) => {
       promptText.value = data.prompt
+      roomStore.initRoom()
       navigator.clipboard?.writeText(data.prompt).then(() => {
         processingStore.setMessage(
           'success',

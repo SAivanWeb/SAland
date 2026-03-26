@@ -79,7 +79,8 @@ export const useRoomStore = defineStore('RoomStore', () => {
       }
     }
     else if (window.location.pathname === '/games') {
-      if (room.value && userStore.currentUser?.user.id === room.value.owner_id) {
+      // Не редиректим обратно, если пользователь только что сам покинул комнату
+      if (room.value && userStore.currentUser?.user.id === room.value.owner_id && !window.history.state?.left) {
         router.push('/game-create')
       }
     }

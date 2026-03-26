@@ -6,18 +6,26 @@
           <!-- Result phase -->
           <template v-if="phase === 'result'">
             <template v-if="isBattle">
-              <div class="modal__players-result">
-                <template v-if="resultType === 'battle_draw'">
-                  <div class="modal__players-result-label modal__players-result-label--draw">Ничья</div>
-                </template>
-                <template v-else-if="winner">
-                  <div class="modal__players-result-battle">
-                    <span class="modal__players-result-battle-name" :style="{ color: winner.color }">{{ winner.name }}</span>
-                    <span class="modal__players-result-battle-verb">победил</span>
-                    <span class="modal__players-result-battle-name" :style="{ color: loser!.color }">{{ loser!.name }}</span>
-                  </div>
-                </template>
-                <div v-else class="modal__players-result-label">Никто не ответил правильно</div>
+              <div class="modal__players-battle">
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
+                  <div class="modal__player-name">{{ players[0].name }}</div>
+                </div>
+                <div class="modal__players-battle-label">
+                  <template v-if="resultType === 'battle_draw'">Ничья</template>
+                  <template v-else-if="winner">победил</template>
+                  <template v-else>Никто не ответил</template>
+                </div>
+                <div
+                  class="modal__player"
+                  :style="{ borderColor: players[1].color, backgroundColor: `${players[1].color}15` }"
+                >
+                  <div class="modal__player-indicator" :style="{ backgroundColor: players[1].color }" />
+                  <div class="modal__player-name">{{ players[1].name }}</div>
+                </div>
               </div>
             </template>
             <template v-else>
@@ -380,39 +388,6 @@ onUnmounted(() => {
       }
     }
 
-    &-result {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-
-      &-label {
-        @include body-1;
-        color: $text-grey;
-
-        &--draw {
-          @include body-1-bold;
-          color: $text-dark;
-        }
-      }
-
-      &-battle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        &-name {
-          @include body-1-bold;
-          font-size: 1.2rem;
-        }
-
-        &-verb {
-          @include body-1;
-          color: $text-grey;
-        }
-      }
-    }
   }
 
   &__player {

@@ -190,7 +190,11 @@
 
     <!-- Game board -->
     <div class="game__board">
-      <div class="game__board-container" :style="boardContainerStyle">
+      <!-- --attacker-color передаётся как CSS-переменная для цвета доступных ходов -->
+      <div
+        class="game__board-container"
+        :style="{ ...boardContainerStyle, '--attacker-color': currentTurnPlayer?.color }"
+      >
         <div
           v-for="cell in gameStore.cells"
           :key="`${cell.q},${cell.r}`"
@@ -202,7 +206,10 @@
           ]"
           :style="getCellStyle(cell)"
           @click="onCellClick(cell)"
-        />
+        >
+          <!-- Иконка мечей — только на доступных ходах по занятой чужой клетке (атака) -->
+          <SwordsIcon v-if="isAttackMove(cell)" class="hex__sword" />
+        </div>
       </div>
     </div>
 
@@ -230,226 +237,49 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { NProgress } from 'naive-ui'
 import GameModal from '@/components/modals/GameModal.vue'
 import GameEndModal from '@/components/modals/GameEndModal.vue'
 import { useGameStore } from '@/stores/useGameStore.ts'
-import { useUserStore } from '@/stores/useUserStore.ts'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useWebSocket } from '@/api'
-import type { HexCell } from '@/api'
 import Chat from '@/components/template/Chat.vue'
+
+import { useGameTimers } from '@/composables/useGameTimers.ts'
+import { useGamePlayers } from '@/composables/useGamePlayers.ts'
+import { useGameBoard } from '@/composables/useGameBoard.ts'
+import { useGameQuestion } from '@/composables/useGameQuestion.ts'
+import { useGameForfeit } from '@/composables/useGameForfeit.ts'
+import SwordsIcon from '@/assets/icons/swords.vue'
 
 const ws = useWebSocket()
 const gameStore = useGameStore()
-const userStore = useUserStore()
 const processingStore = useProcessingStore()
 
-const hexSize = 50
-const hexGap = 6
-
+// ID текущей игры для компонента чата
 const gameId = computed(() => gameStore.currentGameId ?? gameStore.currentGame?.game_id)
 
-// Tick every 100ms for smooth timer progress
-const now = ref(Date.now())
-let clockInterval: number | null = null
+// Таймеры хода и глобальный таймер игры
+const { turnTimerData, formattedGameTimer } = useGameTimers()
 
-// Игроки отсортированы по player_index
-const players = computed(() =>
-  [...gameStore.players].sort((a, b) => a.player_index - b.player_index),
-)
+// Данные игроков, ходы, права на ответ
+const { players, canAnswer, isMyCard, isCurrentTurnPlayer, currentTurnPlayer } = useGamePlayers()
 
-// Индекс текущего пользователя в игре
-const myPlayerIndex = computed(() => {
-  if (!userStore.currentUser) return null
-  const me = gameStore.players.find((p) => p.user_id === userStore.currentUser!.user.id)
-  return me?.player_index ?? null
-})
+// Отрисовка и взаимодействие с доской
+const { boardContainerStyle, getCellStyle, isAvailableMove, isAttackMove, onCellClick } = useGameBoard()
 
-// Могу ли я отвечать на текущий вопрос
-const canAnswer = computed(() => {
-  if (!gameStore.currentQuestion || myPlayerIndex.value === null) return false
-  if (gameStore.currentQuestion.is_battle) {
-    return (
-      myPlayerIndex.value === gameStore.currentTurn?.current_player_index ||
-      myPlayerIndex.value === gameStore.currentQuestion.defender_index
-    )
-  }
-  return myPlayerIndex.value === gameStore.currentTurn?.current_player_index
-})
+// Модалка вопроса
+const { questionSeconds, questionPlayers, onAnswerSelected, onQuestionTimeUp } = useGameQuestion()
 
-// Мой ли сейчас ход
-const isMyTurn = computed(
-  () =>
-    gameStore.currentTurn !== null &&
-    gameStore.currentTurn.current_player_index === myPlayerIndex.value,
-)
+// Двухэтапное подтверждение сдачи
+const { forfeitConfirming, onForfeitConfirm } = useGameForfeit()
 
-// Карточка текущего пользователя
-const isMyCard = (sortedIdx: number) =>
-  players.value[sortedIdx]?.player_index === myPlayerIndex.value
-
-// Карточка текущего ходящего игрока
-const isCurrentTurnPlayer = (sortedIdx: number) =>
-  players.value[sortedIdx]?.player_index === gameStore.currentTurn?.current_player_index
-
-// Данные о текущем ходящем игроке
-const currentTurnPlayer = computed(() => {
-  if (!gameStore.currentTurn) return null
-  return (
-    gameStore.players.find((p) => p.player_index === gameStore.currentTurn!.current_player_index) ??
-    null
-  )
-})
-
-// Таймер хода с определением фазы (обычное/доп. время)
-const turnTimerData = computed(() => {
-  const turn = gameStore.currentTurn
-  if (!turn) return null
-
-  const elapsed = now.value - turn.started_at
-  const timeLimitMs = turn.time_limit
-  const extraTimeMs = turn.extra_time_remaining
-  const normalRemaining = timeLimitMs - elapsed
-
-  if (normalRemaining > 0) {
-    return {
-      percentage: (normalRemaining / timeLimitMs) * 100,
-      isExtra: false,
-    }
-  }
-
-  if (extraTimeMs > 0) {
-    const extraElapsed = elapsed - timeLimitMs
-    const extraRemaining = Math.max(0, extraTimeMs - extraElapsed)
-    return {
-      percentage: (extraRemaining / extraTimeMs) * 100,
-      isExtra: true,
-    }
-  }
-
-  return { percentage: 0, isExtra: false }
-})
-
-// Глобальный игровой таймер (до конца игры)
-const formattedGameTimer = computed(() => {
-  if (!gameStore.gameTimerEndsAt) return null
-  const remaining = Math.max(0, gameStore.gameTimerEndsAt - now.value)
-  const hours = Math.floor(remaining / 3600000)
-  const minutes = Math.floor((remaining % 3600000) / 60000)
-  const seconds = Math.floor((remaining % 60000) / 1000)
-  if (hours > 0) return `${hours} ч ${minutes} мин`
-  if (minutes > 0) return `${minutes} мин ${seconds} сек`
-  return `${seconds} сек`
-})
-
-// Доступные ходы в виде Set для быстрого поиска
-const availableMoveSet = computed(() => {
-  if (!isMyTurn.value || !gameStore.currentTurn) return new Set<string>()
-  return new Set((gameStore.currentTurn.available_moves ?? []).map((m) => `${m.q},${m.r}`))
-})
-
-const isAvailableMove = (cell: HexCell) => availableMoveSet.value.has(`${cell.q},${cell.r}`)
-
-// Конвертация axial координат в пиксели
-const hexToPixel = (q: number, r: number) => {
-  const size = hexSize + hexGap
-  const x = size * ((3 / 2) * q)
-  const y = size * ((Math.sqrt(3) / 2) * q + Math.sqrt(3) * r)
-  return { x, y }
-}
-
-// Стиль для позиционирования ячейки
-const getCellStyle = (cell: HexCell) => {
-  const { x, y } = hexToPixel(cell.q, cell.r)
-  const owner =
-    cell.player_index !== null
-      ? gameStore.players.find((p) => p.player_index === cell.player_index)
-      : null
-  return {
-    '--hex-x': `${x}px`,
-    '--hex-y': `${y}px`,
-    '--hex-size': `${hexSize}px`,
-    '--player-color': owner ? owner.color : '#e0e0e0',
-  }
-}
-
-// Радиус сетки по кол-ву игроков
-const boardRadius = computed(() => (players.value.length <= 2 ? 1 : 2))
-
-const boardContainerStyle = computed(() => {
-  const size = (boardRadius.value * 2 + 1) * (hexSize + hexGap) * 2
-  return { width: `${size}px`, height: `${size}px` }
-})
-
-// Клик по ячейке — только в свой ход, только по доступным
-const onCellClick = (cell: HexCell) => {
-  if (!isMyTurn.value || gameStore.currentQuestion) return
-  if (!isAvailableMove(cell)) return
-  ws.game.selectCell({ q: cell.q, r: cell.r })
-}
-
-// Секунды на ответ из серверного time_limit (мс)
-const questionSeconds = computed(() => {
-  if (!gameStore.currentQuestion) return 30
-  return Math.floor(gameStore.currentQuestion.time_limit / 1000)
-})
-
-// Игроки для модалки вопроса
-const questionPlayers = computed(() => {
-  if (!gameStore.currentQuestion) return []
-  const result: { id: number; name: string; color: string }[] = []
-
-  const attackerIndex = gameStore.currentTurn?.current_player_index ?? null
-  if (attackerIndex !== null) {
-    const attacker = gameStore.players.find((p) => p.player_index === attackerIndex)
-    if (attacker) result.push({ id: attacker.player_index, name: attacker.name, color: attacker.color })
-  }
-
-  if (gameStore.currentQuestion.is_battle && gameStore.currentQuestion.defender_index !== null) {
-    const defIdx = gameStore.currentQuestion.defender_index
-    if (defIdx !== attackerIndex) {
-      const defender = gameStore.players.find((p) => p.player_index === defIdx)
-      if (defender)
-        result.push({ id: defender.player_index, name: defender.name, color: defender.color })
-    }
-  }
-
-  return result
-})
-
-const onAnswerSelected = (answerIndex: number) => {
-  ws.game.answer({ answer_index: answerIndex })
-}
-
-const onQuestionTimeUp = () => {
-  // Таймаут обрабатывается на сервере
-}
-
-// Сдаться
-const forfeitConfirming = ref(false)
-
-const onForfeitConfirm = () => {
-  ws.game.forfeit()
-  forfeitConfirming.value = false
-}
-
+// При монтировании переподключаемся к игре, если стор пустой (например, после перезагрузки страницы)
 onMounted(() => {
-  clockInterval = window.setInterval(() => {
-    now.value = Date.now()
-  }, 100)
-
   if (!gameStore.currentGame && !gameStore.isStarting) {
     processingStore.startLoading()
     ws.game.reconnect()
-  }
-})
-
-onUnmounted(() => {
-  if (clockInterval !== null) {
-    clearInterval(clockInterval)
-    clockInterval = null
   }
 })
 </script>
@@ -644,55 +474,80 @@ onUnmounted(() => {
   top: 50%;
   transform: translate(calc(-50% + var(--hex-x)), calc(-50% + var(--hex-y)));
   cursor: pointer;
-  transition: transform 0.2s ease;
 
-  &::before {
+  // drop-shadow следует за hex-формой, нарисованной псевдоэлементами
+  filter: drop-shadow(1px 2px 0px $border);
+  transition: filter 0.1s ease, transform 0.15s ease;
+
+  // Слой рамки: полноразмерный hex, цвет $border — виден по краям как обводка
+  &::after {
     content: '';
     position: absolute;
+    z-index: 0;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    background: $border;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  }
+
+  // Слой заливки: inset 2px внутрь, чтобы показать рамку по периметру
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 2px;
+    left: 2px;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
     background: var(--player-color);
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-    transition: filter 0.2s ease;
+    transition: filter 0.15s ease, background 0.15s ease;
   }
 
-  &:hover {
-    transform: translate(calc(-50% + var(--hex-x)), calc(-50% + var(--hex-y))) scale(1.1);
-    z-index: 5;
-
-    &::before {
-      filter: brightness(1.15);
-    }
+  // Click: схлопываем тень и сдвигаем позицию — как у MainButton :active
+  &:active {
+    filter: drop-shadow(0px 0px 0px $border);
+    transform: translate(calc(-50% + var(--hex-x) + 1px), calc(-50% + var(--hex-y) + 2px));
   }
 
+  // Иконка мечей: поверх псевдоэлементов, по центру, белая
+  &__sword {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 38%;
+    height: 38%;
+    pointer-events: none;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  // Нейтральная (пустая) клетка
   &--neutral {
     &::before {
       background: #fff;
     }
 
-    &:hover::before {
-      background: $primary-yellow;
-    }
   }
 
-  &--start::before {
-    filter: brightness(1.2);
-  }
-
+  // Доступный ход: заливка = цвет ходящего игрока, чуть светлее; рамка остаётся тёмной
   &--available {
     &::before {
-      background: $primary-red;
-      filter: brightness(1.1);
+      background: var(--attacker-color, $primary-yellow);
+      filter: brightness(1.35);
     }
   }
 
-  &--available.hex--player-0::before,
-  &--available.hex--player-1::before,
-  &--available.hex--player-2::before,
-  &--available.hex--player-3::before {
-    filter: brightness(1.25);
+  // Атакуемая клетка (доступный ход + занята врагом = иконка мечей):
+  // рамка окрашивается в цвет владельца
+  &--available.hex--player-0::after,
+  &--available.hex--player-1::after,
+  &--available.hex--player-2::after,
+  &--available.hex--player-3::after {
+    background: var(--player-color);
   }
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="promo">
     <h1 class="promo__title">
       Создайте игру <br />
-      на тему&nbsp;<span class="typewriter"></span>
+      на любую тему&nbsp;<span class="typewriter"></span>
     </h1>
     <MainButton title="Создать игру" size="large" @click="goTo" color="red" />
   </div>

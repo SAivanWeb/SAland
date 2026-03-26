@@ -180,6 +180,7 @@ export interface RoomThemeSelectedEvent {
 // Room get prompt (manual AI generation)
 export interface RoomGetPromptPayload {
   theme_name: string
+  difficulty?: 'easy' | 'medium' | 'hard'
 }
 
 export interface RoomPromptEvent {

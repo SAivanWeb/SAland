@@ -1444,7 +1444,8 @@ const socket = io('ws://localhost:3000', {
 **Данные:**
 ```typescript
 {
-  theme_name: string;            // 2-255 символов
+  theme_name: string;                        // 2-255 символов
+  difficulty?: 'easy' | 'medium' | 'hard';  // Сложность вопросов, по умолчанию 'medium'
 }
 ```
 
@@ -2075,11 +2076,11 @@ Array<ChatMessage>
 {
   id: string;
   type: 'friend_request'
-  | 'friend_accepted'
-  | 'game_invite'
-  | 'game_invite_accepted'
-  | 'game_invite_rejected'
-  | 'game_invite_expired';
+      | 'friend_accepted'
+      | 'game_invite'
+      | 'game_invite_accepted'
+      | 'game_invite_rejected'
+      | 'game_invite_expired';
   from_user_id: string;
   from_user_name: string;
   to_user_id: string;

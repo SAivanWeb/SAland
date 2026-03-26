@@ -37,3 +37,6 @@ __screenshots__/
 
 .env
 .claude
+
+DEPLOY.md
+saland_frontend.tar.gz

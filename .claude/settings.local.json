@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npx vue-tsc:*)",
-      "Bash(cat /Users/saivan/WebstormProjects/SAland/src/api/modules/types/*.ts)"
+      "Bash(cat /Users/saivan/WebstormProjects/SAland/src/api/modules/types/*.ts)",
+      "Bash(docker-compose up:*)"
     ]
   }
 }

@@ -10,23 +10,23 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-    - [Формат ответа](#формат-ответа)
-    - [Auth](#auth)
-    - [User](#user)
-    - [Friends](#friends)
-    - [Themes](#themes)
-    - [Games](#games)
-    - [Админ](#админ)
-    - [Admin Panel](#admin-panel)
-    - [Health](#health)
+  - [Формат ответа](#формат-ответа)
+  - [Auth](#auth)
+  - [User](#user)
+  - [Friends](#friends)
+  - [Themes](#themes)
+  - [Games](#games)
+  - [Админ](#админ)
+  - [Admin Panel](#admin-panel)
+  - [Health](#health)
 - [WebSocket API](#websocket-api)
-    - [Подключение](#подключение)
-    - [Rooms](#rooms-events)
-    - [Game](#game-events)
-    - [Chat](#chat-events)
-    - [Notifications](#notifications-events)
-    - [AI Generation](#ai-generation-events)
-    - [Main Gateway](#main-gateway-events)
+  - [Подключение](#подключение)
+  - [Rooms](#rooms-events)
+  - [Game](#game-events)
+  - [Chat](#chat-events)
+  - [Notifications](#notifications-events)
+  - [AI Generation](#ai-generation-events)
+  - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -1855,11 +1855,25 @@ Array<{
     cell_captured: boolean;
     cell_owner_changed_from: number | null;
   };
+  message: string;          // Человекочитаемый итог хода (см. таблицу ниже)
   correct_answer_index?: number; // Индекс правильного ответа (0-3). Отсутствует при skip.
   updated_cells: Array<HexCell>;
   updated_players: Array<GamePlayer>;
 }
 ```
+
+**Значения `message`:**
+
+| Контекст | `result.type` | `message` |
+|----------|---------------|-----------|
+| Соло | `solo_capture` | `"Правильно!"` |
+| Соло | `battle_lost` | `"Неправильно"` |
+| Соло | `timeout` | `"Время вышло"` |
+| Батл | `battle_won` | `"{имя атакующего} выиграл"` |
+| Батл | `battle_lost` | `"{имя защитника} выиграл"` |
+| Батл | `battle_draw` | `"Никто не ответил правильно"` |
+| Батл | `timeout` | `"Время вышло"` |
+| Пропуск хода | `skip` | `"Ход пропущен"` |
 
 ---
 
@@ -2326,8 +2340,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-    | 'game_starting' | 'game_started' | 'game_ended'
-    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+          | 'game_starting' | 'game_started' | 'game_ended'
+          | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

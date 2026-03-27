@@ -228,6 +228,7 @@
       :is-battle="!!gameStore.currentQuestion?.is_battle"
       :can-answer="canAnswer"
       :result-type="gameStore.answerResult?.result.type ?? null"
+      :message="gameStore.answerResult?.message ?? ''"
       @answer-selected="onAnswerSelected"
       @time-up="onQuestionTimeUp"
     />

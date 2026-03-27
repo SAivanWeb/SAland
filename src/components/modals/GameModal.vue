@@ -14,11 +14,7 @@
                   <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
                   <div class="modal__player-name">{{ players[0].name }}</div>
                 </div>
-                <div class="modal__players-battle-label">
-                  <template v-if="resultType === 'battle_draw'">Ничья</template>
-                  <template v-else-if="winner">победил</template>
-                  <template v-else>Никто не ответил</template>
-                </div>
+                <div class="modal__players-battle-label">{{ message }}</div>
                 <div
                   class="modal__player"
                   :style="{ borderColor: players[1].color, backgroundColor: `${players[1].color}15` }"
@@ -37,12 +33,7 @@
                   <div class="modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
                   <div class="modal__player-name">{{ players[0].name }}</div>
                 </div>
-                <div
-                  class="modal__players-solo-verdict"
-                  :class="playerAnswerCorrect ? 'modal__players-solo-verdict--correct' : 'modal__players-solo-verdict--wrong'"
-                >
-                  {{ playerAnswerCorrect ? 'Правильно' : 'Неправильно' }}
-                </div>
+                <div class="modal__players-battle-label">{{ message }}</div>
               </div>
             </template>
           </template>
@@ -156,6 +147,7 @@ interface Props {
   isBattle?: boolean
   canAnswer?: boolean
   resultType?: string | null
+  message?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -172,6 +164,7 @@ const props = withDefaults(defineProps<Props>(), {
   isBattle: false,
   canAnswer: true,
   resultType: null,
+  message: '',
 })
 
 const emit = defineEmits<{
@@ -247,23 +240,6 @@ const stopClosingCountdown = () => {
 const closingPercentage = computed(() => {
   if (closingTotal.value === 0) return 0
   return (closingRemaining.value / closingTotal.value) * 100
-})
-
-// --- Победитель в батле ---
-const winner = computed(() => {
-  if (!props.isBattle || props.players.length < 2) return null
-  if (props.resultType === 'battle_draw') return null
-  if (props.resultType === 'battle_won') return props.players[0]
-  if (props.resultType === 'battle_lost') return props.players[1]
-  // fallback to answer flags when resultType not provided
-  if (props.playerAnswerCorrect === true) return props.players[0]
-  if (props.defenderAnswerCorrect === true) return props.players[1]
-  return null
-})
-
-const loser = computed(() => {
-  if (!winner.value || props.players.length < 2) return null
-  return winner.value === props.players[0] ? props.players[1] : props.players[0]
 })
 
 // --- Индекс выбранного ответа (null = ещё не ответил) ---
@@ -368,24 +344,6 @@ onUnmounted(() => {
         white-space: nowrap;
       }
 
-      &-verdict {
-        @include body-1-bold;
-        padding: 6px 16px;
-        border-radius: $border-radius;
-        white-space: nowrap;
-
-        &--correct {
-          color: #276749;
-          background: #c6f6d5;
-          border: 2px solid #48bb78;
-        }
-
-        &--wrong {
-          color: #9b2c2c;
-          background: #fed7d7;
-          border: 2px solid #fc8181;
-        }
-      }
     }
 
   }

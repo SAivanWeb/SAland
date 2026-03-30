@@ -6,7 +6,7 @@
     </div>
     <div class="games__content">
       <div class="games__saved">
-        <h2>Сохраненные темы</h2>
+        <h3>Сохраненные темы</h3>
         <div class="games__filters">
           <MainInput name="search" placeholder="Поиск тем" v-model="search" size="large" />
         </div>
@@ -19,7 +19,7 @@
     </div>
     <div class="games__content">
       <div class="games__active">
-        <h2>Ожидают игры</h2>
+        <h3>Ожидают игры</h3>
         <ActiveRoomsList/>
       </div>
     </div>

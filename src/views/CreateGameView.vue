@@ -3,7 +3,10 @@
     <div class="create__container">
       <template v-if="room">
         <div class="create__header">
-          <h1>Создание игры</h1>
+          <div class="create__header-title">
+            <h1>Создание игры</h1>
+            <p>Для выхода со страницы удалите комнату</p>
+          </div>
           <MainButton title="Удалить комнату" color="red" size="small" @click="leaveRoom" />
         </div>
         <div class="create__card">
@@ -31,6 +34,7 @@
                   class="create__card-user-kick"
                   @click="kickUser(player.user_id)"
                 >
+                  <Close width="12" height="12" />
                 </div>
                 <PlayerIcon :name="player.name" />
               </div>
@@ -159,14 +163,19 @@
               </n-tab-pane>
               <n-tab-pane name="manual" tab="Ручное создание">
                 <div class="create__manual">
-                  <div v-if="isThemeComplete && activeTab === 'manual'" class="create__theme-status">
+                  <div
+                    v-if="isThemeComplete && activeTab === 'manual'"
+                    class="create__theme-status"
+                  >
                     <p>
                       Тема: <span>{{ room!.theme!.name }}</span>
                     </p>
                     <p>
                       Вопросов:
                       <span
-                        >{{ room!.theme!.questions_loaded }}/{{ room!.theme!.questions_total }}</span
+                        >{{ room!.theme!.questions_loaded }}/{{
+                          room!.theme!.questions_total
+                        }}</span
                       >
                     </p>
                   </div>
@@ -193,6 +202,21 @@
                         :disabled="!manualThemeName || !manualDifficulty || showProcessUpload"
                       />
                     </div>
+                    <div v-if="promptText" class="create__manual-prompt">
+                      <p>Если промпт не скопировался автоматически — нажмите кнопку ниже:</p>
+                      <MainButton
+                        title="Показать / скопировать промпт"
+                        size="small"
+                        @click="showPrompt = !showPrompt"
+                      />
+                      <textarea
+                        v-if="showPrompt"
+                        class="create__manual-prompt-text"
+                        readonly
+                        :value="promptText"
+                        @click="($event.target as HTMLTextAreaElement).select()"
+                      />
+                    </div>
                     <div v-if="showProcessUpload" class="create__manual-upload">
                       <h4>Прогресс создания темы</h4>
                       <p>
@@ -204,21 +228,6 @@
                         @click="uploadQuestions"
                         :disabled="isThemeComplete"
                       />
-                      <div v-if="promptText" class="create__manual-prompt">
-                        <p>Если промпт не скопировался автоматически — нажмите кнопку ниже:</p>
-                        <MainButton
-                          title="Показать / скопировать промпт"
-                          size="small"
-                          @click="showPrompt = !showPrompt"
-                        />
-                        <textarea
-                          v-if="showPrompt"
-                          class="create__manual-prompt-text"
-                          readonly
-                          :value="promptText"
-                          @click="($event.target as HTMLTextAreaElement).select()"
-                        />
-                      </div>
                       <div v-if="showPasteError" class="create__manual-fields">
                         <MainInput
                           name="questionsInput"
@@ -242,7 +251,7 @@
       </template>
       <div v-else class="create__noroom">
         <h3>Нет активной комнаты</h3>
-        <MainButton title="На главную" color="red" @click="router.push('/games')" size="medium"/>
+        <MainButton title="На главную" color="red" @click="router.push('/games')" size="medium" />
       </div>
     </div>
   </div>
@@ -511,19 +520,22 @@ onMounted(() => {
     ws.rooms.onPrompt((data) => {
       promptText.value = data.prompt
       roomStore.initRoom()
-      navigator.clipboard?.writeText(data.prompt).then(() => {
-        processingStore.setMessage(
-          'success',
-          'Загрузка вопросов',
-          'Промпт успешно скопирован в буфер обмена. Можете вставить его в ИИ.',
-        )
-      }).catch(() => {
-        processingStore.setMessage(
-          'warning',
-          'Загрузка вопросов',
-          'Не удалось скопировать автоматически. Нажмите кнопку для копирования вручную.',
-        )
-      })
+      navigator.clipboard
+        ?.writeText(data.prompt)
+        .then(() => {
+          processingStore.setMessage(
+            'success',
+            'Загрузка вопросов',
+            'Промпт успешно скопирован в буфер обмена. Можете вставить его в ИИ.',
+          )
+        })
+        .catch(() => {
+          processingStore.setMessage(
+            'warning',
+            'Загрузка вопросов',
+            'Не удалось скопировать автоматически. Нажмите кнопку для копирования вручную.',
+          )
+        })
     }),
     ws.rooms.onThemeRawUploaded((data) => {
       questionUploaded.value = data.loaded
@@ -590,6 +602,12 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    &-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
   }
 
   &__container {
@@ -602,7 +620,7 @@ onUnmounted(() => {
     min-height: calc(100vh - $footer-height - $header-height - 88px);
   }
 
-  &__noroom{
+  &__noroom {
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -696,6 +714,7 @@ onUnmounted(() => {
         display: flex;
         justify-content: center;
         align-items: center;
+        color: $border;
       }
     }
   }

@@ -46,7 +46,7 @@
           </div>
         </div>
       </div>
-      <div v-if="!requests && !activeRoom.name">Нет активных уведомлений</div>
+      <div class="notification__nodata" v-if="!requests && !activeRoom.name">Нет активных уведомлений</div>
     </div>
   </n-popover>
 </template>
@@ -292,6 +292,12 @@ onUnmounted(() => {
     &-name{
       @include body-1-bold;
     }
+  }
+
+  &__nodata{
+    @include caption;
+    margin: 0 auto;
+    color: $text-grey;
   }
 
 }

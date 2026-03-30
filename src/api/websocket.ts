@@ -48,6 +48,8 @@ import type {
   ChatSendPayload,
   ChatMessage,
   ChatHistoryPayload,
+  ChatTypingPayload,
+  ChatTypingEvent,
   // Notification types
   FriendInvitePayload,
   FriendInviteSentEvent,
@@ -530,6 +532,13 @@ class WebSocketClient {
       this.emitOnly('chat:history', payload)
     },
 
+    /**
+     * Notify others that current user is typing
+     */
+    typing: (payload: ChatTypingPayload): void => {
+      this.emitOnly('chat:typing', payload)
+    },
+
     // Event listeners
     onSent: (callback: EventCallback<ChatMessage>): EventUnsubscribe => {
       return this.on('chat:sent', callback)
@@ -541,6 +550,10 @@ class WebSocketClient {
 
     onHistory: (callback: EventCallback<ChatMessage[]>): EventUnsubscribe => {
       return this.on('chat:history', callback)
+    },
+
+    onTyping: (callback: EventCallback<ChatTypingEvent>): EventUnsubscribe => {
+      return this.on('chat:typing', callback)
     },
 
     onError: (callback: EventCallback<WsError>): EventUnsubscribe => {

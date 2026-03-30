@@ -398,6 +398,18 @@ export interface ChatHistoryPayload {
   limit?: number
 }
 
+export interface ChatTypingPayload {
+  room_id?: string
+  game_id?: string
+}
+
+export interface ChatTypingEvent {
+  user_id: string
+  user_name: string
+  room_id?: string
+  game_id?: string
+}
+
 // ============= Notification Types =============
 
 export interface FriendInvitePayload {

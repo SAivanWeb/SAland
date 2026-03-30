@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="card__action">
-      <MainButton title="Войти" size="medium" color="yellow" @click="join(item.id)"/>
+      <MainButton title="Войти" size="medium" color="green" @click="join(item.id)"/>
     </div>
   </div>
 </template>
@@ -51,7 +51,7 @@ const join = (id: string) => {
 <style scoped lang="scss">
 .card {
   padding: 16px 20px;
-  background: $primary-green;
+  background: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;
   box-shadow: $box-shadow;

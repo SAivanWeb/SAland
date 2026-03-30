@@ -59,8 +59,11 @@
         </div>
       </div>
     </n-scrollbar>
+    <div v-if="typingUsers.size > 0" class="chat__typing">
+      <span>{{ [...typingUsers.values()].map((u) => u.name).join(', ') }} печатает...</span>
+    </div>
     <div class="chat__footer">
-      <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" @keydown.enter="sendMessage" />
+      <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" @keydown.enter="sendMessage" @input="onInputTyping" />
       <div class="chat__send" @click="sendMessage">
         <n-icon class="chat__send-icon" size="24">
           <Send />
@@ -97,6 +100,18 @@ const openPopoverUserId = ref<string | null>(null)
 const scrollbarRef = ref<InstanceType<typeof NScrollbar> | null>(null)
 const messages = ref<ChatMessage[]>()
 const newMessage = ref<string>('')
+const typingUsers = ref<Map<string, { name: string; timer: ReturnType<typeof setTimeout> }>>(new Map())
+
+let typingThrottleTimer: ReturnType<typeof setTimeout> | null = null
+
+function onInputTyping() {
+  if (!typingThrottleTimer) {
+    ws.chat.typing({ game_id: props.gameId })
+    typingThrottleTimer = setTimeout(() => {
+      typingThrottleTimer = null
+    }, 2000)
+  }
+}
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -147,6 +162,15 @@ onMounted(() => {
     ws.chat.onMessage(() => {
       ws.chat.getHistory({ game_id: props.gameId })
     }),
+    ws.chat.onTyping((data) => {
+      if (data.user_id === currentUser.value?.user.id) return
+      const existing = typingUsers.value.get(data.user_id)
+      if (existing) clearTimeout(existing.timer)
+      const timer = setTimeout(() => {
+        typingUsers.value.delete(data.user_id)
+      }, 3000)
+      typingUsers.value.set(data.user_id, { name: data.user_name, timer })
+    }),
   )
 
   ws.chat.getHistory({ game_id: props.gameId })
@@ -154,6 +178,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   unsubs.forEach((fn) => fn())
+  if (typingThrottleTimer) clearTimeout(typingThrottleTimer)
+  typingUsers.value.forEach((v) => clearTimeout(v.timer))
 })
 </script>
 
@@ -167,7 +193,7 @@ onUnmounted(() => {
   border-radius: $border-radius;
   border: 2px solid $border;
   box-shadow: $box-shadow;
-  background: $primary-blue;
+  background: #fff;
 
   &__header {
     padding-bottom: 6px;
@@ -232,12 +258,26 @@ onUnmounted(() => {
     }
   }
 
+  &__typing {
+    min-height: 18px;
+    overflow: hidden;
+    span {
+      @include body-2;
+      color: $text-grey;
+      font-style: italic;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
   &__footer {
     display: flex;
     gap: 8px;
 
     & .input {
-      width: 100%;
+      width: 208px;
     }
   }
 
@@ -270,7 +310,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     min-width: 48px;
-    background: $primary-yellow;
+    background: $primary-green;
     border-radius: 50%;
     border: 2px solid $border;
     box-shadow: $box-shadow;
@@ -281,7 +321,7 @@ onUnmounted(() => {
       transform: translate(1px, 2px);
     }
     &-icon {
-      transform: translate(2px, -2px) rotate(-45deg);
+      transform: translate(2px, -2px) rotate(-35deg);
     }
   }
 }

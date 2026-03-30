@@ -10,23 +10,23 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-  - [Формат ответа](#формат-ответа)
-  - [Auth](#auth)
-  - [User](#user)
-  - [Friends](#friends)
-  - [Themes](#themes)
-  - [Games](#games)
-  - [Админ](#админ)
-  - [Admin Panel](#admin-panel)
-  - [Health](#health)
+    - [Формат ответа](#формат-ответа)
+    - [Auth](#auth)
+    - [User](#user)
+    - [Friends](#friends)
+    - [Themes](#themes)
+    - [Games](#games)
+    - [Админ](#админ)
+    - [Admin Panel](#admin-panel)
+    - [Health](#health)
 - [WebSocket API](#websocket-api)
-  - [Подключение](#подключение)
-  - [Rooms](#rooms-events)
-  - [Game](#game-events)
-  - [Chat](#chat-events)
-  - [Notifications](#notifications-events)
-  - [AI Generation](#ai-generation-events)
-  - [Main Gateway](#main-gateway-events)
+    - [Подключение](#подключение)
+    - [Rooms](#rooms-events)
+    - [Game](#game-events)
+    - [Chat](#chat-events)
+    - [Notifications](#notifications-events)
+    - [AI Generation](#ai-generation-events)
+    - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -2073,10 +2073,48 @@ Array<ChatMessage>
 
 ---
 
+#### `chat:typing` (emit)
+Уведомить остальных участников, что текущий пользователь печатает.
+
+**Данные:**
+```typescript
+{
+  room_id?: string;           // UUID комнаты
+  game_id?: string;           // UUID игры
+}
+```
+
+**Broadcast (chat:typing):** отправляется всем участникам комнаты / игры, кроме отправителя.
+
+**Ошибки (chat:error):**
+- `NOT_IN_ROOM` - Вы не находитесь в этой комнате
+- `NOT_IN_GAME` - Вы не участвуете в этой игре
+- `INVALID_TARGET` - Необходимо указать room_id или game_id
+- `VALIDATION_ERROR` - Невалидные данные
+
+---
+
 #### `chat:message` (listen)
 Новое сообщение в чате (пользовательское или системное).
 
 **Данные:** ChatMessage (см. типы данных)
+
+---
+
+#### `chat:typing` (listen)
+Кто-то из участников печатает сообщение в чате.
+
+**Данные:**
+```typescript
+{
+  user_id: string;            // UUID пользователя
+  user_name: string;          // Имя пользователя
+  room_id?: string;           // UUID комнаты (если чат комнаты)
+  game_id?: string;           // UUID игры (если чат игры)
+}
+```
+
+> Событие throttle-ится на стороне сервера: один и тот же пользователь может вызвать broadcast не чаще 1 раза в 2 секунды.
 
 ---
 
@@ -2340,8 +2378,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-          | 'game_starting' | 'game_started' | 'game_ended'
-          | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+             | 'game_starting' | 'game_started' | 'game_ended'
+             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

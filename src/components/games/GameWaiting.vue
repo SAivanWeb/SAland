@@ -45,7 +45,7 @@ const emptySlots = computed(() => {
 <style scoped lang="scss">
 .players {
   padding: 20px 24px;
-  background: $primary-green;
+  background: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;
   width: 100%;
@@ -76,6 +76,11 @@ const emptySlots = computed(() => {
         background: $background;
       }
     }
+  }
+
+  & .button{
+    width: fit-content;
+    margin-left: auto;
   }
 }
 </style>

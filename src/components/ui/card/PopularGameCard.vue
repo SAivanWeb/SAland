@@ -66,7 +66,7 @@ const createRoom = (id: string) => {
 <style scoped lang="scss">
 .card {
   padding: 16px;
-  background: $primary-yellow;
+  background-color: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;
   box-shadow: $box-shadow;

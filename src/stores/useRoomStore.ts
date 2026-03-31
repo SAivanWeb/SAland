@@ -36,8 +36,14 @@ export const useRoomStore = defineStore('RoomStore', () => {
     ws.rooms.leave()
   }
 
-  function createRoom() {
-    ws.rooms.create()
+  function createRoom(): Promise<void> {
+    return new Promise((resolve) => {
+      const unsub = ws.rooms.onCreated(() => {
+        unsub()
+        resolve()
+      })
+      ws.rooms.create()
+    })
   }
 
   function initRoom() {

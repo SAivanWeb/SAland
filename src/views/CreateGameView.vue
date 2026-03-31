@@ -375,6 +375,9 @@ watch(
         if (activeTab.value === 'manual') manualThemeName.value = data.theme.name
         else if (activeTab.value === 'generate') generateThemeName.value = data.theme.name
       }
+      if (data.theme.difficulty) {
+        manualDifficulty.value = data.theme.difficulty
+      }
       questionUploaded.value = data.theme.questions_loaded
       showProcessUpload.value = data.theme.name !== ''
     } else {
@@ -567,12 +570,6 @@ onMounted(() => {
     }),
     ws.rooms.onThemeProgress(() => {
       roomStore.initRoom()
-    }),
-    ws.rooms.onCreated(() => {
-      if (route.query.theme && !themeAutoSelected) {
-        themeAutoSelected = true
-        ws.rooms.selectTheme({ theme_id: route.query.theme as string })
-      }
     }),
     ws.rooms.onThemeSelected(() => {
       router.replace({ query: { ...route.query, theme: undefined } })

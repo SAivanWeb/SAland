@@ -95,7 +95,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; 'new-message': [] }>()
 const api = useApi()
 const processingStore = useProcessingStore()
 const ws = useWebSocket()
@@ -167,6 +167,7 @@ onMounted(() => {
     }),
     ws.chat.onMessage(() => {
       ws.chat.getHistory({ game_id: props.gameId })
+      emit('new-message')
     }),
     ws.chat.onTyping((data) => {
       if (data.user_id === currentUser.value?.user.id) return

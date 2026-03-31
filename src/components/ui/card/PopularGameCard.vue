@@ -24,13 +24,14 @@
       </div>
     </div>
     <div class="card__footer">
-      <MainButton title="Играть" size="small" color="purple" @click="createRoom(theme.id)"/>
+      <MainButton title="Играть" size="small" color="purple" :disabled="creating" @click="createRoom(theme.id)"/>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import MainButton from '@/components/ui/button/MainButton.vue'
+import { ref } from 'vue'
 import { NIcon } from 'naive-ui'
 import Like from '@/assets/icons/like.vue'
 import Dislike from '@/assets/icons/dislike.vue'
@@ -57,9 +58,17 @@ const themeDifficulty = (type: string) => {
   }
 }
 
-const createRoom = (id: string) => {
-  roomStore.createRoom()
-  router.push({ path: '/game-create', query: { theme: id }, state: { fresh: true } })
+const creating = ref(false)
+
+const createRoom = async (id: string) => {
+  if (creating.value) return
+  creating.value = true
+  try {
+    await roomStore.createRoom()
+    router.push({ path: '/game-create', query: { theme: id }, state: { fresh: true } })
+  } finally {
+    creating.value = false
+  }
 }
 </script>
 

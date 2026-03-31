@@ -51,6 +51,7 @@ export type ThemeUploadMethod = 'manual' | 'ai' | 'existing' | null
 export interface ThemeInfo {
   name: string
   upload_method: ThemeUploadMethod
+  difficulty: 'easy' | 'medium' | 'hard' | null
   questions_loaded: number
   questions_total: number
 }

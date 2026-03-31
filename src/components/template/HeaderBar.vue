@@ -59,11 +59,11 @@ const toMain = () => {
 <style lang="scss">
 .header {
   width: 100%;
-  height: $header-height;
+  min-height: calc(#{$header-height} + env(safe-area-inset-top));
   border-bottom: 2px solid $border;
   display: flex;
   align-items: center;
-  padding: 0 $side-padding;
+  padding: env(safe-area-inset-top) $side-padding 0;
   background: $primary-yellow;
 
   &__container {

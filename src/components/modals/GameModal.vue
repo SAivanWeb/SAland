@@ -6,82 +6,7 @@
     :close-on-esc="false"
     :show-close="false"
   >
-    <template #header>
-      <h3 class="game-modal__question">{{ question }}</h3>
-    </template>
-
     <template #body>
-      <!-- Players -->
-      <div class="game-modal__players" v-if="players && players.length > 0">
-        <template v-if="phase === 'result'">
-          <template v-if="isBattle">
-            <div class="game-modal__players-battle">
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
-                <div class="game-modal__player-name">{{ players[0].name }}</div>
-              </div>
-              <div class="game-modal__players-battle-label">{{ message }}</div>
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[1].color, backgroundColor: `${players[1].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[1].color }" />
-                <div class="game-modal__player-name">{{ players[1].name }}</div>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <div class="game-modal__players-solo">
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
-                <div class="game-modal__player-name">{{ players[0].name }}</div>
-              </div>
-              <div class="game-modal__players-battle-label">{{ message }}</div>
-            </div>
-          </template>
-        </template>
-
-        <template v-else>
-          <template v-if="isBattle && players.length >= 2">
-            <div class="game-modal__players-battle">
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
-                <div class="game-modal__player-name">{{ players[0].name }}</div>
-              </div>
-              <div class="game-modal__players-battle-label">атакует</div>
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[1].color, backgroundColor: `${players[1].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[1].color }" />
-                <div class="game-modal__player-name">{{ players[1].name }}</div>
-              </div>
-            </div>
-          </template>
-          <template v-else>
-            <div class="game-modal__players-solo">
-              <div class="game-modal__players-solo-label">Отвечает на вопрос</div>
-              <div
-                class="game-modal__player"
-                :style="{ borderColor: players[0].color, backgroundColor: `${players[0].color}15` }"
-              >
-                <div class="game-modal__player-indicator" :style="{ backgroundColor: players[0].color }" />
-                <div class="game-modal__player-name">{{ players[0].name }}</div>
-              </div>
-            </div>
-          </template>
-        </template>
-      </div>
-
       <!-- Timer -->
       <div class="game-modal__timer">
         <template v-if="phase === 'result'">
@@ -110,6 +35,53 @@
           />
         </template>
       </div>
+
+      <!-- Players -->
+      <div class="game-modal__players" v-if="players && players.length > 0">
+        <template v-if="phase === 'result'">
+          <template v-if="isBattle">
+            <div class="game-modal__players-battle">
+              <div class="game-modal__player" :style="{ color: players[0].color }">
+                {{ players[0].name }}
+              </div>
+              <div class="game-modal__players-battle-label">{{ message }}</div>
+              <div class="game-modal__player" :style="{ color: players[1].color }">
+                {{ players[1].name }}
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="game-modal__players-solo">
+              <div class="game-modal__players-battle-label">{{ message }}</div>
+            </div>
+          </template>
+        </template>
+
+        <template v-else>
+          <template v-if="isBattle && players.length >= 2">
+            <div class="game-modal__players-battle">
+              <div class="game-modal__player" :style="{ color: players[0].color }">
+                {{ players[0].name }}
+              </div>
+              <div class="game-modal__players-battle-label">атакует</div>
+              <div class="game-modal__player" :style="{ color: players[1].color }">
+                {{ players[1].name }}
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="game-modal__players-solo">
+              <div class="game-modal__players-solo-label">Отвечает:</div>
+              <div class="game-modal__player" :style="{ color: players[0].color }">
+                {{ players[0].name }}
+              </div>
+            </div>
+          </template>
+        </template>
+      </div>
+
+      <!-- Question -->
+      <h3 class="game-modal__question">{{ question }}</h3>
 
       <!-- Answers -->
       <div class="game-modal__answers">
@@ -258,7 +230,8 @@ const getAnswerClass = (index: number) => {
   if (phase.value === 'result') {
     if (index === props.correctAnswerIndex) return { 'game-modal__answer--correct': true }
     const isPlayerWrong = props.playerAnswerIndex === index && props.playerAnswerCorrect === false
-    const isDefenderWrong = props.defenderAnswerIndex === index && props.defenderAnswerCorrect === false
+    const isDefenderWrong =
+      props.defenderAnswerIndex === index && props.defenderAnswerCorrect === false
     if (isPlayerWrong || isDefenderWrong) return { 'game-modal__answer--wrong': true }
     return {}
   }
@@ -267,7 +240,11 @@ const getAnswerClass = (index: number) => {
 }
 
 const getAnswerStyle = (index: number) => {
-  if (phase.value === 'waiting' && index === selectedAnswerIndex.value && props.players.length > 0) {
+  if (
+    phase.value === 'waiting' &&
+    index === selectedAnswerIndex.value &&
+    props.players.length > 0
+  ) {
     const color = props.players[0].color
     return { backgroundColor: `${color}30`, borderColor: color }
   }
@@ -345,7 +322,7 @@ onUnmounted(() => {
     &-solo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
 
       &-label {
         @include body-1;
@@ -356,25 +333,8 @@ onUnmounted(() => {
   }
 
   &__player {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: $border-radius;
-    border: 2px solid;
-    background: $background;
-    box-shadow: $box-shadow;
-
-    &-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    &-name {
-      @include body-1-bold;
-      color: $text-dark;
-    }
+    font-size: 16px;
+    font-weight: 600;
   }
 
   &__timer {

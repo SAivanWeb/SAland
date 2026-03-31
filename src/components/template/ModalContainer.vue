@@ -7,7 +7,7 @@
     block-scroll
   >
     <div class="modal">
-      <div class="modal__header">
+      <div v-if="$slots.header || showClose !== false" class="modal__header">
         <slot name="header" />
         <n-icon
           v-if="showClose !== false"

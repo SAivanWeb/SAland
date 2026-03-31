@@ -7,6 +7,7 @@
       :gameId="gameId"
       :closable="chatOpen"
       @close="chatOpen = false"
+      @new-message="onNewMessage"
     />
 
     <div class="game__info-bar">
@@ -28,8 +29,9 @@
       </div>
 
       <!-- Chat toggle (mobile only) -->
-      <button class="game__chat-toggle" @click="chatOpen = !chatOpen">
+      <button class="game__chat-toggle" @click="chatOpen = !chatOpen; hasUnread = false">
         <n-icon size="20"><ChatIcon /></n-icon>
+        <span v-if="hasUnread" class="game__chat-badge" />
       </button>
     </div>
 
@@ -471,6 +473,11 @@ const { forfeitConfirming, onForfeitConfirm } = useGameForfeit()
 
 // Мобильный чат-оверлей
 const chatOpen = ref(false)
+const hasUnread = ref(false)
+
+const onNewMessage = () => {
+  if (!chatOpen.value) hasUnread.value = true
+}
 
 // Мобильный pinch-to-zoom + pan игровой доски
 const boardContainerRef = ref<HTMLElement | null>(null)
@@ -564,9 +571,15 @@ onMounted(() => {
 .game {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: $background;
+
+  @media (max-width: 900px) {
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+  }
 
   &__chat {
     position: absolute;
@@ -592,6 +605,7 @@ onMounted(() => {
     display: none;
 
     @media (max-width: 900px) {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -607,17 +621,29 @@ onMounted(() => {
     }
   }
 
+  &__chat-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: $error;
+    border: 2px solid #fff;
+    pointer-events: none;
+  }
+
   &__info-bar {
     display: contents;
 
     @media (max-width: 900px) {
+      order: 3;
       display: flex;
       align-items: center;
       gap: 12px;
-      position: absolute;
-      bottom: 16px;
-      left: 12px;
-      right: 12px;
+      position: static;
+      flex-shrink: 0;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
       z-index: 10;
 
       .game__game-timer,
@@ -663,8 +689,8 @@ onMounted(() => {
     z-index: 10;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 20px;
+    gap: 6px;
+    padding: 8px 12px;
     background: #fff;
     border-radius: $border-radius;
     border: 2px solid $border;
@@ -693,10 +719,13 @@ onMounted(() => {
     z-index: 10;
 
     @media (max-width: 900px) {
+      order: 1;
+      position: static;
+      flex-shrink: 0;
       display: flex;
       align-items: stretch;
       gap: 12px;
-      padding-bottom: 4px;
+      padding: 8px 12px 4px;
       overflow-x: auto;
       scrollbar-width: none;
       &::-webkit-scrollbar { display: none; }
@@ -714,7 +743,8 @@ onMounted(() => {
     background: #fff;
     border-radius: $border-radius;
     border: 2px solid $border;
-    width: 180px;
+    width: 100%;
+    max-width: 220px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -827,10 +857,14 @@ onMounted(() => {
     transform: translate(-50%, -50%);
 
     @media (max-width: 900px) {
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      order: 2;
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      top: auto;
+      left: auto;
+      right: auto;
+      bottom: auto;
       transform: none;
       display: flex;
       align-items: center;

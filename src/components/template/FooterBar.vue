@@ -15,9 +15,9 @@
 
 <style scoped lang="scss">
 .footer {
-  padding: 24px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
   background: $primary-orange;
-  height: $footer-height;
+  min-height: $footer-height;
 
   &__content {
     max-width: 1080px;

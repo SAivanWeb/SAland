@@ -81,19 +81,19 @@ const isError = computed(() => route.path === '/error')
 
 .main {
   width: 100%;
-  min-height: calc(100vh - $header-height - $footer-height);
+  min-height: calc(100dvh - #{$header-height} - env(safe-area-inset-top));
   position: relative;
 
   &_game {
-    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 
 .scrollbar {
-  max-height: calc(100vh - $header-height);
+  max-height: calc(100dvh - #{$header-height} - env(safe-area-inset-top));
 
   &:has(.main_game) {
-    max-height: 100vh;
+    max-height: 100dvh;
   }
 }
 

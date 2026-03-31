@@ -1478,8 +1478,9 @@ const socket = io('ws://localhost:3000', {
 **Данные:**
 ```typescript
 {
-  theme_name?: string;           // 2-255 символов, опционально (уже сохранён через room:get_prompt)
-  raw_text: string | object;     // Строка (сырой ответ AI, мин. 10 символов) или JSON-объект (например {questions: [...]})
+  theme_name?: string;                        // 2-255 символов, опционально (уже сохранён через room:get_prompt)
+  difficulty?: 'easy' | 'medium' | 'hard';  // Сложность темы, по умолчанию 'medium'
+  raw_text: string | object;                  // Строка (сырой ответ AI, мин. 10 символов) или JSON-объект (например {questions: [...]})
 }
 ```
 
@@ -2425,10 +2426,11 @@ interface PlayerAnswer {
 ### ThemeInfo
 ```typescript
 interface ThemeInfo {
-  name: string;                              // Название темы
+  name: string;                                         // Название темы
   upload_method: 'manual' | 'ai' | 'existing' | null;  // Способ загрузки темы
-  questions_loaded: number;                  // Количество загруженных вопросов (0-80)
-  questions_total: number;                   // Необходимое количество (80)
+  difficulty: 'easy' | 'medium' | 'hard' | null;       // Сложность (только для manual/ai, иначе null)
+  questions_loaded: number;                             // Количество загруженных вопросов (0-80)
+  questions_total: number;                              // Необходимое количество (80)
 }
 ```
 
@@ -2461,6 +2463,11 @@ interface RoomState {
 > - `'ai'` — тема сгенерирована через AI (через `room:generate_theme`)
 > - `'existing'` — существующая тема из PostgreSQL (через `room:select_theme`)
 > - `null` — способ ещё не определён
+>
+> **theme.difficulty:**
+> - Заполняется только для `manual` и `ai` тем (указывается при загрузке/генерации)
+> - Для `existing` тем — `null` (сложность берётся из самой темы)
+> - Значения: `'easy'`, `'medium'`, `'hard'`
 
 ### RoomPlayer
 ```typescript

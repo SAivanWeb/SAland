@@ -24,10 +24,12 @@ export function useGameQuestion() {
     if (!gameStore.currentQuestion) return []
     const result: { id: number; name: string; color: string }[] = []
 
-    // currentTurn обнуляется при получении answerResult — берём fallback из самого результата
+    // currentTurn обнуляется при получении answerResult — берём fallback из результата или
+    // из lastTurnPlayerIndex (нужен при таймауте, когда player_answer = null)
     const attackerIndex =
       gameStore.currentTurn?.current_player_index ??
       gameStore.answerResult?.result.player_answer?.player_index ??
+      gameStore.lastTurnPlayerIndex ??
       null
     if (attackerIndex !== null) {
       const attacker = gameStore.players.find((p) => p.player_index === attackerIndex)

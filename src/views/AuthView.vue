@@ -97,6 +97,11 @@ const register = () => {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 24px 28px;
+
+  @include sm {
+    padding: 16px;
+    width: calc(100% - 24px);
+  }
   background: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;

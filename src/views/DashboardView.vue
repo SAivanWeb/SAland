@@ -91,6 +91,11 @@ onMounted(() => {
 <style scoped lang="scss">
 .games {
   padding: 48px $side-padding 64px $side-padding;
+
+  @include md {
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
   display: flex;
   flex-direction: column;
   gap: 20px;

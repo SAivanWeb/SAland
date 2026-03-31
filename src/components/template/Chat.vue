@@ -2,6 +2,9 @@
   <div class="chat">
     <div class="chat__header">
       <h4>Чат игры</h4>
+      <button v-if="closable" class="chat__close" @click="emit('close')">
+        <n-icon size="20"><Close /></n-icon>
+      </button>
     </div>
     <n-scrollbar ref="scrollbarRef" style="max-height: 250px">
       <div class="chat__content">
@@ -84,12 +87,15 @@ import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import Dots from '@/assets/icons/dots.vue'
 import Send from '@/assets/icons/send.vue'
+import Close from '@/assets/icons/close.vue'
 
 interface Props {
   gameId: string
+  closable?: boolean
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{ close: [] }>()
 const api = useApi()
 const processingStore = useProcessingStore()
 const ws = useWebSocket()
@@ -196,8 +202,26 @@ onUnmounted(() => {
   background: #fff;
 
   &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding-bottom: 6px;
     border-bottom: 1px solid $border;
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: $border-radius;
+    color: $text-grey;
+    transition: color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      color: $text-dark;
+      background-color: $background;
+    }
   }
 
   &__content {

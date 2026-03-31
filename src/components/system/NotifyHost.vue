@@ -74,7 +74,7 @@ watch(
 
   & .n-notification-main .n-notification-main__header {
     color: $text-dark !important;
-    font-size: 18px !important;
+    font-size: $fs-h3 !important;
     font-weight: bold !important;
   }
 
@@ -83,7 +83,7 @@ watch(
   }
 
   & .n-notification-main__description {
-    font-size: 16px !important;
+    font-size: $fs-body-1 !important;
     color: $text-dark !important;
   }
 

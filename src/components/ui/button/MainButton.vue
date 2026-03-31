@@ -68,6 +68,10 @@ const classes = computed(() => {
   &_large {
     padding: 12px 20px;
     @include body-1-bold;
+
+    @media (max-width: 900px) {
+      padding: 10px 16px;
+    }
   }
 
   &_medium {

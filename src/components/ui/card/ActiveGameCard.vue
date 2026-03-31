@@ -1,28 +1,34 @@
 <template>
   <div v-if="item" class="card">
-    <div class="card__info">
-      <h3 class="card__title">{{ item.theme_name }}</h3>
-      <div class="card__meta">
-        <div class="card__players-count">
-          <n-icon size="18">
-            <People />
-          </n-icon>
-          <span>{{ item.players.length }}/{{ item.players_count }}</span>
+    <h3 class="card__title">{{ item.theme_name }}</h3>
+    <div class="card__body">
+      <div class="card__info">
+        <div class="card__meta">
+          <div class="card__players-count">
+            <n-icon size="18">
+              <People />
+            </n-icon>
+            <span>{{ item.players.length }}/{{ item.players_count }}</span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="card__players">
-      <div v-for="player in item.players" :key="player.user_id" class="card__player card__player--filled">
-        <PlayerIcon :name="player.name" />
+      <div class="card__players">
+        <div
+          v-for="player in item.players"
+          :key="player.user_id"
+          class="card__player card__player--filled"
+        >
+          <PlayerIcon :name="player.name" />
+        </div>
+        <div v-for="n in emptySlots" :key="'empty-' + n" class="card__player card__player--empty">
+          <n-icon size="24" color="#858585">
+            <AddCircle />
+          </n-icon>
+        </div>
       </div>
-      <div v-for="n in emptySlots" :key="'empty-' + n" class="card__player card__player--empty">
-        <n-icon size="24" color="#858585">
-          <AddCircle />
-        </n-icon>
+      <div class="card__action">
+        <MainButton title="Войти" size="medium" color="green" @click="join(item.id)" />
       </div>
-    </div>
-    <div class="card__action">
-      <MainButton title="Войти" size="medium" color="green" @click="join(item.id)"/>
     </div>
   </div>
 </template>
@@ -57,9 +63,15 @@ const join = (id: string) => {
   box-shadow: $box-shadow;
   width: 100%;
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  gap: 8px;
   transition: all 0.2s ease;
+
+  &__body{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 
   &__info {
     flex: 1;

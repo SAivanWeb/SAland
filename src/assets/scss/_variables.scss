@@ -1,4 +1,21 @@
 
+// ========================================
+// Typography scale (responsive via clamp)
+// Min at ~375px, max at ~1280px
+// To adjust responsive behaviour — edit only these variables
+// ========================================
+$fs-caption:     clamp(12px, 0.9375vw, 12px);
+$fs-body-2:      clamp(12px, 1.09375vw, 14px);
+$fs-body-1:      clamp(14px, 1.25vw, 16px);
+$fs-body-0:      clamp(16px, 1.5625vw, 20px);
+$fs-h5:          clamp(13px, 1.25vw, 16px);
+$fs-h4:          clamp(16px, 1.5625vw, 20px);
+$fs-h3:          clamp(18px, 1.875vw, 24px);
+$fs-h2:          clamp(20px, 2.1875vw, 28px);
+$fs-h1:          clamp(22px, 2.5vw, 32px);
+$fs-head-extra:  clamp(32px, 3.75vw, 48px);
+$fs-tabs-label:  clamp(20px, 2.1875vw, 28px);
+
 // Primary accent
 $primary-yellow: #fed787;
 $primary-green: #abe6bb;
@@ -35,56 +52,70 @@ $player-4: #9B5DE5;  // Фиолетовый
 // ========================================
 // Layout
 // ========================================
-$side-padding: 24px;
+$side-padding: clamp(12px, 3vw, 24px);
 $header-height: 64px;
 $footer-height: 124px;
 $border-radius: 8px;
 $border-radius-lg: 12px;
 
+// Breakpoints
+$bp-sm: 480px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+
+@mixin sm { @media (max-width: #{$bp-sm}) { @content; } }
+@mixin md { @media (max-width: #{$bp-md}) { @content; } }
+@mixin lg { @media (max-width: #{$bp-lg}) { @content; } }
+
 // Shadows
 $box-shadow: 1px 2px 0px $border;
 
+@mixin head-extra {
+  font-size: $fs-head-extra;
+  line-height: 1;
+}
+
 @mixin body-0 {
-  font-size: 20px;
+  font-size: $fs-body-0;
   font-weight: 400;
-  line-height: 20px;
+  line-height: 1.25;
 }
 
 @mixin body-1 {
-  font-size: 16px;
+  font-size: $fs-body-1;
   font-weight: 400;
-  line-height: 18px;
+  line-height: 1.4;
 }
 
 @mixin body-2 {
-  font-size: 14px;
+  font-size: $fs-body-2;
   font-weight: 400;
-  line-height: 18px;
+  line-height: 1.4;
 }
 
 @mixin body-1-bold {
-  font-size: 16px;
+  font-size: $fs-body-1;
   font-weight: 700;
-  line-height: 18px;
+  line-height: 1.4;
 }
 
 @mixin body-2-bold {
-  font-size: 14px;
+  font-size: $fs-body-2;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 1.25;
 }
 
 @mixin body-2-up {
-  font-size: 14px;
+  font-size: $fs-body-2;
   font-weight: 700;
-  line-height: 22px;
+  line-height: 1.6;
   text-transform: uppercase;
 }
 
 @mixin caption {
-  font-size: 12px;
+  font-size: $fs-caption;
   font-weight: 400;
-  line-height: 14px;
+  line-height: 1.25;
 }
 
 // ========================================

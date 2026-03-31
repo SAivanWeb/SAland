@@ -43,8 +43,7 @@ const goTo = () => {
   overflow: hidden;
 
   &__title {
-    font-size: 48px;
-    line-height: 1;
+    @include head-extra;
     text-align: center;
   }
 }
@@ -201,7 +200,7 @@ const goTo = () => {
   content: '';
   border-right: 1px solid var(--caret);
   animation: blink 0.5s linear infinite;
-  font-size: 32px;
+  @include head-extra;
   font-weight: 600;
 }
 

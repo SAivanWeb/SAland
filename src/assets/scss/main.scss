@@ -18,7 +18,7 @@ body {
           color 0.3s ease,
           background-color 0.3s ease;
   line-height: 1.2;
-  font-size: 16px;
+  font-size: $fs-body-1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -43,43 +43,43 @@ body {
 }
 
 h1 {
-  font-size: 32px;
+  font-size: $fs-h1;
   font-style: normal;
   font-weight: 800;
-  line-height: 32px;
+  line-height: 1;
   letter-spacing: 0.5px;
 }
 
 h2 {
-  font-size: 28px;
+  font-size: $fs-h2;
   font-style: normal;
   font-weight: 800;
-  line-height: 36px;
+  line-height: 1.3;
   letter-spacing: 0.5px;
   overflow: hidden;
 }
 
 h3 {
-  font-size: 24px;
+  font-size: $fs-h3;
   font-style: normal;
   font-weight: 800;
-  line-height: 32px;
+  line-height: 1.3;
   letter-spacing: 0.5px;
 }
 
 h4 {
-  font-size: 20px;
+  font-size: $fs-h4;
   font-style: normal;
   font-weight: 800;
-  line-height: 24px;
+  line-height: 1.2;
   letter-spacing: 0.5px;
 }
 
 h5 {
-  font-size: 16px;
+  font-size: $fs-h5;
   font-style: normal;
   font-weight: 800;
-  line-height: 24px;
+  line-height: 1.5;
   letter-spacing: 0.5px;
 }
 
@@ -118,7 +118,7 @@ button {
 }
 
 .n-tabs-tab__label {
-  font-size: 28px;
+  font-size: $fs-tabs-label;
   font-style: normal;
   font-weight: 800;
   line-height: 36px;

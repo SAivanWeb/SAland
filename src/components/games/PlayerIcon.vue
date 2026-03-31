@@ -34,8 +34,7 @@ const iconName = computed(() => {
   background: $primary-purple;
   border-radius: 50%;
   color: $text-dark;
-  font-weight: 600;
-  font-size: 16px;
+  @include body-1-bold;
   transition: all 0.2s ease;
   border: 2px solid $border;
   box-shadow: $box-shadow;

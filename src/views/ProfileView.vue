@@ -272,6 +272,14 @@ onUnmounted(() => {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
+
+      @include md {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @include sm {
+        grid-template-columns: 1fr;
+      }
     }
 
     &-item {
@@ -290,7 +298,7 @@ onUnmounted(() => {
 
       &-value {
         text-align: center;
-        font-size: 2rem;
+        font-size: $fs-h1;
         font-weight: 700;
         color: $primary-purple;
       }

@@ -602,6 +602,7 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
 
     &-title {
       display: flex;
@@ -644,10 +645,16 @@ onUnmounted(() => {
     transition: all 0.2s ease;
     box-shadow: $box-shadow;
 
+    @media (max-width: 900px) {
+      padding: 14px 18px;
+      gap: 12px;
+    }
+
     &-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
 
       &_col {
         flex-direction: column;
@@ -665,14 +672,35 @@ onUnmounted(() => {
       flex-direction: column;
       gap: 16px;
 
+      @media (max-width: 900px) {
+        gap: 12px;
+      }
+
       :deep(.n-tabs-tab__label) {
-        font-size: 16px !important;
+        font-size: $fs-body-1 !important;
+      }
+
+      :deep(.n-tabs .n-tabs-tab) {
+        padding: 0 12px;
+      }
+
+      :deep(.n-tabs .n-tabs-rail) {
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
       }
     }
 
     &-param {
       display: flex;
       gap: 12px;
+
+      @media (max-width: 900px) {
+        flex-direction: column;
+      }
     }
 
     &-row {
@@ -747,6 +775,7 @@ onUnmounted(() => {
       display: flex;
       gap: 20px;
       align-items: end;
+      flex-wrap: wrap;
     }
   }
 
@@ -771,6 +800,9 @@ onUnmounted(() => {
       display: flex;
       align-items: end;
       gap: 20px;
+      @media (max-width: 900px) {
+        flex-direction: column;
+      }
     }
 
     &-upload {

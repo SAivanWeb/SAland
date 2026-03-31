@@ -1,22 +1,207 @@
 <template>
   <div class="game">
-    <Chat v-if="gameId" class="game__chat" :gameId="gameId" />
+    <Chat
+      v-if="gameId"
+      class="game__chat"
+      :class="{ 'game__chat--open': chatOpen }"
+      :gameId="gameId"
+      :closable="chatOpen"
+      @close="chatOpen = false"
+    />
 
-    <!-- Global game timer -->
-    <div v-if="formattedGameTimer !== null" class="game__game-timer">
-      До конца: <span>{{ formattedGameTimer }}</span>
+    <div class="game__info-bar">
+      <!-- Global game timer -->
+      <div v-if="formattedGameTimer !== null" class="game__game-timer">
+        <span>{{ formattedGameTimer }}</span>
+      </div>
+
+      <!-- Current turn indicator -->
+      <div
+        v-if="currentTurnPlayer && !gameStore.currentQuestion"
+        class="game__turn-indicator"
+        :style="{ borderColor: currentTurnPlayer.color }"
+      >
+        <span class="game__turn-label">Ходит:</span>
+        <span class="game__turn-name" :style="{ color: currentTurnPlayer.color }">{{
+          currentTurnPlayer.name
+        }}</span>
+      </div>
+
+      <!-- Chat toggle (mobile only) -->
+      <button class="game__chat-toggle" @click="chatOpen = !chatOpen">
+        <n-icon size="20"><ChatIcon /></n-icon>
+      </button>
     </div>
 
-    <!-- Current turn indicator -->
-    <div
-      v-if="currentTurnPlayer && !gameStore.currentQuestion"
-      class="game__turn-indicator"
-      :style="{ borderColor: currentTurnPlayer.color }"
-    >
-      <span class="game__turn-label">Ходит:</span>
-      <span class="game__turn-name" :style="{ color: currentTurnPlayer.color }">{{
-        currentTurnPlayer.name
-      }}</span>
+    <div class="game__users">
+      <!-- Player panels -->
+      <div
+        class="game__user first"
+        v-if="players.length >= 1"
+        :style="{ borderColor: players[0].color }"
+      >
+        <div class="game__user-header">
+          <div class="game__user-name">{{ players[0]?.name }}</div>
+          <template v-if="isMyCard(0)">
+            <button
+              v-if="!forfeitConfirming"
+              class="game__forfeit-btn"
+              @click="forfeitConfirming = true"
+            >
+              Сдаться
+            </button>
+            <div v-else class="game__forfeit-confirm">
+              <button
+                class="game__forfeit-btn game__forfeit-btn--cancel"
+                @click="forfeitConfirming = false"
+              >
+                Нет
+              </button>
+              <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+                Да
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="game__user-stat">
+          Захвачено: <span>{{ players[0]?.territories_count }}</span>
+        </div>
+        <n-progress
+          v-if="isCurrentTurnPlayer(0) && !gameStore.currentQuestion"
+          type="line"
+          :percentage="turnTimerData?.percentage ?? 0"
+          :show-indicator="false"
+          :height="4"
+          :border-radius="2"
+          :color="turnTimerData?.isExtra ? '#EF476F' : '#fed787'"
+        />
+      </div>
+
+      <div
+        class="game__user second"
+        v-if="players.length >= 2"
+        :style="{ borderColor: players[1].color }"
+      >
+        <div class="game__user-header">
+          <div class="game__user-name">{{ players[1]?.name }}</div>
+          <template v-if="isMyCard(1)">
+            <button
+              v-if="!forfeitConfirming"
+              class="game__forfeit-btn"
+              @click="forfeitConfirming = true"
+            >
+              Сдаться
+            </button>
+            <div v-else class="game__forfeit-confirm">
+              <button
+                class="game__forfeit-btn game__forfeit-btn--cancel"
+                @click="forfeitConfirming = false"
+              >
+                Нет
+              </button>
+              <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+                Да
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="game__user-stat">
+          Захвачено: <span>{{ players[1]?.territories_count }}</span>
+        </div>
+        <n-progress
+          v-if="isCurrentTurnPlayer(1) && !gameStore.currentQuestion"
+          type="line"
+          :percentage="turnTimerData?.percentage ?? 0"
+          :show-indicator="false"
+          :height="4"
+          :border-radius="2"
+          :color="turnTimerData?.isExtra ? '#EF476F' : '#fed787'"
+        />
+      </div>
+
+      <div
+        class="game__user third"
+        v-if="players.length >= 3"
+        :style="{ borderColor: players[2].color }"
+      >
+        <div class="game__user-header">
+          <div class="game__user-name">{{ players[2]?.name }}</div>
+          <template v-if="isMyCard(2)">
+            <button
+              v-if="!forfeitConfirming"
+              class="game__forfeit-btn"
+              @click="forfeitConfirming = true"
+            >
+              Сдаться
+            </button>
+            <div v-else class="game__forfeit-confirm">
+              <button
+                class="game__forfeit-btn game__forfeit-btn--cancel"
+                @click="forfeitConfirming = false"
+              >
+                Нет
+              </button>
+              <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+                Да
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="game__user-stat">
+          Захвачено: <span>{{ players[2]?.territories_count }}</span>
+        </div>
+        <n-progress
+          v-if="isCurrentTurnPlayer(2) && !gameStore.currentQuestion"
+          type="line"
+          :percentage="turnTimerData?.percentage ?? 0"
+          :show-indicator="false"
+          :height="4"
+          :border-radius="2"
+          :color="turnTimerData?.isExtra ? '#EF476F' : '#fed787'"
+        />
+      </div>
+
+      <div
+        class="game__user fourth"
+        v-if="players.length >= 4"
+        :style="{ borderColor: players[3].color }"
+      >
+        <div class="game__user-header">
+          <div class="game__user-name">{{ players[3]?.name }}</div>
+          <template v-if="isMyCard(3)">
+            <button
+              v-if="!forfeitConfirming"
+              class="game__forfeit-btn"
+              @click="forfeitConfirming = true"
+            >
+              Сдаться
+            </button>
+            <div v-else class="game__forfeit-confirm">
+              <button
+                class="game__forfeit-btn game__forfeit-btn--cancel"
+                @click="forfeitConfirming = false"
+              >
+                Нет
+              </button>
+              <button class="game__forfeit-btn game__forfeit-btn--ok" @click="onForfeitConfirm">
+                Да
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="game__user-stat">
+          Захвачено: <span>{{ players[3]?.territories_count }}</span>
+        </div>
+        <n-progress
+          v-if="isCurrentTurnPlayer(3) && !gameStore.currentQuestion"
+          type="line"
+          :percentage="turnTimerData?.percentage ?? 0"
+          :show-indicator="false"
+          :height="4"
+          :border-radius="2"
+          :color="turnTimerData?.isExtra ? '#EF476F' : '#fed787'"
+        />
+      </div>
     </div>
 
     <!-- Player panels -->
@@ -189,11 +374,17 @@
     </div>
 
     <!-- Game board -->
-    <div class="game__board">
+    <div
+      class="game__board"
+      @touchstart="onBoardTouchStart"
+      @touchmove="onBoardTouchMove"
+      @touchend="onBoardTouchEnd"
+    >
       <!-- --attacker-color передаётся как CSS-переменная для цвета доступных ходов -->
       <div
+        ref="boardContainerRef"
         class="game__board-container"
-        :style="{ ...boardContainerStyle, '--attacker-color': currentTurnPlayer?.color }"
+        :style="{ ...boardContainerStyle, '--attacker-color': currentTurnPlayer?.color, ...mobileBoardStyle }"
       >
         <div
           v-for="cell in gameStore.cells"
@@ -238,8 +429,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { NProgress } from 'naive-ui'
+import { computed, onMounted, ref } from 'vue'
+import { NProgress, NIcon } from 'naive-ui'
 import GameModal from '@/components/modals/GameModal.vue'
 import GameEndModal from '@/components/modals/GameEndModal.vue'
 import { useGameStore } from '@/stores/useGameStore.ts'
@@ -253,6 +444,7 @@ import { useGameBoard } from '@/composables/useGameBoard.ts'
 import { useGameQuestion } from '@/composables/useGameQuestion.ts'
 import { useGameForfeit } from '@/composables/useGameForfeit.ts'
 import SwordsIcon from '@/assets/icons/swords.vue'
+import ChatIcon from '@/assets/icons/chat.vue'
 
 const ws = useWebSocket()
 const gameStore = useGameStore()
@@ -268,13 +460,96 @@ const { turnTimerData, formattedGameTimer } = useGameTimers()
 const { players, canAnswer, isMyCard, isCurrentTurnPlayer, currentTurnPlayer } = useGamePlayers()
 
 // Отрисовка и взаимодействие с доской
-const { boardContainerStyle, getCellStyle, isAvailableMove, isAttackMove, onCellClick } = useGameBoard()
+const { boardContainerStyle, getCellStyle, isAvailableMove, isAttackMove, onCellClick } =
+  useGameBoard()
 
 // Модалка вопроса
 const { questionSeconds, questionPlayers, onAnswerSelected, onQuestionTimeUp } = useGameQuestion()
 
 // Двухэтапное подтверждение сдачи
 const { forfeitConfirming, onForfeitConfirm } = useGameForfeit()
+
+// Мобильный чат-оверлей
+const chatOpen = ref(false)
+
+// Мобильный pinch-to-zoom + pan игровой доски
+const boardContainerRef = ref<HTMLElement | null>(null)
+const mobileScale = ref(1)
+const mobilePanX = ref(0)
+const mobilePanY = ref(0)
+
+const SCALE_MIN = 0.5
+const SCALE_MAX = 4
+
+const mobileBoardStyle = computed(() => ({
+  transform: `translate(${mobilePanX.value}px, ${mobilePanY.value}px) scale(${mobileScale.value})`,
+  transformOrigin: 'center center',
+}))
+
+const _clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi)
+
+const clampPan = (x: number, y: number) => {
+  const el = boardContainerRef.value
+  if (!el) return { x, y }
+  // offsetWidth/Height не меняются от CSS-трансформа — всегда натуральный размер
+  const maxX = Math.max(0, (el.offsetWidth * mobileScale.value - window.innerWidth) / 2)
+  const maxY = Math.max(0, (el.offsetHeight * mobileScale.value - window.innerHeight) / 2)
+  return { x: _clamp(x, -maxX, maxX), y: _clamp(y, -maxY, maxY) }
+}
+
+const _touch = { isPinching: false, lastDist: 0, lastMidX: 0, lastMidY: 0, startX: 0, startY: 0 }
+
+const onBoardTouchStart = (e: TouchEvent) => {
+  if (window.innerWidth > 900) return
+  if (e.touches.length === 1) {
+    _touch.isPinching = false
+    _touch.startX = e.touches[0].clientX - mobilePanX.value
+    _touch.startY = e.touches[0].clientY - mobilePanY.value
+  } else if (e.touches.length === 2) {
+    _touch.isPinching = true
+    const t0 = e.touches[0]; const t1 = e.touches[1]
+    const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY
+    _touch.lastDist = Math.sqrt(dx * dx + dy * dy)
+    _touch.lastMidX = (t0.clientX + t1.clientX) / 2
+    _touch.lastMidY = (t0.clientY + t1.clientY) / 2
+  }
+}
+
+const onBoardTouchMove = (e: TouchEvent) => {
+  if (window.innerWidth > 900) return
+  e.preventDefault()
+  if (e.touches.length === 1 && !_touch.isPinching) {
+    const { x, y } = clampPan(
+      e.touches[0].clientX - _touch.startX,
+      e.touches[0].clientY - _touch.startY,
+    )
+    mobilePanX.value = x
+    mobilePanY.value = y
+  } else if (e.touches.length === 2) {
+    const t0 = e.touches[0]; const t1 = e.touches[1]
+    const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const midX = (t0.clientX + t1.clientX) / 2
+    const midY = (t0.clientY + t1.clientY) / 2
+
+    mobileScale.value = _clamp(mobileScale.value * (dist / _touch.lastDist), SCALE_MIN, SCALE_MAX)
+
+    const { x, y } = clampPan(
+      mobilePanX.value + (midX - _touch.lastMidX),
+      mobilePanY.value + (midY - _touch.lastMidY),
+    )
+    mobilePanX.value = x
+    mobilePanY.value = y
+
+    _touch.lastDist = dist
+    _touch.lastMidX = midX
+    _touch.lastMidY = midY
+  }
+}
+
+const onBoardTouchEnd = (e: TouchEvent) => {
+  if (e.touches.length < 2) _touch.isPinching = false
+}
 
 // При монтировании переподключаемся к игре, если стор пустой (например, после перезагрузки страницы)
 onMounted(() => {
@@ -298,6 +573,64 @@ onMounted(() => {
     top: 50%;
     right: 16px;
     transform: translateY(-50%);
+
+    @media (max-width: 900px) {
+      display: none;
+      top: auto;
+      bottom: 72px;
+      right: 12px;
+      transform: none;
+
+      &--open {
+        display: flex;
+        z-index: 10;
+      }
+    }
+  }
+
+  &__chat-toggle {
+    display: none;
+
+    @media (max-width: 900px) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid $border;
+      background: #fff;
+      box-shadow: $box-shadow;
+      cursor: pointer;
+      color: $text-dark;
+    }
+  }
+
+  &__info-bar {
+    display: contents;
+
+    @media (max-width: 900px) {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: absolute;
+      bottom: 16px;
+      left: 12px;
+      right: 12px;
+      z-index: 10;
+
+      .game__game-timer,
+      .game__turn-indicator {
+        position: static;
+        transform: none;
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
   }
 
   &__game-timer {
@@ -345,6 +678,35 @@ onMounted(() => {
 
   &__turn-name {
     @include body-1-bold;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__users {
+    display: none;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 10;
+
+    @media (max-width: 900px) {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      padding-bottom: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar { display: none; }
+
+      & .game__user {
+        display: flex;
+        position: static;
+        flex-shrink: 0;
+      }
+    }
   }
 
   &__user {
@@ -359,6 +721,10 @@ onMounted(() => {
     position: absolute;
     z-index: 10;
     box-shadow: $box-shadow;
+
+    @media (max-width: 900px) {
+      display: none;
+    }
 
     &.first {
       top: 16px;
@@ -460,6 +826,19 @@ onMounted(() => {
     left: 50%;
     transform: translate(-50%, -50%);
 
+    @media (max-width: 900px) {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transform: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      // Запрещаем браузерный скролл/зум — обрабатываем жесты сами
+      touch-action: none;
+    }
+
     &-container {
       position: relative;
     }
@@ -478,7 +857,9 @@ onMounted(() => {
 
   // drop-shadow следует за hex-формой, нарисованной псевдоэлементами
   filter: drop-shadow(1px 2px 0px $border);
-  transition: filter 0.1s ease, transform 0.15s ease;
+  transition:
+    filter 0.1s ease,
+    transform 0.15s ease;
 
   // Слой рамки: полноразмерный hex, цвет $border — виден по краям как обводка
   &::after {
@@ -504,7 +885,9 @@ onMounted(() => {
     height: calc(100% - 4px);
     background: var(--player-color);
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-    transition: filter 0.15s ease, background 0.15s ease;
+    transition:
+      filter 0.15s ease,
+      background 0.15s ease;
   }
 
   // Click: схлопываем тень и сдвигаем позицию — как у MainButton :active
@@ -531,7 +914,6 @@ onMounted(() => {
     &::before {
       background: #fff;
     }
-
   }
 
   // Доступный ход: заливка = цвет ходящего игрока, чуть светлее; рамка остаётся тёмной

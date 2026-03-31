@@ -29,6 +29,9 @@ export const useGameStore = defineStore('useGameStore', () => {
   const gameEnded = ref<GameEndedEvent | null>(null)
   const gameTimerEndsAt = ref<number | null>(null)
   const isStarting = ref(false)
+  // Сохраняем индекс атакующего при получении хода — нужен для отображения
+  // результата таймаута, когда currentTurn уже обнулён, а player_answer = null
+  const lastTurnPlayerIndex = ref<number | null>(null)
 
   ws.game.onStarting(() => {
     isStarting.value = true
@@ -50,6 +53,7 @@ export const useGameStore = defineStore('useGameStore', () => {
 
   ws.game.onTurn((data) => {
     currentTurn.value = data
+    lastTurnPlayerIndex.value = data.current_player_index
     currentQuestion.value = null
     answerResult.value = null
     waitingForOpponent.value = false
@@ -140,6 +144,7 @@ export const useGameStore = defineStore('useGameStore', () => {
     gameEnded,
     gameTimerEndsAt,
     isStarting,
+    lastTurnPlayerIndex,
     clearGameEnded,
     reconnect,
   }

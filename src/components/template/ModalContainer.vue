@@ -1,9 +1,20 @@
 <template>
-  <n-modal v-model:show="innerShow" :style="{ width: modalWidth ? modalWidth : '' }" block-scroll>
+  <n-modal
+    v-model:show="innerShow"
+    :style="{ width: modalWidth ? modalWidth : '' }"
+    :mask-closable="maskClosable ?? true"
+    :close-on-esc="closeOnEsc ?? true"
+    block-scroll
+  >
     <div class="modal">
       <div class="modal__header">
         <slot name="header" />
-        <n-icon size="24" class="modal__close" @click="innerShow = false">
+        <n-icon
+          v-if="showClose !== false"
+          size="24"
+          class="modal__close"
+          @click="innerShow = false"
+        >
           <Close />
         </n-icon>
       </div>
@@ -22,6 +33,9 @@ import Close from '@/assets/icons/close.vue'
 interface ModalContainerProps {
   show: boolean
   modalWidth?: string
+  maskClosable?: boolean
+  closeOnEsc?: boolean
+  showClose?: boolean
 }
 
 const props = defineProps<ModalContainerProps>()
@@ -45,6 +59,10 @@ const innerShow = computed({
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  @media (max-width: 900px) {
+    padding: 16px;
+  }
 
   &__header {
     display: flex;
@@ -104,8 +122,8 @@ const innerShow = computed({
     }
   }
 
-  & span{
-    &.bold{
+  & span {
+    &.bold {
       @include body-1-bold;
     }
   }

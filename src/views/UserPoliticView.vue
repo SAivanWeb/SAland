@@ -226,6 +226,14 @@
     border-radius: $border-radius;
     border: 2px solid $border;
     box-shadow: $box-shadow;
+
+    @include md {
+      padding: 24px 20px;
+    }
+
+    @include sm {
+      padding: 16px 12px;
+    }
   }
 
   h1 {

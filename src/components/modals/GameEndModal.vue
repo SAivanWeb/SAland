@@ -1,106 +1,110 @@
 <template>
-  <n-modal :show="!!gameEnded" :mask-closable="false" :close-on-esc="false">
-    <n-card style="width: 560px" :bordered="false" size="huge" role="dialog" aria-modal="true">
-      <div class="end-modal">
-        <!-- Winner -->
-        <div class="end-modal__winner">
-          <div class="end-modal__winner-label">Победитель</div>
-          <div class="end-modal__winner-name">
-            {{ gameEnded?.winner_name ?? 'Ничья' }}
+  <ModalContainer
+    :show="!!gameEnded"
+    modal-width="min(560px, 95vw)"
+    :mask-closable="false"
+    :close-on-esc="false"
+    :show-close="false"
+  >
+    <template #header>
+      <div class="end-modal__winner">
+        <div class="end-modal__winner-label">Победитель</div>
+        <div class="end-modal__winner-name">
+          {{ gameEnded?.winner_name ?? 'Ничья' }}
+        </div>
+      </div>
+    </template>
+
+    <template #body>
+      <!-- Standings -->
+      <div class="end-modal__standings">
+        <div
+          v-for="standing in gameEnded?.final_standings"
+          :key="standing.player_index"
+          class="end-modal__standing"
+          :class="{ 'end-modal__standing--first': standing.place === 1 }"
+        >
+          <div class="end-modal__standing-place">#{{ standing.place }}</div>
+          <div class="end-modal__standing-name">{{ standing.name }}</div>
+          <div class="end-modal__standing-stats">
+            <span>{{ standing.territories }} тер.</span>
+            <span>{{ standing.correct_answers }}/{{ standing.questions_answered }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- Standings -->
-        <div class="end-modal__standings">
-          <div
-            v-for="standing in gameEnded?.final_standings"
-            :key="standing.player_index"
-            class="end-modal__standing"
-            :class="{ 'end-modal__standing--first': standing.place === 1 }"
-          >
-            <div class="end-modal__standing-place">#{{ standing.place }}</div>
-            <div class="end-modal__standing-name">{{ standing.name }}</div>
-            <div class="end-modal__standing-stats">
-              <span>{{ standing.territories }} тер.</span>
-              <span>{{ standing.correct_answers }}/{{ standing.questions_answered }}</span>
-            </div>
+      <!-- Theme rating -->
+      <template v-if="canRate">
+        <div v-if="!rated" class="end-modal__rating">
+          <div class="end-modal__rating-title">Оцените тему «{{ gameEnded!.theme_name }}»</div>
+          <div class="end-modal__rating-options">
+            <button
+              v-for="opt in ratingOptions"
+              :key="opt.value"
+              class="end-modal__rating-btn"
+              :class="{ 'end-modal__rating-btn--active': selectedRating === opt.value }"
+              @click="selectedRating = opt.value"
+            >
+              {{ opt.label }}
+            </button>
           </div>
-        </div>
-
-        <!-- Theme rating -->
-        <template v-if="canRate">
-          <div v-if="!rated" class="end-modal__rating">
-            <div class="end-modal__rating-title">Оцените тему «{{ gameEnded!.theme_name }}»</div>
-            <div class="end-modal__rating-options">
+          <div v-if="selectedRating && selectedRating !== 'skip'" class="end-modal__difficulty">
+            <div class="end-modal__difficulty-label">Сложность темы:</div>
+            <div class="end-modal__difficulty-options">
               <button
-                v-for="opt in ratingOptions"
+                v-for="opt in difficultyOptions"
                 :key="opt.value"
-                class="end-modal__rating-btn"
-                :class="{ 'end-modal__rating-btn--active': selectedRating === opt.value }"
-                @click="selectedRating = opt.value"
+                class="end-modal__difficulty-btn"
+                :class="{ 'end-modal__difficulty-btn--active': selectedDifficulty === opt.value }"
+                @click="selectedDifficulty = opt.value"
               >
                 {{ opt.label }}
               </button>
             </div>
-            <div v-if="selectedRating && selectedRating !== 'skip'" class="end-modal__difficulty">
-              <div class="end-modal__difficulty-label">Сложность темы:</div>
-              <div class="end-modal__difficulty-options">
-                <button
-                  v-for="opt in difficultyOptions"
-                  :key="opt.value"
-                  class="end-modal__difficulty-btn"
-                  :class="{ 'end-modal__difficulty-btn--active': selectedDifficulty === opt.value }"
-                  @click="selectedDifficulty = opt.value"
-                >
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-            <div v-if="selectedRating === 'dislike'" class="end-modal__reason">
-              <div class="end-modal__reason-label">Причина (необязательно):</div>
-              <textarea
-                v-model="dislikeReason"
-                class="end-modal__reason-input"
-                placeholder="Что не понравилось в теме?"
-                rows="3"
-                maxlength="1000"
-              />
-            </div>
-            <button
-              class="end-modal__submit-btn"
-              :disabled="!canSubmitRating || isSubmitting"
-              @click="submitRating"
-            >
-              {{ isSubmitting ? 'Отправка...' : 'Оценить' }}
-            </button>
           </div>
-          <div v-else class="end-modal__rated">
-            Спасибо за оценку!
+          <div v-if="selectedRating === 'dislike'" class="end-modal__reason">
+            <div class="end-modal__reason-label">Причина (необязательно):</div>
+            <textarea
+              v-model="dislikeReason"
+              class="end-modal__reason-input"
+              placeholder="Что не понравилось в теме?"
+              rows="3"
+              maxlength="1000"
+            />
           </div>
-        </template>
+          <button
+            class="end-modal__submit-btn"
+            :disabled="!canSubmitRating || isSubmitting"
+            @click="submitRating"
+          >
+            {{ isSubmitting ? 'Отправка...' : 'Оценить' }}
+          </button>
+        </div>
+        <div v-else class="end-modal__rated">
+          Спасибо за оценку!
+        </div>
+      </template>
 
-        <button class="end-modal__lobby-btn" @click="goToLobby">
-          В лобби
-        </button>
-      </div>
-    </n-card>
-  </n-modal>
+      <button class="end-modal__lobby-btn" @click="goToLobby">
+        В лобби
+      </button>
+    </template>
+  </ModalContainer>
 </template>
 
 <script setup lang="ts">
-import { NModal, NCard } from 'naive-ui'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
 import { useGameStore } from '@/stores/useGameStore.ts'
 import type { TempThemeRating, ThemeRating, Difficulty } from '@/api'
+import ModalContainer from '@/components/template/ModalContainer.vue'
 
 const gameStore = useGameStore()
 const router = useRouter()
 
 const gameEnded = computed(() => gameStore.gameEnded)
 
-// Ratable when there's a temp theme OR a permanent theme (theme_id not null)
 const canRate = computed(() =>
   !!gameEnded.value && (gameEnded.value.is_temp_theme || !!gameEnded.value.theme_id),
 )
@@ -115,7 +119,6 @@ const dislikeReason = ref('')
 const isSubmitting = ref(false)
 const rated = ref(false)
 
-// Temp themes allow 'skip', permanent themes don't
 const ratingOptions = computed<{ label: string; value: AnyRating }[]>(() => {
   const base = [
     { label: 'Нравится', value: 'like' as const },
@@ -172,21 +175,18 @@ const goToLobby = () => {
 
 <style scoped lang="scss">
 .end-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-
   &__winner {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 
     &-label {
       @include body-2-up;
       color: $text-grey;
-      margin-bottom: 8px;
     }
 
     &-name {
-      font-size: 2rem;
+      font-size: $fs-h1;
       font-weight: 700;
       color: $text-dark;
       line-height: 1;
@@ -414,7 +414,7 @@ const goToLobby = () => {
       box-shadow 0.1s ease;
 
     &:hover {
-      background: darken(#fed787, 8%);
+      background: darken($primary-yellow, 8%);
     }
 
     &:active {
@@ -422,12 +422,5 @@ const goToLobby = () => {
       transform: translate(1px, 2px);
     }
   }
-}
-
-:deep(.n-card) {
-  background: $background !important;
-  border: 2px solid $border !important;
-  box-shadow: $box-shadow !important;
-  border-radius: $border-radius !important;
 }
 </style>

@@ -117,8 +117,11 @@ export const useGameStore = defineStore('useGameStore', () => {
   ws.game.onError((err) => {
     if (err.code === 'GAME_START_FAILED') {
       processingStore.setMessage('error', 'Запуск игры', 'Ошибка запуска комнаты')
+      isStarting.value = false
       router.push('/games')
     } else if (err.code === 'NOT_IN_GAME' || err.code === 'GAME_NOT_FOUND') {
+      currentGameId.value = null
+      isStarting.value = false
       router.push('/games')
     }
   })

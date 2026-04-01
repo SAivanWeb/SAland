@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
+import { useGameStore } from '@/stores/useGameStore'
 import { setAccessToken } from '@/api'
 
 const router = createRouter({
@@ -96,6 +97,15 @@ router.beforeEach(async (to) => {
   // Гостевые маршруты - редирект на /games
   if (to.meta.guestOnly && isAuthenticated) {
     return { name: 'Games' }
+  }
+
+  // Если игра активна — не даём уйти со страницы игры
+  if (to.name !== 'Game') {
+    const gameStore = useGameStore()
+    const inActiveGame = (gameStore.currentGameId || gameStore.isStarting) && !gameStore.gameEnded
+    if (inActiveGame) {
+      return { name: 'Game' }
+    }
   }
 })
 

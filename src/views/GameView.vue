@@ -597,7 +597,7 @@ onMounted(() => {
 
       &--open {
         display: flex;
-        z-index: 10;
+        z-index: 20;
       }
     }
   }

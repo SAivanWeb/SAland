@@ -10,23 +10,23 @@
 ## Содержание
 
 - [HTTP API](#http-api)
-    - [Формат ответа](#формат-ответа)
-    - [Auth](#auth)
-    - [User](#user)
-    - [Friends](#friends)
-    - [Themes](#themes)
-    - [Games](#games)
-    - [Админ](#админ)
-    - [Admin Panel](#admin-panel)
-    - [Health](#health)
+  - [Формат ответа](#формат-ответа)
+  - [Auth](#auth)
+  - [User](#user)
+  - [Friends](#friends)
+  - [Themes](#themes)
+  - [Games](#games)
+  - [Админ](#админ)
+  - [Admin Panel](#admin-panel)
+  - [Health](#health)
 - [WebSocket API](#websocket-api)
-    - [Подключение](#подключение)
-    - [Rooms](#rooms-events)
-    - [Game](#game-events)
-    - [Chat](#chat-events)
-    - [Notifications](#notifications-events)
-    - [AI Generation](#ai-generation-events)
-    - [Main Gateway](#main-gateway-events)
+  - [Подключение](#подключение)
+  - [Rooms](#rooms-events)
+  - [Game](#game-events)
+  - [Chat](#chat-events)
+  - [Notifications](#notifications-events)
+  - [AI Generation](#ai-generation-events)
+  - [Main Gateway](#main-gateway-events)
 - [Типы данных](#типы-данных)
 - [Коды ошибок](#коды-ошибок)
 
@@ -1336,35 +1336,34 @@ const socket = io('ws://localhost:3000', {
 #### `room:generate_theme` (emit)
 Сгенерировать тему через AI (только владелец, только для INACTIVE комнат).
 
+> **Внимание:** это событие теперь является алиасом для `ai_gen:join_queue`.
+> Ответ приходит как `ai_gen:queued` (не `room:theme_generation_started`).
+> Рекомендуется использовать `ai_gen:join_queue` напрямую.
+
 **Данные:**
 ```typescript
 {
-  theme_name: string;            // 2-255 символов
+  theme_name: string;                          // 2-255 символов
+  difficulty?: 'easy' | 'medium' | 'hard';    // по умолчанию 'medium'
 }
 ```
 
-**Ответ (room:theme_generation_started):**
+**Ответ (ai_gen:queued):**
 ```typescript
 {
-  room_id: string;
-  generation_started: boolean;
-  theme_name: string;
+  session_id: string;
+  queue_position: number;
+  queue_total: number;
 }
 ```
 
-**Broadcast (room:theme_generation_started):**
-```typescript
-{
-  theme_name: string;
-}
-```
-
-**Ошибки (room:error):**
+**Ошибки (room:error или ai_gen:error):**
 - `NOT_IN_ROOM` - Вы не находитесь в комнате
-- `ROOM_NOT_FOUND` - Комната не найдена
 - `NOT_OWNER` - Только владелец комнаты может генерировать тему
 - `ROOM_ALREADY_ACTIVE` - Тему можно создать только для неактивных комнат
-- `THEME_EXISTS` - В комнате уже есть тема
+- `THEME_EXISTS` - В комнате уже есть тема (удалите через `room:delete_theme`)
+- `ALREADY_IN_QUEUE` - Уже в очереди на генерацию
+- `DAILY_LIMIT_REACHED` - Исчерпан лимит 3 генерации в день
 
 ---
 
@@ -2291,62 +2290,183 @@ Array<{
 
 ### AI Generation Events
 
-События для отслеживания прогресса генерации темы через AI внутри комнаты.
-Отправляются владельцу комнаты после вызова `room:generate_theme`.
+AI-генерация вопросов работает через глобальную очередь (один поток GigaChat). Все события начинаются с префикса `ai_gen:`.
 
-#### `ai:progress` (listen)
-Прогресс генерации (отправляется после каждого батча из 20 вопросов).
+> **Точки входа:**
+> - `ai_gen:join_queue` — встать в очередь (рекомендуется)
+> - `room:generate_theme` — алиас, делегирует в `ai_gen:join_queue` (обратная совместимость)
+>
+> **Блокировки:** пока пользователь в очереди или идёт генерация, следующие операции недоступны:
+> `room:get_prompt`, `room:upload_theme`, `room:upload_theme_raw`, `room:select_theme`,
+> `room:delete_theme`, `room:clear_uploaded_questions`. Все они вернут ошибку `ALREADY_IN_QUEUE`.
+
+---
+
+#### `ai_gen:join_queue` (emit)
+Встать в очередь на AI-генерацию темы. Вызывается вместо `room:generate_theme`.
 
 **Данные:**
 ```typescript
 {
+  theme_name: string;                          // 2-255 символов
+  difficulty?: 'easy' | 'medium' | 'hard';    // по умолчанию 'medium'
+}
+```
+
+**Ответ (ai_gen:queued):**
+```typescript
+{
   session_id: string;
-  status: 'generating';
-  progress: {
-    generated: number;      // 20, 40, 60...
-    total: 80;
-  };
+  queue_position: number;   // 1 = следующий на генерацию
+  queue_total: number;      // всего в очереди
+}
+```
+
+**Ошибки (ai_gen:error):**
+- `NOT_IN_ROOM` — пользователь не в комнате
+- `NOT_OWNER` — не владелец комнаты
+- `ROOM_ALREADY_ACTIVE` — комната уже активна
+- `THEME_EXISTS` — тема уже есть (удалите через `room:delete_theme` сначала)
+- `ALREADY_IN_QUEUE` — уже стоит в очереди или идёт генерация
+- `DAILY_LIMIT_REACHED` — исчерпан лимит 3 генерации в день
+
+---
+
+#### `ai_gen:leave_queue` (emit)
+Выйти из очереди или отменить текущую генерацию.
+
+**Данные:** нет
+
+**Ответ (ai_gen:cancelled):**
+```typescript
+{
+  session_id: string;
+}
+```
+
+> Если генерация уже идёт — отмена применится после завершения текущего батча (до 60 сек).
+
+**Ошибки (ai_gen:error):**
+- `NOT_IN_QUEUE` — не стоит в очереди
+
+---
+
+#### `ai_gen:get_status` (emit)
+Получить текущий статус — позицию в очереди или прогресс генерации. Вызывать при reconnect.
+
+**Данные:** нет
+
+**Ответ (ai_gen:status):**
+```typescript
+// Если не в очереди:
+{
+  in_queue: false;
+}
+
+// Если в очереди или генерирует:
+{
+  in_queue: true;
+  session_id: string;
+  status: 'queued' | 'generating';
+  queue_position: number;
+  queue_total: number;
+  progress: { generated: number; total: 80 };
 }
 ```
 
 ---
 
-#### `ai:ready` (listen)
-Генерация завершена успешно.
+#### `ai_gen:queued` (listen)
+Вы добавлены в очередь.
 
-**Данные:**
 ```typescript
 {
   session_id: string;
-  status: 'ready';
-  progress: {
-    generated: 80;
-    total: 80;
-  };
+  queue_position: number;
+  queue_total: number;
 }
 ```
-
-> После этого события генерация завершена, тема привязана к комнате.
 
 ---
 
-#### `ai:error` (listen)
-Ошибка при генерации.
+#### `ai_gen:position_update` (listen)
+Ваша позиция в очереди изменилась (кто-то перед вами завершил или вышел).
 
-**Данные:**
+```typescript
+{
+  queue_position: number;
+  queue_total: number;
+}
+```
+
+---
+
+#### `ai_gen:started` (listen)
+Ваша очередь — генерация началась.
+
 ```typescript
 {
   session_id: string;
-  status: 'error';
-  error: string;
+}
+```
+
+---
+
+#### `ai_gen:progress` (listen)
+Батч из 20 вопросов сгенерирован (отправляется 4 раза: 20, 40, 60, 80).
+
+```typescript
+{
+  session_id: string;
   progress: {
-    generated: number;      // Сколько успели сгенерировать
+    generated: number;   // 20, 40, 60, 80
     total: 80;
   };
 }
 ```
 
-> При ошибке частично сгенерированные вопросы удаляются.
+> Одновременно обновляется `theme.questions_loaded` в `RoomState` (виден всем в комнате через `room:get_state`).
+
+---
+
+#### `ai_gen:completed` (listen)
+Генерация завершена, тема применена к комнате. После этого можно вызывать `room:activate`.
+
+```typescript
+{
+  session_id: string;
+  room_state: RoomState;   // Актуальное состояние комнаты с темой (80/80 вопросов)
+}
+```
+
+---
+
+#### `ai_gen:error` (listen)
+Ошибка генерации или ошибочный вызов события.
+
+```typescript
+{
+  session_id?: string;
+  error?: string;
+  code?: string;     // Код ошибки при неверном вызове (ALREADY_IN_QUEUE, DAILY_LIMIT_REACHED, ...)
+  message?: string;
+  progress?: { generated: number; total: 80 };
+}
+```
+
+> При ошибке генерации частично сгенерированные вопросы удаляются. Тема сбрасывается.
+> Лимит в 3 генерации/день не увеличивается при ошибке — только при успехе.
+
+---
+
+#### `ai_gen:cancelled` (listen)
+Генерация / ожидание отменены (в ответ на `ai_gen:leave_queue`).
+
+```typescript
+{
+  session_id: string;
+}
+```
 
 ---
 
@@ -2379,8 +2499,8 @@ interface ChatMessage {
   user_name: string | null;     // null для системных
   content: string;
   system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-             | 'game_starting' | 'game_started' | 'game_ended'
-             | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
+          | 'game_starting' | 'game_started' | 'game_ended'
+          | 'player_disconnected' | 'player_reconnected' | 'player_forfeited';
   timestamp: number;
 }
 ```

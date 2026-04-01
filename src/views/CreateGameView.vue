@@ -133,32 +133,79 @@
             >
               <n-tab-pane name="generate" tab="ИИ генерация">
                 <div class="create__generate">
-                  <div class="create__generate-header">
-                    <MainInput
-                      name="generateThemeName"
-                      label="Название темы"
-                      placeholder="Спорт, CS 2, история Руси и т.д."
-                      v-model="generateThemeName"
-                      size="large"
-                    />
-                    <MainButton
-                      title="Сгенерировать"
-                      size="large"
-                      color="blue"
-                      :disabled="!generateThemeName || room.status === 'waiting'"
-                    />
+                  <!-- Тема готова (после завершения AI генерации) -->
+                  <div v-if="aiGenStatus === 'idle' && room?.theme?.upload_method === 'ai'" class="create__theme-status">
+                    <p>Тема: <span>{{ room.theme.name }}</span></p>
+                    <p>Вопросов: <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span></p>
                   </div>
-                </div>
-              </n-tab-pane>
-              <n-tab-pane name="existing" tab="Готовая тема">
-                <div v-if="room?.theme" class="create__theme-status">
-                  <p>
-                    Тема: <span>{{ room.theme.name }}</span>
-                  </p>
-                  <p>
-                    Вопросов:
-                    <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span>
-                  </p>
+
+                  <!-- Idle: форма запуска -->
+                  <template v-else-if="aiGenStatus === 'idle'">
+                    <div class="create__generate-header">
+                      <MainInput
+                        name="generateThemeName"
+                        label="Название темы"
+                        placeholder="Спорт, CS 2, история Руси и т.д."
+                        v-model="generateThemeName"
+                        size="large"
+                      />
+                      <MainSelect
+                        name="generateDifficulty"
+                        :options="difficultyOption"
+                        v-model="generateDifficulty"
+                        placeholder="Сложность"
+                        label="Сложность"
+                      />
+                      <MainButton
+                        title="Сгенерировать"
+                        size="large"
+                        color="blue"
+                        :disabled="!generateThemeName || !generateDifficulty || room.status === 'waiting'"
+                        @click="joinAiGenQueue"
+                      />
+                    </div>
+                  </template>
+
+                  <!-- Queued: ожидание в очереди -->
+                  <template v-else-if="aiGenStatus === 'queued'">
+                    <div class="create__generate-status">
+                      <div class="create__generate-status-icon">⏳</div>
+                      <p class="create__generate-status-title">Вы в очереди</p>
+                      <p class="create__generate-status-sub">Позиция {{ aiQueuePosition }} из {{ aiQueueTotal }}</p>
+                      <MainButton title="Отменить" color="red" size="small" @click="leaveAiGenQueue" />
+                    </div>
+                  </template>
+
+                  <!-- Generating: идёт генерация -->
+                  <template v-else-if="aiGenStatus === 'generating'">
+                    <div class="create__generate-status">
+                      <p class="create__generate-status-title">Генерация вопросов...</p>
+                      <div class="create__generate-progress">
+                        <n-progress
+                          type="line"
+                          :percentage="aiGenProgressPercent"
+                          :show-indicator="false"
+                          :height="8"
+                          :border-radius="4"
+                          color="#4ecca3"
+                        />
+                        <span class="create__generate-progress-label">{{ aiGenProgressGenerated }} / {{ aiGenProgressTotal }} вопросов</span>
+                      </div>
+                      <MainButton title="Отменить" color="red" size="small" @click="leaveAiGenQueue" />
+                    </div>
+                  </template>
+
+                  <!-- Error: ошибка генерации -->
+                  <template v-else-if="aiGenStatus === 'error'">
+                    <div class="create__generate-status create__generate-status--error">
+                      <p class="create__generate-status-title">Ошибка генерации</p>
+                      <p class="create__generate-status-sub">{{ aiGenError }}</p>
+                      <div class="create__generate-status-actions">
+                        <MainButton title="Попробовать снова" color="blue" size="small" @click="joinAiGenQueue" :disabled="!generateThemeName || !generateDifficulty" />
+                        <MainButton title="Сбросить" size="small" @click="resetAiGenState" />
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </n-tab-pane>
               <n-tab-pane name="manual" tab="Ручное создание">
@@ -245,6 +292,43 @@
                   </template>
                 </div>
               </n-tab-pane>
+              <n-tab-pane name="existing" tab="Готовая тема">
+                <div v-if="room?.theme" class="create__theme-status">
+                  <p>Тема уже добавлена: <span>{{ room.theme.name }}</span></p>
+                  <p>Вопросов: <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span></p>
+                </div>
+                <template v-else>
+                  <div class="create__existing">
+                    <MainInput
+                      name="themeSearch"
+                      placeholder="Поиск по названию..."
+                      label="Поиск темы"
+                      v-model="themeSearch"
+                    />
+                    <div v-if="themesLoading" class="create__existing-empty">Загрузка...</div>
+                    <div v-else-if="!existingThemes.length" class="create__existing-empty">Темы не найдены</div>
+                    <div v-else class="create__existing-list">
+                      <div
+                        v-for="theme in existingThemes"
+                        :key="theme.id"
+                        class="create__existing-item"
+                      >
+                        <div class="create__existing-info">
+                          <span class="create__existing-name">{{ theme.name }}</span>
+                          <span class="create__existing-meta">{{ themeDifficultyLabel(theme.difficulty) }} · {{ theme.questions_count }} вопросов</span>
+                        </div>
+                        <MainButton
+                          title="Добавить"
+                          size="small"
+                          color="green"
+                          :disabled="room?.status === 'waiting'"
+                          @click="selectExistingTheme(theme.id)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </n-tab-pane>
             </n-tabs>
           </div>
         </div>
@@ -260,8 +344,8 @@
 <script setup lang="ts">
 import MainSelect from '@/components/ui/select/MainSelect.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { type RoomUpdateParamsPayload, useWebSocket } from '@/api'
-import { NTabs, NTabPane, NIcon } from 'naive-ui'
+import { type RoomUpdateParamsPayload, useWebSocket, api, type Theme } from '@/api'
+import { NTabs, NTabPane, NIcon, NProgress } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
@@ -286,6 +370,41 @@ const answerTime = ref<number>()
 const turnTime = ref<number>()
 const timer = ref<number>()
 const generateThemeName = ref<string>('')
+const generateDifficulty = ref<'easy' | 'medium' | 'hard' | undefined>(undefined)
+
+// AI Gen queue state
+type AiGenStatus = 'idle' | 'queued' | 'generating' | 'error'
+const aiGenStatus = ref<AiGenStatus>('idle')
+const aiQueuePosition = ref(0)
+const aiQueueTotal = ref(0)
+const aiGenProgressGenerated = ref(0)
+const aiGenProgressTotal = ref(80)
+const aiGenError = ref('')
+
+const aiGenProgressPercent = computed(() =>
+  aiGenProgressTotal.value > 0
+    ? Math.round((aiGenProgressGenerated.value / aiGenProgressTotal.value) * 100)
+    : 0
+)
+
+function resetAiGenState() {
+  aiGenStatus.value = 'idle'
+  aiQueuePosition.value = 0
+  aiQueueTotal.value = 0
+  aiGenProgressGenerated.value = 0
+  aiGenProgressTotal.value = 80
+  aiGenError.value = ''
+}
+
+function joinAiGenQueue() {
+  if (!generateThemeName.value || !generateDifficulty.value) return
+  ws.aiGen.joinQueue({ theme_name: generateThemeName.value, difficulty: generateDifficulty.value })
+}
+
+function leaveAiGenQueue() {
+  ws.aiGen.leaveQueue()
+}
+
 const manualThemeName = ref<string>('')
 const manualDifficulty = ref<'easy' | 'medium' | 'hard' | undefined>(undefined)
 const questionUploaded = ref<number>(0)
@@ -301,6 +420,39 @@ const emptySlots = computed(() => {
 })
 
 const isThemeComplete = computed(() => room.value?.theme?.questions_loaded === 80)
+
+const themeSearch = ref('')
+const existingThemes = ref<Theme[]>([])
+const themesLoading = ref(false)
+
+async function fetchExistingThemes() {
+  themesLoading.value = true
+  try {
+    const res = await api.themes.popular({ q: themeSearch.value || undefined, size: 20 })
+    existingThemes.value = res.themes
+  } catch {
+    existingThemes.value = []
+  } finally {
+    themesLoading.value = false
+  }
+}
+
+watch(themeSearch, () => fetchExistingThemes())
+
+watch(activeTab, (val) => {
+  if (val === 'existing' && !room.value?.theme) fetchExistingThemes()
+})
+
+function selectExistingTheme(id: string) {
+  ws.rooms.selectTheme({ theme_id: id })
+}
+
+function themeDifficultyLabel(d: string) {
+  if (d === 'easy') return 'Лёгкая'
+  if (d === 'medium') return 'Средняя'
+  if (d === 'hard') return 'Сложная'
+  return d
+}
 
 function resetThemeState() {
   generateThemeName.value = ''
@@ -425,6 +577,7 @@ async function uploadQuestionsManually() {
 function clearTheme() {
   ws.rooms.deleteTheme()
   resetThemeState()
+  resetAiGenState()
 }
 
 function activateRoom() {
@@ -484,6 +637,7 @@ onMounted(() => {
         roomStore.room = { ...roomStore.room, theme: null }
       }
       resetThemeState()
+      resetAiGenState()
     }),
     ws.rooms.onError((err) => {
       if (isLeaving) return
@@ -580,10 +734,58 @@ onMounted(() => {
       )
       roomStore.initRoom()
     }),
+    ws.aiGen.onQueued((data) => {
+      aiGenStatus.value = 'queued'
+      aiQueuePosition.value = data.queue_position
+      aiQueueTotal.value = data.queue_total
+    }),
+    ws.aiGen.onPositionUpdate((data) => {
+      aiQueuePosition.value = data.queue_position
+      aiQueueTotal.value = data.queue_total
+    }),
+    ws.aiGen.onStarted(() => {
+      aiGenStatus.value = 'generating'
+    }),
+    ws.aiGen.onProgress((data) => {
+      aiGenProgressGenerated.value = data.progress.generated
+      aiGenProgressTotal.value = data.progress.total
+    }),
+    ws.aiGen.onCompleted((data) => {
+      resetAiGenState()
+      roomStore.room = data.room_state
+    }),
+    ws.aiGen.onError((data) => {
+      aiGenStatus.value = 'error'
+      aiGenError.value = data.message || data.error || 'Неизвестная ошибка'
+      if (data.code === 'DAILY_LIMIT_REACHED') {
+        processingStore.setMessage('error', 'ИИ генерация', 'Лимит 3 генерации в день исчерпан')
+        resetAiGenState()
+      } else if (data.code === 'ALREADY_IN_QUEUE') {
+        processingStore.setMessage('error', 'ИИ генерация', 'Вы уже находитесь в очереди')
+        aiGenStatus.value = 'queued'
+      }
+    }),
+    ws.aiGen.onCancelled(() => {
+      resetAiGenState()
+    }),
+    ws.aiGen.onStatus((data) => {
+      if (!data.in_queue) {
+        resetAiGenState()
+      } else if (data.status === 'queued') {
+        aiGenStatus.value = 'queued'
+        aiQueuePosition.value = data.queue_position ?? 0
+        aiQueueTotal.value = data.queue_total ?? 0
+      } else if (data.status === 'generating') {
+        aiGenStatus.value = 'generating'
+        aiGenProgressGenerated.value = data.progress?.generated ?? 0
+        aiGenProgressTotal.value = data.progress?.total ?? 80
+      }
+    }),
   )
   if (!window.history.state?.fresh) {
     roomStore.initRoom()
   }
+  ws.aiGen.getStatus()
 })
 
 onUnmounted(() => {
@@ -744,6 +946,58 @@ onUnmounted(() => {
     }
   }
 
+  &__existing {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &-empty {
+      @include body-1;
+      color: $text-grey;
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    &-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    &-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border: 2px solid $border;
+      border-radius: $border-radius;
+      background: #f9f9f9;
+    }
+
+    &-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    &-name {
+      @include body-1-bold;
+      color: $text-dark;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-meta {
+      @include caption;
+      color: $text-grey;
+    }
+  }
+
   &__theme-status {
     display: flex;
     flex-direction: column;
@@ -773,6 +1027,57 @@ onUnmounted(() => {
       gap: 20px;
       align-items: end;
       flex-wrap: wrap;
+    }
+
+    &-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+      border: 2px solid $border;
+      border-radius: $border-radius;
+      background: #f9f9f9;
+      text-align: center;
+
+      &--error {
+        border-color: $primary-red;
+        background: rgba($primary-red, 0.05);
+      }
+
+      &-icon {
+        font-size: 32px;
+      }
+
+      &-title {
+        @include body-1-bold;
+        color: $text-dark;
+      }
+
+      &-sub {
+        @include body-1;
+        color: $text-grey;
+      }
+
+      &-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    &-progress {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      &-label {
+        @include caption;
+        color: $text-grey;
+        text-align: center;
+      }
     }
   }
 

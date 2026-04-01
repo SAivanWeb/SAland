@@ -61,10 +61,20 @@ import type {
   NotificationEvent,
   FriendOnlineEvent,
   FriendOfflineEvent,
-  // AI Generation types
+  // AI Generation types (legacy)
   AIProgressEvent,
   AIReadyEvent,
   AIErrorEvent,
+  // AI Gen Queue types
+  AiGenJoinQueuePayload,
+  AiGenQueuedEvent,
+  AiGenPositionUpdateEvent,
+  AiGenStartedEvent,
+  AiGenProgressEvent,
+  AiGenCompletedEvent,
+  AiGenErrorEvent,
+  AiGenCancelledEvent,
+  AiGenStatusEvent,
   // Other
   PongEvent,
   WsError,
@@ -630,28 +640,74 @@ class WebSocketClient {
     },
   }
 
-  // ============= AI Generation Events =============
+  // ============= AI Generation Events (legacy) =============
 
   ai = {
-    /**
-     * Listen for generation progress (after each batch of 20 questions)
-     */
     onProgress: (callback: EventCallback<AIProgressEvent>): EventUnsubscribe => {
       return this.on('ai:progress', callback)
     },
-
-    /**
-     * Listen for generation complete
-     */
     onReady: (callback: EventCallback<AIReadyEvent>): EventUnsubscribe => {
       return this.on('ai:ready', callback)
     },
-
-    /**
-     * Listen for generation error
-     */
     onError: (callback: EventCallback<AIErrorEvent>): EventUnsubscribe => {
       return this.on('ai:error', callback)
+    },
+  }
+
+  // ============= AI Gen Queue =============
+
+  aiGen = {
+    /**
+     * Join the AI generation queue
+     */
+    joinQueue: (payload: AiGenJoinQueuePayload): void => {
+      this.emitOnly('ai_gen:join_queue', payload)
+    },
+
+    /**
+     * Leave the AI generation queue / cancel ongoing generation
+     */
+    leaveQueue: (): void => {
+      this.emitOnly('ai_gen:leave_queue')
+    },
+
+    /**
+     * Request current AI gen status (for reconnect)
+     */
+    getStatus: (): void => {
+      this.emitOnly('ai_gen:get_status')
+    },
+
+    onQueued: (callback: EventCallback<AiGenQueuedEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:queued', callback)
+    },
+
+    onPositionUpdate: (callback: EventCallback<AiGenPositionUpdateEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:position_update', callback)
+    },
+
+    onStarted: (callback: EventCallback<AiGenStartedEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:started', callback)
+    },
+
+    onProgress: (callback: EventCallback<AiGenProgressEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:progress', callback)
+    },
+
+    onCompleted: (callback: EventCallback<AiGenCompletedEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:completed', callback)
+    },
+
+    onError: (callback: EventCallback<AiGenErrorEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:error', callback)
+    },
+
+    onCancelled: (callback: EventCallback<AiGenCancelledEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:cancelled', callback)
+    },
+
+    onStatus: (callback: EventCallback<AiGenStatusEvent>): EventUnsubscribe => {
+      return this.on('ai_gen:status', callback)
     },
   }
 

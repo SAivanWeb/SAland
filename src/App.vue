@@ -4,14 +4,14 @@
       <n-modal-provider>
         <div class="sota">
           <HeaderBar v-if="!isGame && !isError" />
-          <n-scrollbar class="scrollbar">
+          <n-scrollbar ref="scrollbarRef" class="scrollbar">
             <div class="main" :class="{ main_game: isGame }">
               <router-view />
             </div>
             <FooterBar v-if="!isGame && !isError" />
           </n-scrollbar>
         </div>
-        <div class="decorations">
+        <div v-if="!isGame" class="decorations">
           <div class="decorations__hex decorations__hex--1"></div>
           <div class="decorations__hex decorations__hex--2"></div>
           <div class="decorations__hex decorations__hex--3"></div>
@@ -30,7 +30,7 @@
 import { NConfigProvider, NScrollbar, NModalProvider, NNotificationProvider } from 'naive-ui'
 import HeaderBar from '@/components/template/HeaderBar.vue'
 import FooterBar from '@/components/template/FooterBar.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import Preloader from '@/components/system/Preloader.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import NotifyHost from '@/components/system/NotifyHost.vue'
@@ -52,6 +52,12 @@ const themeOverrides = {
 
 const processingStore = useProcessingStore()
 const route = useRoute()
+const scrollbarRef = ref()
+
+watch(
+  () => route.path,
+  () => nextTick(() => scrollbarRef.value?.scrollTo({ top: 0 }))
+)
 
 const isGame = computed(() => route.path === '/game')
 

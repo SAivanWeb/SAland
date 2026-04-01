@@ -97,20 +97,19 @@ const register = () => {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 24px 28px;
-
-  @include sm {
-    padding: 16px;
-    width: calc(100% - 24px);
-  }
   background: #fff;
   border-radius: $border-radius;
   border: 2px solid $border;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 100%;
+  width: 90vw;
   max-width: 450px;
   box-shadow: 4px 6px 0px $border;
+
+  @media (max-width: 900px) {
+    padding: 16px;
+  }
 
   &__form {
     display: flex;

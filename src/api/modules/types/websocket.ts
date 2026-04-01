@@ -498,7 +498,7 @@ export interface FriendOfflineEvent {
   timestamp: number
 }
 
-// ============= AI Generation Events =============
+// ============= AI Generation Events (legacy) =============
 
 export interface AIGenerationProgress {
   generated: number
@@ -522,6 +522,64 @@ export interface AIErrorEvent {
   status: 'error'
   error: string
   progress: AIGenerationProgress
+}
+
+// ============= AI Gen Queue Events =============
+
+export interface AiGenJoinQueuePayload {
+  theme_name: string
+  difficulty?: 'easy' | 'medium' | 'hard'
+}
+
+export interface AiGenQueuedEvent {
+  session_id: string
+  queue_position: number
+  queue_total: number
+}
+
+export interface AiGenPositionUpdateEvent {
+  queue_position: number
+  queue_total: number
+}
+
+export interface AiGenStartedEvent {
+  session_id: string
+}
+
+export interface AiGenProgress {
+  generated: number
+  total: number
+}
+
+export interface AiGenProgressEvent {
+  session_id: string
+  progress: AiGenProgress
+}
+
+export interface AiGenCompletedEvent {
+  session_id: string
+  room_state: RoomState
+}
+
+export interface AiGenErrorEvent {
+  session_id?: string
+  error?: string
+  code?: string
+  message?: string
+  progress?: AiGenProgress
+}
+
+export interface AiGenCancelledEvent {
+  session_id: string
+}
+
+export interface AiGenStatusEvent {
+  in_queue: boolean
+  session_id?: string
+  status?: 'queued' | 'generating'
+  queue_position?: number
+  queue_total?: number
+  progress?: AiGenProgress
 }
 
 // ============= Main Gateway Types =============
@@ -594,6 +652,9 @@ export type WsErrorCode =
   // AI errors
   | 'AI_SERVICE_UNAVAILABLE'
   | 'AI_GENERATION_FAILED'
+  | 'ALREADY_IN_QUEUE'
+  | 'DAILY_LIMIT_REACHED'
+  | 'NOT_IN_QUEUE'
   // Theme rating errors
   | 'NOT_TEMP_THEME'
   | 'ALREADY_VOTED'

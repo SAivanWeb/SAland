@@ -1,7 +1,7 @@
 <template>
   <n-popover
     v-model:show="showPopover"
-    style="padding: 0; top: 12px; width: 300px"
+    style="padding: 0; top: 12px;"
     trigger="click"
     placement="bottom-end"
     :show-arrow="false"
@@ -217,7 +217,11 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 100%;
+    width: 240px;
+    
+    @media (max-width: 400px) {
+      width: 200px;
+    }
   }
 
   &__item{

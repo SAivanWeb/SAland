@@ -1016,11 +1016,13 @@ WAITING (после активации)
 ```json
 {
   "theme_name": "string?",
+  "difficulty": "easy | medium | hard",
   "raw_text": "string | object"
 }
 ```
 
 > `theme_name`: 2-255 символов, опционально. Если `room:get_prompt` был вызван ранее — название уже сохранено в комнате. Можно передать для переопределения.
+> `difficulty`: опционально, по умолчанию `medium`. Сохраняется в комнате и возвращается в `room:state` в поле `theme.difficulty`.
 > `raw_text`: принимает **строку** (минимум 10 символов, сырой ответ AI) или **JSON-объект** (например `{"questions": [...]}`).
 > Сервер извлекает JSON из текста (стрипает markdown code blocks, ищет массив вопросов), валидирует и добавляет к уже загруженным.
 > Дедупликация по тексту вопроса. Максимум 80 вопросов — лишние отбрасываются.
@@ -1239,7 +1241,8 @@ WAITING (после активации)
   ],
   "theme": {
     "name": "string",
-    "upload_method": "'manual' | 'ai' | null",
+    "upload_method": "'manual' | 'ai' | 'existing' | null",
+    "difficulty": "'easy' | 'medium' | 'hard' | null",
     "questions_loaded": "number",
     "questions_total": 80
   }
@@ -1252,6 +1255,7 @@ WAITING (после активации)
 | `theme` | Информация о теме (null пока тема не создана) |
 | `theme.name` | Название темы |
 | `theme.upload_method` | Способ загрузки: `'manual'` (ручная/JSON), `'ai'` (AI-генерация), `'existing'` (существующая тема), `null` |
+| `theme.difficulty` | Сложность темы (`'easy'`/`'medium'`/`'hard'`) для `manual`/`ai`; `null` для `existing` и если не задана |
 | `theme.questions_loaded` | Количество загруженных вопросов (0-80) |
 | `theme.questions_total` | Необходимое количество (80) |
 
@@ -2060,64 +2064,85 @@ WAITING (после активации)
 
 ## AI-генерация (WebSocket)
 
-> События для отслеживания прогресса генерации темы через AI внутри комнаты.
-> Отправляются владельцу комнаты после вызова `room:generate_theme`.
+> AI-генерация реализована через глобальную очередь (модуль `ai-generation`).
+> Один поток GigaChat, пользователи ждут своей очереди.
+> Вход: `ai_gen:join_queue` (или `room:generate_theme` как алиас).
+
+### Лимиты и ограничения
+
+- **3 генерации в день** на пользователя (считаются только успешные, сбрасываются в полночь UTC)
+- **Батчи:** 4 запроса по 20 вопросов, каждый с timeout 60 сек
+- **MAX_RETRIES:** 3 попытки на батч при ошибке GigaChat
+
+### Клиент → Сервер
+
+#### `ai_gen:join_queue`
+```json
+{ "theme_name": "Наполеон", "difficulty": "hard" }
+```
+
+#### `ai_gen:leave_queue`
+```json
+{}
+```
+
+#### `ai_gen:get_status`
+```json
+{}
+```
 
 ### Сервер → Клиент
 
-#### `ai:progress`
+#### `ai_gen:queued`
+```json
+{ "session_id": "string", "queue_position": 1, "queue_total": 3 }
+```
 
-> Прогресс генерации (отправляется после каждого батча)
+#### `ai_gen:position_update`
+```json
+{ "queue_position": 1, "queue_total": 2 }
+```
 
+#### `ai_gen:started`
+```json
+{ "session_id": "string" }
+```
+
+#### `ai_gen:progress`
+```json
+{ "session_id": "string", "progress": { "generated": 20, "total": 80 } }
+```
+
+#### `ai_gen:completed`
+```json
+{ "session_id": "string", "room_state": { /* RoomState */ } }
+```
+
+#### `ai_gen:error`
 ```json
 {
+  "session_id": "string",
+  "error": "AI generation failed.",
+  "progress": { "generated": 20, "total": 80 }
+}
+```
+
+#### `ai_gen:cancelled`
+```json
+{ "session_id": "string" }
+```
+
+#### `ai_gen:status` (ответ на get_status)
+```json
+{
+  "in_queue": true,
   "session_id": "string",
   "status": "generating",
-  "progress": {
-    "generated": 20,
-    "total": 80
-  }
+  "queue_position": 1,
+  "queue_total": 1,
+  "progress": { "generated": 40, "total": 80 }
 }
 ```
-
----
-
-#### `ai:ready`
-
-> Генерация завершена успешно
-
-```json
-{
-  "session_id": "string",
-  "status": "ready",
-  "progress": {
-    "generated": 80,
-    "total": 80
-  }
-}
-```
-
-> После этого события генерация завершена, тема привязана к комнате.
-
----
-
-#### `ai:error`
-
-> Ошибка при генерации
-
-```json
-{
-  "session_id": "string",
-  "status": "error",
-  "error": "string",
-  "progress": {
-    "generated": 40,
-    "total": 80
-  }
-}
-```
-
-> При ошибке частично сгенерированные вопросы удаляются.
 
 ---
 
@@ -2830,29 +2855,55 @@ CREATE INDEX idx_game_players_user ON game_players(user_id, game_id);
 
 Файл: `src/modules/rooms/prompts/generate-questions.prompt.ts`
 
-Промпт и константы генерации определены в коде. Вызывается через `room:generate_theme` в контексте INACTIVE комнаты.
+Промпт и константы генерации определены в коде. Вход через `ai_gen:join_queue`
+(или `room:generate_theme` как deprecated алиас) в контексте INACTIVE комнаты.
 
 ## Параметры генерации
 
-| Параметр | Значение |
-|----------|----------|
-| Всего вопросов | 80 |
-| Размер батча | 20 |
-| Количество запросов | 4 |
-| Модель | GigaChat |
+| Параметр | Значение | ENV |
+|----------|----------|-----|
+| Всего вопросов | 80 | — |
+| Размер батча | 20 | — |
+| Количество батчей | 4 | — |
+| Модель | GigaChat | `GIGACHAT_MODEL` |
+| Timeout на запрос | 60 сек | `AI_GENERATION_REQUEST_TIMEOUT_MS` |
+| Ретраев на батч | 3 | `AI_GENERATION_MAX_RETRIES` |
+| Лимит в день | 3 | `AI_GENERATION_DAILY_LIMIT` |
 
-## Валидация ответа AI
+## Архитектура модуля
 
-После каждого запроса к AI проверять:
-1. Ответ — валидный JSON
-2. Массив `questions` содержит ровно `BATCH_SIZE` элементов
-3. Каждый вопрос имеет:
-    - `question` — непустая строка
-    - `answers` — массив из 4 непустых строк
-    - `correct_answer` — число от 0 до 3
-4. Нет дублей вопросов (сравнение по тексту)
+| Файл | Назначение |
+|------|------------|
+| `src/modules/ai-generation/gigachat.service.ts` | GigaChat OAuth2 клиент, токен-кеш, https-запросы |
+| `src/modules/ai-generation/ai-generation.service.ts` | Очередь (Redis Sorted Set), воркер, батч-генерация |
+| `src/modules/ai-generation/ai-generation.gateway.ts` | WebSocket gateway (`ai_gen:*` события) |
+| `src/modules/ai-generation/ai-generation.module.ts` | NestJS модуль |
 
-При ошибке валидации — retry (макс. 3 попытки), затем ошибка пользователю.
+## Redis ключи (AI Generation)
+
+| Ключ | Тип | TTL | Содержимое |
+|------|-----|-----|------------|
+| `ai_gen_queue` | Sorted Set | — | userId → timestamp |
+| `ai_gen_processing` | String | 600 сек | userId, кто генерирует сейчас |
+| `ai_gen_user:{userId}` | JSON | 900 сек | AiGenUserState |
+| `ai_gen_cancel:{userId}` | String | 30 сек | флаг отмены |
+| `ai_gen_daily:{userId}:{date}` | String | 26 ч | счётчик (0-3) |
+
+## Валидация ответа GigaChat
+
+После каждого батч-запроса:
+1. Попытка парсинга JSON напрямую
+2. Если не удалось — извлечение JSON из markdown-блока (```json ... ```)
+3. Если не удалось — поиск первого `{...}` в ответе
+4. Валидация структуры каждого вопроса: `question` (string), `answers` (4 strings), `correct_answer` (0-3)
+5. При < BATCH_SIZE валидных вопросов — retry с экспоненциальным backoff (1s, 2s, 4s)
+6. После MAX_RETRIES — ошибка пользователю, лимит не увеличивается
+
+## Обработка аварийного завершения сервера
+
+При старте (`onModuleInit`): проверяется `ai_gen_processing`. Если ключ найден —
+пользователь помечается как `error`, очередь двигается дальше.
+`ai_gen_processing` имеет TTL 600 сек (watchdog).
 
 ---
 

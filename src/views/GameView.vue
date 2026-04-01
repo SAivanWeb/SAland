@@ -576,6 +576,7 @@ onMounted(() => {
   background: $background;
 
   @media (max-width: 900px) {
+    height: 100svh;
     display: flex;
     flex-direction: column;
     touch-action: none;
@@ -725,7 +726,7 @@ onMounted(() => {
       display: flex;
       align-items: stretch;
       gap: 12px;
-      padding: 8px 12px 4px;
+      padding: calc(8px + env(safe-area-inset-top)) 12px 4px;
       overflow-x: auto;
       scrollbar-width: none;
       &::-webkit-scrollbar { display: none; }

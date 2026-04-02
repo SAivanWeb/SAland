@@ -1,7 +1,9 @@
 <template>
   <div class="header">
     <div class="header__container">
-      <div class="header__logo" @click="toMain"></div>
+      <div class="header__logo" @click="toMain">
+        <img src="/logo.svg" alt="logo" />
+      </div>
       <div class="header__nav">
         <MainButton
           v-if="!isAuth && !isAuthPage"
@@ -86,11 +88,16 @@ const toMain = () => {
   }
 
   &__logo {
-    width: 34px;
-    height: 34px;
+    width: 60px;
+    min-width: 60px;
+    height: 60px;
     cursor: pointer;
-    background: $text-dark;
-    border-radius: 50%;
+
+    & img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   }
 }
 </style>

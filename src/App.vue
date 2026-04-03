@@ -87,7 +87,7 @@ const isError = computed(() => route.path === '/error')
 
 .main {
   width: 100%;
-  min-height: calc(100dvh - #{$header-height} - env(safe-area-inset-top));
+  min-height: calc(100dvh - #{$header-height} - env(safe-area-inset-top) - 124px);
   position: relative;
 
   &_game {

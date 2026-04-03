@@ -93,7 +93,7 @@ const menuOptions = computed(() => {
 
     return options
   }
-  return null
+  return []
 })
 
 function logout(key: string) {

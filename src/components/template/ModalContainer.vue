@@ -1,7 +1,7 @@
 <template>
   <n-modal
     v-model:show="innerShow"
-    :style="{ width: modalWidth ? modalWidth : '' }"
+    :style="{ width: modalWidth ? modalWidth : '', maxWidth: '90vw' }"
     :mask-closable="maskClosable ?? true"
     :close-on-esc="closeOnEsc ?? true"
     block-scroll
@@ -38,7 +38,11 @@ interface ModalContainerProps {
   showClose?: boolean
 }
 
-const props = defineProps<ModalContainerProps>()
+const props = withDefaults(defineProps<ModalContainerProps>(), {
+  showClose: true,
+  maskClosable: true,
+  closeOnEsc: true
+})
 
 const emit = defineEmits<{
   (e: 'update:show', value: boolean): void

@@ -325,6 +325,7 @@ export interface GameStateEvent {
   phase: GamePhase
   players: GamePlayer[]
   cells: HexCell[]
+  available_moves: HexCoord[]
   current_turn: TurnState | null
   game_timer_ends_at: number | null
 }

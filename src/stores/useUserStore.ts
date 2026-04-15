@@ -74,14 +74,12 @@ export const useUserStore = defineStore('UserStore', () => {
       processingStore.startLoading()
       currentUser.value = await api.user.init();
       await ws.connect();
-      if (window.location.pathname !== '/game-create') {
-        if (currentUser.value && currentUser.value.active_room_id) {
-          await roomStore.initRoom()
-        }
-        if (currentUser.value && currentUser.value.active_game_id) {
-          router.push('/game')
-          await gameStore.reconnect();
-        }
+      if (currentUser.value?.active_game_id) {
+        router.push('/game')
+        await gameStore.reconnect()
+      } else if (currentUser.value?.active_room_id) {
+        router.push('/game-create')
+        await roomStore.initRoom()
       }
     } catch (e) {
       console.log(e)

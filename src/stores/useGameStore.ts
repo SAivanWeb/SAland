@@ -109,7 +109,16 @@ export const useGameStore = defineStore('useGameStore', () => {
     if (data.game_id) currentGameId.value = data.game_id
     cells.value = data.cells
     players.value = data.players
-    currentTurn.value = data.current_turn
+    // available_moves приходит на верхнем уровне game:state, а не внутри current_turn —
+    // мержим вручную, чтобы не затереть ходы, уже выставленные обработчиком game:turn
+    if (data.current_turn) {
+      currentTurn.value = {
+        ...data.current_turn,
+        available_moves: data.available_moves ?? data.current_turn.available_moves ?? [],
+      }
+    } else {
+      currentTurn.value = null
+    }
     gameTimerEndsAt.value = data.game_timer_ends_at
     processingStore.stopLoading()
   })

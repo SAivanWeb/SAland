@@ -1,6 +1,6 @@
 <template>
   <n-popover
-    style="padding: 0; top: 12px;"
+    style="padding: 0; top: 12px"
     trigger="click"
     placement="bottom-end"
     :show-arrow="false"
@@ -73,22 +73,20 @@ const menuOptions = computed(() => {
     ]
 
     if (userStore.currentUser.user.role === 'admin') {
-      options.unshift(
-        {
-          label: () =>
-            h(
-              RouterLink,
-              {
-                to: {
-                  path: '/admin',
-                },
+      options.unshift({
+        label: () =>
+          h(
+            RouterLink,
+            {
+              to: {
+                path: '/admin',
               },
-              { default: () => 'Администрирование' },
-            ),
-          key: 'toAdmin',
-          icon: renderIcon(Shield),
-        }
-      )
+            },
+            { default: () => 'Администрирование' },
+          ),
+        key: 'toAdmin',
+        icon: renderIcon(Shield),
+      })
     }
 
     return options

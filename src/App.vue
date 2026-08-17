@@ -56,7 +56,7 @@ const scrollbarRef = ref()
 
 watch(
   () => route.path,
-  () => nextTick(() => scrollbarRef.value?.scrollTo({ top: 0 }))
+  () => nextTick(() => scrollbarRef.value?.scrollTo({ top: 0 })),
 )
 
 const isGame = computed(() => route.path === '/game')

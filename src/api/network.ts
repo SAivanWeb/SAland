@@ -118,10 +118,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok || json.status !== 'success') {
     const errorData = json as unknown as { message?: string; status: string }
-    throw new ApiRequestError(
-      response.status,
-      errorData.message || 'Request failed',
-    )
+    throw new ApiRequestError(response.status, errorData.message || 'Request failed')
   }
 
   return json.data
@@ -191,18 +188,32 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
 }
 
 // Shorthand methods
-export function get<T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+export function get<T>(
+  endpoint: string,
+  options?: Omit<RequestOptions, 'method' | 'body'>,
+): Promise<T> {
   return request<T>(endpoint, { ...options, method: 'GET' })
 }
 
-export function post<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+export function post<T>(
+  endpoint: string,
+  body?: unknown,
+  options?: Omit<RequestOptions, 'method' | 'body'>,
+): Promise<T> {
   return request<T>(endpoint, { ...options, method: 'POST', body })
 }
 
-export function put<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+export function put<T>(
+  endpoint: string,
+  body?: unknown,
+  options?: Omit<RequestOptions, 'method' | 'body'>,
+): Promise<T> {
   return request<T>(endpoint, { ...options, method: 'PUT', body })
 }
 
-export function del<T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T> {
+export function del<T>(
+  endpoint: string,
+  options?: Omit<RequestOptions, 'method' | 'body'>,
+): Promise<T> {
   return request<T>(endpoint, { ...options, method: 'DELETE' })
 }

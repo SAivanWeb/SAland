@@ -23,7 +23,7 @@
           <span>{{ user.stats.total_questions_answered }}</span>
         </div>
       </div>
-      <MainButton title="Удалить из друзей" color="red" @click="deleteFriend()"/>
+      <MainButton title="Удалить из друзей" color="red" @click="deleteFriend()" />
     </template>
   </ModalContainer>
 </template>
@@ -45,7 +45,7 @@ const processingStore = useProcessingStore()
 
 const emit = defineEmits<{
   (e: 'update:show', value: boolean): void
-  (e: 'deleted' ): void
+  (e: 'deleted'): void
 }>()
 const show = computed({
   get: () => props.show,
@@ -58,8 +58,8 @@ async function deleteFriend() {
     await api.friends.remove(props.user.id)
     emit('deleted')
     emit('update:show', false)
-  } catch (e) {
-    console.error(e)
+  } catch {
+    processingStore.setMessage('error', 'Удаление из друзей', 'Ошибка удаления из друзей')
   } finally {
     processingStore.stopLoading()
   }

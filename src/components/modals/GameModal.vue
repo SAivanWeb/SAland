@@ -39,7 +39,7 @@
       <!-- Players -->
       <div class="game-modal__players" v-if="players && players.length > 0">
         <template v-if="phase === 'result'">
-          <template v-if="isBattle">
+          <template v-if="isBattle && players[0] && players[1]">
             <div class="game-modal__players-battle">
               <div class="game-modal__player" :style="{ color: players[0].color }">
                 {{ players[0].name }}
@@ -58,7 +58,7 @@
         </template>
 
         <template v-else>
-          <template v-if="isBattle && players.length >= 2">
+          <template v-if="isBattle && players[0] && players[1]">
             <div class="game-modal__players-battle">
               <div class="game-modal__player" :style="{ color: players[0].color }">
                 {{ players[0].name }}
@@ -69,7 +69,7 @@
               </div>
             </div>
           </template>
-          <template v-else>
+          <template v-else-if="players[0]">
             <div class="game-modal__players-solo">
               <div class="game-modal__players-solo-label">Отвечает:</div>
               <div class="game-modal__player" :style="{ color: players[0].color }">
@@ -217,10 +217,7 @@ const stopClosingCountdown = () => {
   }
 }
 
-const closingPercentage = computed(() => {
-  if (closingTotal.value === 0) return 0
-  return (closingRemaining.value / closingTotal.value) * 100
-})
+const closingPercentage = computed(() => (closingRemaining.value / closingTotal.value) * 100)
 
 // --- Индекс выбранного ответа ---
 const selectedAnswerIndex = ref<number | null>(null)
@@ -240,12 +237,9 @@ const getAnswerClass = (index: number) => {
 }
 
 const getAnswerStyle = (index: number) => {
-  if (
-    phase.value === 'waiting' &&
-    index === selectedAnswerIndex.value &&
-    props.players.length > 0
-  ) {
-    const color = props.players[0].color
+  const firstPlayer = props.players[0]
+  if (phase.value === 'waiting' && index === selectedAnswerIndex.value && firstPlayer) {
+    const color = firstPlayer.color
     return { backgroundColor: `${color}30`, borderColor: color }
   }
   return {}

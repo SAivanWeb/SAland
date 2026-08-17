@@ -9,11 +9,11 @@
           v-model="statusFilter"
           :options="statusOptions"
         />
-        <MainInput name="search" placeholder="Поиск по нарушителю" v-model="searchQuery"/>
+        <MainInput name="search" placeholder="Поиск по нарушителю" v-model="searchQuery" />
       </div>
     </div>
 
-    <MainTable :headers="reportsHeaders" :items="reportsData" :loading="loading"/>
+    <MainTable :headers="reportsHeaders" :items="reportsData" :loading="loading" />
 
     <div class="reports__footer" v-if="pagination">
       <n-pagination
@@ -35,7 +35,15 @@ import { NPagination } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainSelect from '@/components/ui/select/MainSelect.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
-import { type AdminReport, type AdminReportsParams, type AdminReportsPagination, type ReportStatus, useApi } from '@/api'
+import type { DataTableColumns } from 'naive-ui'
+import {
+  type AdminReport,
+  type AdminReportsParams,
+  type AdminReportsPagination,
+  type ReportStatus,
+  useApi,
+} from '@/api'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
 function formatDate(timestamp: number | null): string {
   if (!timestamp) return '—'
@@ -50,6 +58,7 @@ function formatDate(timestamp: number | null): string {
 }
 
 const api = useApi()
+const processingStore = useProcessingStore()
 
 const searchQuery = ref('')
 const loading = ref(false)
@@ -70,17 +79,53 @@ const statusOptions = [
   { label: 'Решена', value: 'resolved' },
 ]
 
-const reportsHeaders = [
+const reportsHeaders: DataTableColumns<AdminReport> = [
   { title: 'ID', key: 'id', minWidth: 280, ellipsis: { tooltip: true } },
-  { title: 'Нарушитель', key: 'reported_user', minWidth: 180, render: (row: AdminReport) => `${row.reported_user.name} (${row.reported_user.email})` },
-  { title: 'Статус нарушителя', key: 'reported_user_status', minWidth: 160, render: (row: AdminReport) => row.reported_user.status },
-  { title: 'Жалобщик', key: 'reporter', minWidth: 180, render: (row: AdminReport) => `${row.reporter.name} (${row.reporter.email})` },
+  {
+    title: 'Нарушитель',
+    key: 'reported_user',
+    minWidth: 180,
+    render: (row: AdminReport) => `${row.reported_user.name} (${row.reported_user.email})`,
+  },
+  {
+    title: 'Статус нарушителя',
+    key: 'reported_user_status',
+    minWidth: 160,
+    render: (row: AdminReport) => row.reported_user.status,
+  },
+  {
+    title: 'Жалобщик',
+    key: 'reporter',
+    minWidth: 180,
+    render: (row: AdminReport) => `${row.reporter.name} (${row.reporter.email})`,
+  },
   { title: 'Причина', key: 'reason', minWidth: 240, ellipsis: { tooltip: true } },
   { title: 'Статус', key: 'status', minWidth: 120 },
-  { title: 'Решил', key: 'resolver', minWidth: 160, render: (row: AdminReport) => row.resolver?.name ?? '—' },
-  { title: 'Комментарий', key: 'resolved_comment', minWidth: 220, ellipsis: { tooltip: true }, render: (row: AdminReport) => row.resolved_comment ?? '—' },
-  { title: 'Решена', key: 'resolved_at', minWidth: 170, render: (row: AdminReport) => formatDate(row.resolved_at) },
-  { title: 'Создана', key: 'created_at', minWidth: 170, render: (row: AdminReport) => formatDate(row.created_at) },
+  {
+    title: 'Решил',
+    key: 'resolver',
+    minWidth: 160,
+    render: (row: AdminReport) => row.resolver?.name ?? '—',
+  },
+  {
+    title: 'Комментарий',
+    key: 'resolved_comment',
+    minWidth: 220,
+    ellipsis: { tooltip: true },
+    render: (row: AdminReport) => row.resolved_comment ?? '—',
+  },
+  {
+    title: 'Решена',
+    key: 'resolved_at',
+    minWidth: 170,
+    render: (row: AdminReport) => formatDate(row.resolved_at),
+  },
+  {
+    title: 'Создана',
+    key: 'created_at',
+    minWidth: 170,
+    render: (row: AdminReport) => formatDate(row.created_at),
+  },
 ]
 
 async function fetchReports() {
@@ -90,7 +135,7 @@ async function fetchReports() {
     reportsData.value = res.reports
     pagination.value = res.pagination
   } catch {
-    //
+    processingStore.setMessage('error', 'Жалобы', 'Ошибка получения жалоб')
   } finally {
     loading.value = false
   }

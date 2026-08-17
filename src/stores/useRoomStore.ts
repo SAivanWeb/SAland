@@ -29,7 +29,7 @@ export const useRoomStore = defineStore('RoomStore', () => {
   }
 
   function joinRoom(payload: string) {
-    ws.rooms.join({room_id: payload})
+    ws.rooms.join({ room_id: payload })
   }
 
   function leaveRoom() {
@@ -60,33 +60,32 @@ export const useRoomStore = defineStore('RoomStore', () => {
     if (window.location.pathname !== '/game-create' && window.location.pathname !== '/games') {
       if (room.value && userStore.currentUser?.user.id === room.value.owner_id) {
         const timer = setTimeout(() => onClickTimeout('admin'), 3500)
-        const withTracking = (fn: () => void) => () => { clearTimeout(timer); fn() }
-        processingStore.setMessage(
-          'info',
-          'Активная комната',
-          'У вас есть активная комната.',
-          {
-            label: 'Подключиться',
-            onClick: withTracking(() => router.push(`/game-create`)),
-          },
-        )
+        const withTracking = (fn: () => void) => () => {
+          clearTimeout(timer)
+          fn()
+        }
+        processingStore.setMessage('info', 'Активная комната', 'У вас есть активная комната.', {
+          label: 'Подключиться',
+          onClick: withTracking(() => router.push(`/game-create`)),
+        })
       } else if (room.value && userStore.currentUser?.user.id !== room.value.owner_id) {
         const timer = setTimeout(() => onClickTimeout('user'), 3500)
-        const withTracking = (fn: () => void) => () => { clearTimeout(timer); fn() }
-        processingStore.setMessage(
-          'info',
-          'Активная комната',
-          'У вас есть активная комната.',
-          {
-            label: 'Подключиться',
-            onClick: withTracking(() => router.push(`/games`)),
-          },
-        )
+        const withTracking = (fn: () => void) => () => {
+          clearTimeout(timer)
+          fn()
+        }
+        processingStore.setMessage('info', 'Активная комната', 'У вас есть активная комната.', {
+          label: 'Подключиться',
+          onClick: withTracking(() => router.push(`/games`)),
+        })
       }
-    }
-    else if (window.location.pathname === '/games') {
+    } else if (window.location.pathname === '/games') {
       // Не редиректим обратно, если пользователь только что сам покинул комнату
-      if (room.value && userStore.currentUser?.user.id === room.value.owner_id && !window.history.state?.left) {
+      if (
+        room.value &&
+        userStore.currentUser?.user.id === room.value.owner_id &&
+        !window.history.state?.left
+      ) {
         router.push('/game-create')
       }
     }
@@ -101,7 +100,7 @@ export const useRoomStore = defineStore('RoomStore', () => {
 
   ws.rooms.onPlayerLeft((data) => {
     if (room.value) {
-      room.value.players = room.value.players.filter(p => p.user_id !== data.user_id)
+      room.value.players = room.value.players.filter((p) => p.user_id !== data.user_id)
     }
   })
 
@@ -111,10 +110,17 @@ export const useRoomStore = defineStore('RoomStore', () => {
 
   ws.rooms.onKicked((data) => {
     room.value = null
-    if (data.reason === 'Room was deactivated by owner' || data.reason === 'Room was deleted by owner') {
+    if (
+      data.reason === 'Room was deactivated by owner' ||
+      data.reason === 'Room was deleted by owner'
+    ) {
       processingStore.setMessage('info', 'Активвная комната', 'Комната была закрыта владельцем')
     } else {
-      processingStore.setMessage('info', 'Вы исключены из комнаты', 'Администратор исключил вас из комнаты')
+      processingStore.setMessage(
+        'info',
+        'Вы исключены из комнаты',
+        'Администратор исключил вас из комнаты',
+      )
     }
   })
 
@@ -129,7 +135,6 @@ export const useRoomStore = defineStore('RoomStore', () => {
     processingStore.setMessage('info', 'Запуск игры', 'Игра запускается, ожидайте')
     router.push('/game')
   })
-
 
   return { room, createRoom, initRoom, joinRoom, leaveRoom }
 })

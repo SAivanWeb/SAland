@@ -11,7 +11,7 @@
         fieldType="textarea"
         :height="150"
       />
-      <MainButton title="Отправить" :disabled="!report" @click="reportUser"/>
+      <MainButton title="Отправить" :disabled="!report" @click="reportUser" />
     </template>
   </ModalContainer>
 </template>
@@ -51,7 +51,7 @@ async function reportUser() {
     processingStore.startLoading()
     await api.user.report({
       reported_user_id: props.user.id,
-      reason: props.user.name
+      reason: props.user.name,
     })
 
     processingStore.setMessage('success', 'Жалоба на пользователя', 'Жалоба отправлена')

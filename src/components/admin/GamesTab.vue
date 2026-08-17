@@ -24,26 +24,30 @@
         @update:page-size="onPageSizeChange"
       />
     </div>
-
   </div>
 
-  <AcceptModal v-model:show="showGameDelete" :game-id="selectedGameId" type="game-delete" @action="fetchGames"/>
+  <AcceptModal
+    v-model:show="showGameDelete"
+    :game-id="selectedGameId"
+    type="game-delete"
+    @action="fetchGames"
+  />
 </template>
 
 <script setup lang="ts">
-import { type AdminGame, type AdminGamesParams, type AdminUsersPagination, useApi } from '@/api'
+import { type AdminGame, type AdminGamesParams, type AdminGamesPagination, useApi } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { onMounted, ref, watch } from 'vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
 import { NPagination } from 'naive-ui'
+import type { DataTableColumns } from 'naive-ui'
 import AcceptModal from '@/components/modals/AcceptModal.vue'
-
 
 const api = useApi()
 const processingStore = useProcessingStore()
 
-const gamesData = ref<AdminGame[]>()
+const gamesData = ref<AdminGame[]>([])
 const searchQuery = ref('')
 const loading = ref(false)
 const params = ref<AdminGamesParams>({
@@ -51,14 +55,14 @@ const params = ref<AdminGamesParams>({
   page: 1,
   size: 10,
 })
-const pagination = ref<AdminUsersPagination | null>(null)
+const pagination = ref<AdminGamesPagination | null>(null)
 const showGameDelete = ref<boolean>(false)
 const selectedGameId = ref<string | number>()
 
-const gamesHeaders = [
+const gamesHeaders: DataTableColumns<AdminGame> = [
   { title: 'ID', key: 'id', minWidth: 280, ellipsis: { tooltip: true } },
   { title: 'Название', key: 'theme_name', minWidth: 280 },
-  { title: 'Кол-во игроков', key: 'players_count'},
+  { title: 'Кол-во игроков', key: 'players_count' },
 ]
 
 function onAction(id: string | number) {
@@ -73,9 +77,10 @@ async function fetchGames() {
     loading.value = true
     const res = await api.admin.games.list(params.value)
     gamesData.value = res.games
+    pagination.value = res.pagination
   } catch {
     processingStore.setMessage('error', 'Активные игры', 'Ошибка получения игр')
-  }  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -98,12 +103,12 @@ watch(searchQuery, (val) => {
 })
 
 onMounted(() => {
-  fetchGames();
+  fetchGames()
 })
 </script>
 
 <style scoped lang="scss">
-.games{
+.games {
   display: flex;
   flex-direction: column;
   gap: 24px;

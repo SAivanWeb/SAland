@@ -82,6 +82,10 @@ import type {
 
 const WS_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:3000'
 
+function logDebug(...args: unknown[]): void {
+  if (import.meta.env.DEV) console.log('[WS]', ...args)
+}
+
 type EventCallback<T> = (data: T) => void
 type EventUnsubscribe = () => void
 
@@ -119,7 +123,7 @@ class WebSocketClient {
       })
 
       this.socket.on('connect', () => {
-        console.log('[WS] Connected successfully')
+        logDebug('Connected successfully')
         this.isConnected.value = true
         this.connectionError.value = null
         resolve()
@@ -138,10 +142,10 @@ class WebSocketClient {
 
       // Re-emit all registered events to internal handlers
       this.socket.onAny((event, data) => {
-        console.log('[WS] Event received:', event, data)
+        logDebug('Event received:', event, data)
         const handlers = this.eventHandlers.get(event)
         if (handlers) {
-          handlers.forEach(handler => handler(data))
+          handlers.forEach((handler) => handler(data))
         }
       })
     })
@@ -280,7 +284,6 @@ class WebSocketClient {
      * Select existing theme from PostgreSQL (owner only, INACTIVE rooms only)
      */
     selectTheme: (payload: RoomSelectThemePayload): void => {
-      console.log('select_theme:', payload)
       this.emitOnly('room:select_theme', payload)
     },
 
@@ -388,7 +391,9 @@ class WebSocketClient {
       return this.on('room:params_updated', callback)
     },
 
-    onThemeGenerationStarted: (callback: EventCallback<RoomThemeGenerationStartedEvent>): EventUnsubscribe => {
+    onThemeGenerationStarted: (
+      callback: EventCallback<RoomThemeGenerationStartedEvent>,
+    ): EventUnsubscribe => {
       return this.on('room:theme_generation_started', callback)
     },
 
@@ -508,11 +513,15 @@ class WebSocketClient {
       return this.on('game:ended', callback)
     },
 
-    onPlayerDisconnected: (callback: EventCallback<GamePlayerDisconnectedEvent>): EventUnsubscribe => {
+    onPlayerDisconnected: (
+      callback: EventCallback<GamePlayerDisconnectedEvent>,
+    ): EventUnsubscribe => {
       return this.on('game:player_disconnected', callback)
     },
 
-    onPlayerReconnected: (callback: EventCallback<GamePlayerReconnectedEvent>): EventUnsubscribe => {
+    onPlayerReconnected: (
+      callback: EventCallback<GamePlayerReconnectedEvent>,
+    ): EventUnsubscribe => {
       return this.on('game:player_reconnected', callback)
     },
 

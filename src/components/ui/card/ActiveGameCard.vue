@@ -67,7 +67,7 @@ const join = (id: string) => {
   gap: 8px;
   transition: all 0.2s ease;
 
-  &__body{
+  &__body {
     display: flex;
     align-items: center;
     gap: 20px;

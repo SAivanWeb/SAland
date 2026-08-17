@@ -76,7 +76,7 @@ watch(localValue, (val) => {
     box-shadow: $box-shadow;
     transition: 0.2s;
 
-    &:hover{
+    &:hover {
       border-color: $text-dark;
     }
 

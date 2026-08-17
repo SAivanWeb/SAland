@@ -16,10 +16,10 @@
       </div>
     </div>
     <Transition name="dropdown">
-      <div v-if="isOpen" class="select__dropdown" :style="dropdownStyle">
+      <div v-if="isOpen" class="select__dropdown">
         <div
           v-for="option in options"
-          :key="option.value"
+          :key="option.value ?? 'null'"
           class="select__option"
           :class="{ 'select__option--selected': option.value === modelValue }"
           @click="selectOption(option)"
@@ -36,22 +36,24 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { NIcon } from 'naive-ui'
 import Arrow from '@/assets/icons/arrow.vue'
 
+type OptionValue = string | number | null
+
 interface Option {
   label: string
-  value: any
+  value: OptionValue
 }
 
 interface Props {
   name: string
   placeholder: string
   label?: string
-  modelValue: any
+  modelValue: OptionValue | undefined
   options: Option[]
   size?: 'small' | 'medium' | 'large'
 }
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: any): void
+  (e: 'update:modelValue', value: OptionValue): void
 }>()
 
 const props = withDefaults(defineProps<Props>(), {
@@ -60,7 +62,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isOpen = ref(false)
 const selectRef = ref<HTMLElement | null>(null)
-const dropdownStyle = ref({})
 
 const selectedLabel = computed(() => {
   const selected = props.options.find((opt) => opt.value === props.modelValue)
@@ -75,8 +76,6 @@ const selectOption = (option: Option) => {
   emit('update:modelValue', option.value)
   isOpen.value = false
 }
-
-
 
 const handleClickOutside = (event: MouseEvent) => {
   if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
@@ -180,7 +179,9 @@ onUnmounted(() => {
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .dropdown-enter-from,

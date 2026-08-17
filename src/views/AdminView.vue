@@ -5,16 +5,16 @@
       <div class="admin__content">
         <n-tabs default-value="users" type="segment" size="medium" justify-content="space-evenly">
           <n-tab-pane name="users" tab="Пользователи">
-            <UsersTab/>
+            <UsersTab />
           </n-tab-pane>
           <n-tab-pane name="themes" tab="Темы">
-            <ThemesTab/>
+            <ThemesTab />
           </n-tab-pane>
           <n-tab-pane name="games" tab="Игры">
-            <GamesTab/>
+            <GamesTab />
           </n-tab-pane>
           <n-tab-pane name="reports" tab="Жалобы">
-            <ReportsTab/>
+            <ReportsTab />
           </n-tab-pane>
         </n-tabs>
       </div>
@@ -28,7 +28,6 @@ import UsersTab from '@/components/admin/UsersTab.vue'
 import ReportsTab from '@/components/admin/ReportsTab.vue'
 import GamesTab from '@/components/admin/GamesTab.vue'
 import ThemesTab from '@/components/admin/ThemesTab.vue'
-
 </script>
 
 <style scoped lang="scss">

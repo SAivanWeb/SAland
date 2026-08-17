@@ -41,7 +41,7 @@ interface ModalContainerProps {
 const props = withDefaults(defineProps<ModalContainerProps>(), {
   showClose: true,
   maskClosable: true,
-  closeOnEsc: true
+  closeOnEsc: true,
 })
 
 const emit = defineEmits<{

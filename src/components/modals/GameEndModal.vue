@@ -80,14 +80,10 @@
             {{ isSubmitting ? 'Отправка...' : 'Оценить' }}
           </button>
         </div>
-        <div v-else class="end-modal__rated">
-          Спасибо за оценку!
-        </div>
+        <div v-else class="end-modal__rated">Спасибо за оценку!</div>
       </template>
 
-      <button class="end-modal__lobby-btn" @click="goToLobby">
-        В лобби
-      </button>
+      <button class="end-modal__lobby-btn" @click="goToLobby">В лобби</button>
     </template>
   </ModalContainer>
 </template>
@@ -105,8 +101,8 @@ const router = useRouter()
 
 const gameEnded = computed(() => gameStore.gameEnded)
 
-const canRate = computed(() =>
-  !!gameEnded.value && (gameEnded.value.is_temp_theme || !!gameEnded.value.theme_id),
+const canRate = computed(
+  () => !!gameEnded.value && (gameEnded.value.is_temp_theme || !!gameEnded.value.theme_id),
 )
 
 const isTempTheme = computed(() => !!gameEnded.value?.is_temp_theme)
@@ -120,9 +116,9 @@ const isSubmitting = ref(false)
 const rated = ref(false)
 
 const ratingOptions = computed<{ label: string; value: AnyRating }[]>(() => {
-  const base = [
-    { label: 'Нравится', value: 'like' as const },
-    { label: 'Не нравится', value: 'dislike' as const },
+  const base: { label: string; value: AnyRating }[] = [
+    { label: 'Нравится', value: 'like' },
+    { label: 'Не нравится', value: 'dislike' },
   ]
   if (isTempTheme.value) {
     base.push({ label: 'Пропустить', value: 'skip' as const })
@@ -156,9 +152,10 @@ const submitRating = async () => {
         game_id: gameStore.currentGameId,
         rating: selectedRating.value as ThemeRating,
         difficulty_rating: selectedDifficulty.value ?? undefined,
-        reason: selectedRating.value === 'dislike' && dislikeReason.value.trim()
-          ? dislikeReason.value.trim()
-          : undefined,
+        reason:
+          selectedRating.value === 'dislike' && dislikeReason.value.trim()
+            ? dislikeReason.value.trim()
+            : undefined,
       })
     }
     rated.value = true
@@ -174,6 +171,8 @@ const goToLobby = () => {
 </script>
 
 <style scoped lang="scss">
+@use 'sass:color';
+
 .end-modal {
   &__winner {
     display: flex;
@@ -357,7 +356,7 @@ const goToLobby = () => {
       box-sizing: border-box;
 
       &:focus {
-        border-color: darken($border, 15%);
+        border-color: color.adjust($border, $lightness: -15%);
       }
     }
   }
@@ -414,7 +413,7 @@ const goToLobby = () => {
       box-shadow 0.1s ease;
 
     &:hover {
-      background: darken($primary-yellow, 8%);
+      background: color.adjust($primary-yellow, $lightness: -8%);
     }
 
     &:active {

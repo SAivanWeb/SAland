@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import {
-  api,
-  type LoginRequest,
-  type RegisterRequest,
-  type InitResponse,
-} from '@/api'
+import { api, type LoginRequest, type RegisterRequest, type InitResponse } from '@/api'
 import { ws } from '@/api/websocket'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { useRouter } from 'vue-router'
@@ -25,10 +20,11 @@ export const useUserStore = defineStore('UserStore', () => {
       processingStore.startLoading()
       const res = await api.auth.login(data)
       localStorage.setItem('access_token', res.access_token)
-      await initUser();
+      await initUser()
       await router.push('/games')
     } catch (e) {
-      if (isErrorMessage(e, 'Invalid credentials')) processingStore.setMessage('error', 'Ошибка авторизации', 'Неверный логин или пароль')
+      if (isErrorMessage(e, 'Invalid credentials'))
+        processingStore.setMessage('error', 'Ошибка авторизации', 'Неверный логин или пароль')
       else processingStore.setMessage('error', 'Ошибка авторизации', '')
     } finally {
       processingStore.stopLoading()
@@ -44,13 +40,13 @@ export const useUserStore = defineStore('UserStore', () => {
       await router.push('/games')
     } catch (e) {
       if (isErrorMessage(e, 'User with this email already exists')) {
-        processingStore.setMessage('error', 'Ошибка регистрации', 'Пользователь с таким email уже существует')
-      } else {
         processingStore.setMessage(
           'error',
           'Ошибка регистрации',
-          '',
+          'Пользователь с таким email уже существует',
         )
+      } else {
+        processingStore.setMessage('error', 'Ошибка регистрации', '')
       }
       throw e
     } finally {
@@ -72,8 +68,8 @@ export const useUserStore = defineStore('UserStore', () => {
   async function initUser() {
     try {
       processingStore.startLoading()
-      currentUser.value = await api.user.init();
-      await ws.connect();
+      currentUser.value = await api.user.init()
+      await ws.connect()
       if (currentUser.value?.active_game_id) {
         router.push('/game')
         await gameStore.reconnect()
@@ -81,8 +77,6 @@ export const useUserStore = defineStore('UserStore', () => {
         router.push('/game-create')
         await roomStore.initRoom()
       }
-    } catch (e) {
-      console.log(e)
     } finally {
       processingStore.stopLoading()
     }

@@ -24,7 +24,13 @@
       </div>
     </div>
     <div class="card__footer">
-      <MainButton title="Играть" size="small" color="purple" :disabled="creating" @click="createRoom(theme.id)"/>
+      <MainButton
+        title="Играть"
+        size="small"
+        color="purple"
+        :disabled="creating"
+        @click="createRoom(theme.id)"
+      />
     </div>
   </div>
 </template>
@@ -38,13 +44,13 @@ import Dislike from '@/assets/icons/dislike.vue'
 import Difficult from '@/assets/icons/difficult.vue'
 import type { Theme } from '@/api'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
-import {useRouter} from 'vue-router'
+import { useRouter } from 'vue-router'
 
 interface Props {
   theme: Theme
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const router = useRouter()
 const roomStore = useRoomStore()
 

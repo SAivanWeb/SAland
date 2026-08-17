@@ -29,7 +29,7 @@
       </div>
 
       <!-- Chat toggle (mobile only) -->
-      <button class="game__chat-toggle" @click="chatOpen = !chatOpen; hasUnread = false">
+      <button class="game__chat-toggle" @click="toggleChat">
         <n-icon size="20"><ChatIcon /></n-icon>
         <span v-if="hasUnread" class="game__chat-badge" />
       </button>
@@ -40,7 +40,7 @@
       <div
         class="game__user first"
         v-if="players.length >= 1"
-        :style="{ borderColor: players[0].color }"
+        :style="{ borderColor: players[0]?.color }"
       >
         <div class="game__user-header">
           <div class="game__user-name">{{ players[0]?.name }}</div>
@@ -82,7 +82,7 @@
       <div
         class="game__user second"
         v-if="players.length >= 2"
-        :style="{ borderColor: players[1].color }"
+        :style="{ borderColor: players[1]?.color }"
       >
         <div class="game__user-header">
           <div class="game__user-name">{{ players[1]?.name }}</div>
@@ -124,7 +124,7 @@
       <div
         class="game__user third"
         v-if="players.length >= 3"
-        :style="{ borderColor: players[2].color }"
+        :style="{ borderColor: players[2]?.color }"
       >
         <div class="game__user-header">
           <div class="game__user-name">{{ players[2]?.name }}</div>
@@ -166,7 +166,7 @@
       <div
         class="game__user fourth"
         v-if="players.length >= 4"
-        :style="{ borderColor: players[3].color }"
+        :style="{ borderColor: players[3]?.color }"
       >
         <div class="game__user-header">
           <div class="game__user-name">{{ players[3]?.name }}</div>
@@ -210,7 +210,7 @@
     <div
       class="game__user first"
       v-if="players.length >= 1"
-      :style="{ borderColor: players[0].color }"
+      :style="{ borderColor: players[0]?.color }"
     >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[0]?.name }}</div>
@@ -252,7 +252,7 @@
     <div
       class="game__user second"
       v-if="players.length >= 2"
-      :style="{ borderColor: players[1].color }"
+      :style="{ borderColor: players[1]?.color }"
     >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[1]?.name }}</div>
@@ -294,7 +294,7 @@
     <div
       class="game__user third"
       v-if="players.length >= 3"
-      :style="{ borderColor: players[2].color }"
+      :style="{ borderColor: players[2]?.color }"
     >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[2]?.name }}</div>
@@ -336,7 +336,7 @@
     <div
       class="game__user fourth"
       v-if="players.length >= 4"
-      :style="{ borderColor: players[3].color }"
+      :style="{ borderColor: players[3]?.color }"
     >
       <div class="game__user-header">
         <div class="game__user-name">{{ players[3]?.name }}</div>
@@ -386,7 +386,11 @@
       <div
         ref="boardContainerRef"
         class="game__board-container"
-        :style="{ ...boardContainerStyle, '--attacker-color': currentTurnPlayer?.color, ...mobileBoardStyle }"
+        :style="{
+          ...boardContainerStyle,
+          '--attacker-color': currentTurnPlayer?.color,
+          ...mobileBoardStyle,
+        }"
       >
         <div
           v-for="cell in gameStore.cells"
@@ -479,6 +483,11 @@ const onNewMessage = () => {
   if (!chatOpen.value) hasUnread.value = true
 }
 
+const toggleChat = () => {
+  chatOpen.value = !chatOpen.value
+  hasUnread.value = false
+}
+
 // Мобильный pinch-to-zoom + pan игровой доски
 const boardContainerRef = ref<HTMLElement | null>(null)
 const mobileScale = ref(1)
@@ -509,13 +518,18 @@ const _touch = { isPinching: false, lastDist: 0, lastMidX: 0, lastMidY: 0, start
 const onBoardTouchStart = (e: TouchEvent) => {
   if (window.innerWidth > 900) return
   if (e.touches.length === 1) {
+    const touch = e.touches[0]
+    if (!touch) return
     _touch.isPinching = false
-    _touch.startX = e.touches[0].clientX - mobilePanX.value
-    _touch.startY = e.touches[0].clientY - mobilePanY.value
+    _touch.startX = touch.clientX - mobilePanX.value
+    _touch.startY = touch.clientY - mobilePanY.value
   } else if (e.touches.length === 2) {
+    const t0 = e.touches[0]
+    const t1 = e.touches[1]
+    if (!t0 || !t1) return
     _touch.isPinching = true
-    const t0 = e.touches[0]; const t1 = e.touches[1]
-    const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY
+    const dx = t1.clientX - t0.clientX
+    const dy = t1.clientY - t0.clientY
     _touch.lastDist = Math.sqrt(dx * dx + dy * dy)
     _touch.lastMidX = (t0.clientX + t1.clientX) / 2
     _touch.lastMidY = (t0.clientY + t1.clientY) / 2
@@ -526,15 +540,17 @@ const onBoardTouchMove = (e: TouchEvent) => {
   if (window.innerWidth > 900) return
   e.preventDefault()
   if (e.touches.length === 1 && !_touch.isPinching) {
-    const { x, y } = clampPan(
-      e.touches[0].clientX - _touch.startX,
-      e.touches[0].clientY - _touch.startY,
-    )
+    const touch = e.touches[0]
+    if (!touch) return
+    const { x, y } = clampPan(touch.clientX - _touch.startX, touch.clientY - _touch.startY)
     mobilePanX.value = x
     mobilePanY.value = y
   } else if (e.touches.length === 2) {
-    const t0 = e.touches[0]; const t1 = e.touches[1]
-    const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY
+    const t0 = e.touches[0]
+    const t1 = e.touches[1]
+    if (!t0 || !t1) return
+    const dx = t1.clientX - t0.clientX
+    const dy = t1.clientY - t0.clientY
     const dist = Math.sqrt(dx * dx + dy * dy)
     const midX = (t0.clientX + t1.clientX) / 2
     const midY = (t0.clientY + t1.clientY) / 2
@@ -568,6 +584,8 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use 'sass:color';
+
 .game {
   position: relative;
   width: 100%;
@@ -729,7 +747,9 @@ onMounted(() => {
       padding: calc(8px + env(safe-area-inset-top)) 12px 4px;
       overflow-x: auto;
       scrollbar-width: none;
-      &::-webkit-scrollbar { display: none; }
+      &::-webkit-scrollbar {
+        display: none;
+      }
 
       & .game__user {
         display: flex;
@@ -840,7 +860,7 @@ onMounted(() => {
       background: $primary-red;
 
       &:hover {
-        background: darken(#fea89a, 10%);
+        background: color.adjust(#fea89a, $lightness: -10%);
       }
     }
   }

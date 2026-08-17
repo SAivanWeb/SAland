@@ -12,11 +12,13 @@
       </p>
       <p v-if="type === 'admin-delete'">
         При подтверждении удаления аккаунта доступ к нему станет невозможным, а так же удалится вся
-        статистика. Вы уверены что хотите удалить аккаунт пользователя <span class="bold">{{ user.name }}</span
+        статистика. Вы уверены что хотите удалить аккаунт пользователя
+        <span class="bold">{{ user?.name }}</span
         >?
       </p>
       <p v-if="type === 'game-delete'">
-        При подтверждении удаления игры ее прогресс удалится и пользователи будут изгнаны из нее. Вы уверены что хотите удалить?
+        При подтверждении удаления игры ее прогресс удалится и пользователи будут изгнаны из нее. Вы
+        уверены что хотите удалить?
       </p>
       <p v-if="type === 'theme-delete'">
         При подтверждении удаления темы ее прогресс удалится. Вы уверены что хотите удалить?
@@ -96,6 +98,8 @@ async function deleteAccount() {
 }
 
 async function adminDelete() {
+  if (!props.user) return
+
   try {
     processingStore.startLoading()
     await api.admin.users.delete(props.user.userId)
@@ -110,9 +114,11 @@ async function adminDelete() {
 }
 
 async function gameDelete() {
+  if (props.gameId === undefined) return
+
   try {
     processingStore.startLoading()
-    await api.admin.games.delete(props.gameId)
+    await api.admin.games.delete(String(props.gameId))
     emit('action')
     emit('update:show', false)
     processingStore.setMessage('success', 'Удаление игры', 'Игра удалена')
@@ -124,9 +130,11 @@ async function gameDelete() {
 }
 
 async function themeDelete() {
+  if (props.themeId === undefined) return
+
   try {
     processingStore.startLoading()
-    await api.admin.themes.delete(props.themeId)
+    await api.admin.themes.delete(String(props.themeId))
     emit('action')
     emit('update:show', false)
     processingStore.setMessage('success', 'Удаление темы', 'Тема удалена')

@@ -134,9 +134,19 @@
               <n-tab-pane name="generate" tab="ИИ генерация">
                 <div class="create__generate">
                   <!-- Тема готова (после завершения AI генерации) -->
-                  <div v-if="aiGenStatus === 'idle' && room?.theme?.upload_method === 'ai'" class="create__theme-status">
-                    <p>Тема: <span>{{ room.theme.name }}</span></p>
-                    <p>Вопросов: <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span></p>
+                  <div
+                    v-if="aiGenStatus === 'idle' && room?.theme?.upload_method === 'ai'"
+                    class="create__theme-status"
+                  >
+                    <p>
+                      Тема: <span>{{ room.theme.name }}</span>
+                    </p>
+                    <p>
+                      Вопросов:
+                      <span
+                        >{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span
+                      >
+                    </p>
                   </div>
 
                   <!-- Idle: форма запуска -->
@@ -160,7 +170,9 @@
                         title="Сгенерировать"
                         size="large"
                         color="blue"
-                        :disabled="!generateThemeName || !generateDifficulty || room.status === 'waiting'"
+                        :disabled="
+                          !generateThemeName || !generateDifficulty || room.status === 'waiting'
+                        "
                         @click="joinAiGenQueue"
                       />
                     </div>
@@ -171,8 +183,15 @@
                     <div class="create__generate-status">
                       <div class="create__generate-status-icon">⏳</div>
                       <p class="create__generate-status-title">Вы в очереди</p>
-                      <p class="create__generate-status-sub">Позиция {{ aiQueuePosition }} из {{ aiQueueTotal }}</p>
-                      <MainButton title="Отменить" color="red" size="small" @click="leaveAiGenQueue" />
+                      <p class="create__generate-status-sub">
+                        Позиция {{ aiQueuePosition }} из {{ aiQueueTotal }}
+                      </p>
+                      <MainButton
+                        title="Отменить"
+                        color="red"
+                        size="small"
+                        @click="leaveAiGenQueue"
+                      />
                     </div>
                   </template>
 
@@ -189,9 +208,16 @@
                           :border-radius="4"
                           color="#4ecca3"
                         />
-                        <span class="create__generate-progress-label">{{ aiGenProgressGenerated }} / {{ aiGenProgressTotal }} вопросов</span>
+                        <span class="create__generate-progress-label"
+                          >{{ aiGenProgressGenerated }} / {{ aiGenProgressTotal }} вопросов</span
+                        >
                       </div>
-                      <MainButton title="Отменить" color="red" size="small" @click="leaveAiGenQueue" />
+                      <MainButton
+                        title="Отменить"
+                        color="red"
+                        size="small"
+                        @click="leaveAiGenQueue"
+                      />
                     </div>
                   </template>
 
@@ -201,7 +227,13 @@
                       <p class="create__generate-status-title">Ошибка генерации</p>
                       <p class="create__generate-status-sub">{{ aiGenError }}</p>
                       <div class="create__generate-status-actions">
-                        <MainButton title="Попробовать снова" color="blue" size="small" @click="joinAiGenQueue" :disabled="!generateThemeName || !generateDifficulty" />
+                        <MainButton
+                          title="Попробовать снова"
+                          color="blue"
+                          size="small"
+                          @click="joinAiGenQueue"
+                          :disabled="!generateThemeName || !generateDifficulty"
+                        />
                         <MainButton title="Сбросить" size="small" @click="resetAiGenState" />
                       </div>
                     </div>
@@ -294,8 +326,13 @@
               </n-tab-pane>
               <n-tab-pane name="existing" tab="Готовая тема">
                 <div v-if="room?.theme" class="create__theme-status">
-                  <p>Тема уже добавлена: <span>{{ room.theme.name }}</span></p>
-                  <p>Вопросов: <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span></p>
+                  <p>
+                    Тема уже добавлена: <span>{{ room.theme.name }}</span>
+                  </p>
+                  <p>
+                    Вопросов:
+                    <span>{{ room.theme.questions_loaded }}/{{ room.theme.questions_total }}</span>
+                  </p>
                 </div>
                 <template v-else>
                   <div class="create__existing">
@@ -306,7 +343,9 @@
                       v-model="themeSearch"
                     />
                     <div v-if="themesLoading" class="create__existing-empty">Загрузка...</div>
-                    <div v-else-if="!existingThemes.length" class="create__existing-empty">Темы не найдены</div>
+                    <div v-else-if="!existingThemes.length" class="create__existing-empty">
+                      Темы не найдены
+                    </div>
                     <div v-else class="create__existing-list">
                       <div
                         v-for="theme in existingThemes"
@@ -315,7 +354,10 @@
                       >
                         <div class="create__existing-info">
                           <span class="create__existing-name">{{ theme.name }}</span>
-                          <span class="create__existing-meta">{{ themeDifficultyLabel(theme.difficulty) }} · {{ theme.questions_count }} вопросов</span>
+                          <span class="create__existing-meta"
+                            >{{ themeDifficultyLabel(theme.difficulty) }} ·
+                            {{ theme.questions_count }} вопросов</span
+                          >
                         </div>
                         <MainButton
                           title="Добавить"
@@ -384,7 +426,7 @@ const aiGenError = ref('')
 const aiGenProgressPercent = computed(() =>
   aiGenProgressTotal.value > 0
     ? Math.round((aiGenProgressGenerated.value / aiGenProgressTotal.value) * 100)
-    : 0
+    : 0,
 )
 
 function resetAiGenState() {
@@ -660,19 +702,13 @@ onMounted(() => {
         themeAutoSelected = false
       }
     }),
-    ws.rooms.onThemeGenerationStarted((data) => {
-      console.log('Theme generation started:', data.theme_name)
-    }),
-    ws.ai.onProgress((data) => {
-      console.log('AI progress:', data.progress.generated, '/', data.progress.total)
-    }),
     ws.ai.onReady(() => {
       if (room.value) {
         ws.rooms.getState()
       }
     }),
     ws.ai.onError((data) => {
-      console.error('AI error:', data.error)
+      processingStore.setMessage('error', 'Генерация темы', data.error)
     }),
     ws.rooms.onPrompt((data) => {
       promptText.value = data.prompt

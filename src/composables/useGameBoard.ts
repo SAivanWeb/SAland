@@ -54,8 +54,7 @@ export function useGameBoard() {
   const isAvailableMove = (cell: HexCell) => availableMoveSet.value.has(`${cell.q},${cell.r}`)
 
   // Ячейка является атакой: доступный ход И занята чужим игроком
-  const isAttackMove = (cell: HexCell) =>
-    isAvailableMove(cell) && cell.player_index !== null
+  const isAttackMove = (cell: HexCell) => isAvailableMove(cell) && cell.player_index !== null
 
   // Клик разрешён только в свой ход, только по доступной ячейке, и не во время вопроса
   const onCellClick = (cell: HexCell) => {

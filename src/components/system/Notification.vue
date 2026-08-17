@@ -1,17 +1,14 @@
 <template>
   <n-popover
     v-model:show="showPopover"
-    style="padding: 0; top: 12px;"
+    style="padding: 0; top: 12px"
     trigger="click"
     placement="bottom-end"
     :show-arrow="false"
     @update:show="handlePopoverChange"
   >
     <template #trigger>
-      <div
-        class="notification"
-        :class="{ 'notification_has' : hasNotification }"
-      >
+      <div class="notification" :class="{ notification_has: hasNotification }">
         <n-icon size="20">
           <notification />
         </n-icon>
@@ -22,7 +19,7 @@
         <span>Активные комнаты:</span>
         <div class="notification__room">
           <div class="notification__room-name">{{ activeRoom.name }}</div>
-          <MainButton title="Подключиться" size="small" color="green" @click="connectRoom"/>
+          <MainButton title="Подключиться" size="small" color="green" @click="connectRoom" />
         </div>
       </div>
       <div v-if="requests" class="notification__item">
@@ -46,7 +43,9 @@
           </div>
         </div>
       </div>
-      <div class="notification__nodata" v-if="!requests && !activeRoom.name">Нет активных уведомлений</div>
+      <div class="notification__nodata" v-if="!requests && !activeRoom.name">
+        Нет активных уведомлений
+      </div>
     </div>
   </n-popover>
 </template>
@@ -72,7 +71,7 @@ const userStore = useUserStore()
 let unsubNotification: (() => void) | null = null
 
 const currentUser = computed(() => userStore.currentUser)
-const showPopover = ref(false);
+const showPopover = ref(false)
 const requests = ref<FriendRequest[]>()
 
 const isGameCreate = computed(() => {
@@ -80,7 +79,7 @@ const isGameCreate = computed(() => {
 })
 
 const hasNotification = computed(() => {
-  if(requests.value && requests.value.length > 0) {
+  if (requests.value && requests.value.length > 0) {
     return true
   } else if (activeRoom.value.name) {
     return true
@@ -108,7 +107,7 @@ watch(
     if (newValue) {
       showPopover.value = true
     }
-  }
+  },
 )
 
 async function acceptRequest(id: string) {
@@ -116,8 +115,8 @@ async function acceptRequest(id: string) {
     processingStore.startLoading()
     await api.friends.acceptRequest({ request_id: id })
     await fetchPendingRequests()
-  } catch (error) {
-    console.log(error)
+  } catch {
+    processingStore.setMessage('error', 'Заявка в друзья', 'Ошибка принятия заявки')
   } finally {
     processingStore.stopLoading()
   }
@@ -128,8 +127,8 @@ async function rejectRequest(id: string) {
     processingStore.startLoading()
     await api.friends.rejectRequest({ request_id: id })
     await fetchPendingRequests()
-  } catch (error) {
-    console.log(error)
+  } catch {
+    processingStore.setMessage('error', 'Заявка в друзья', 'Ошибка отклонения заявки')
   } finally {
     processingStore.stopLoading()
   }
@@ -139,8 +138,8 @@ async function fetchPendingRequests() {
   try {
     processingStore.startLoading()
     requests.value = await api.friends.getRequests()
-  } catch (error) {
-    console.log(error)
+  } catch {
+    // background refresh — fail silently
   } finally {
     processingStore.stopLoading()
   }
@@ -218,13 +217,13 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 12px;
     width: 240px;
-    
+
     @media (max-width: 400px) {
       width: 200px;
     }
   }
 
-  &__item{
+  &__item {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -235,7 +234,6 @@ onUnmounted(() => {
   }
 
   &__friend {
-
     &-item {
       width: 100%;
       display: flex;
@@ -293,16 +291,15 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
 
-    &-name{
+    &-name {
       @include body-1-bold;
     }
   }
 
-  &__nodata{
+  &__nodata {
     @include caption;
     margin: 0 auto;
     color: $text-grey;
   }
-
 }
 </style>

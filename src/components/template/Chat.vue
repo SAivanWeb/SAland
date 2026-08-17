@@ -35,15 +35,20 @@
                 <template #trigger>
                   <div
                     class="chat__message-user-additional"
-                    @click.stop="openPopoverUserId = openPopoverUserId === item.user_id ? null : item.user_id"
+                    @click.stop="
+                      openPopoverUserId = openPopoverUserId === item.user_id ? null : item.user_id
+                    "
                   >
                     <n-icon size="24">
                       <Dots />
                     </n-icon>
                   </div>
                 </template>
-                <div class="chat__popover">
-                  <div class="chat__popover-item" @click="openReport(item.user_id, item.user_name)">
+                <div class="chat__popover" v-if="item.user_id">
+                  <div
+                    class="chat__popover-item"
+                    @click="openReport(item.user_id, item.user_name ?? '')"
+                  >
                     Пожаловаться
                   </div>
                   <div class="chat__popover-item" @click="addFriend(item.user_id)">
@@ -66,7 +71,13 @@
       <span>{{ [...typingUsers.values()].map((u) => u.name).join(', ') }} печатает...</span>
     </div>
     <div class="chat__footer">
-      <MainInput name="message" placeholder="Введите сообщение" v-model="newMessage" @keydown.enter="sendMessage" @input="onInputTyping" />
+      <MainInput
+        name="message"
+        placeholder="Введите сообщение"
+        v-model="newMessage"
+        @keydown.enter="sendMessage"
+        @input="onInputTyping"
+      />
       <div class="chat__send" @click="sendMessage">
         <n-icon class="chat__send-icon" size="24">
           <Send />
@@ -83,7 +94,6 @@ import { NScrollbar, NIcon, NPopover } from 'naive-ui'
 import { useUserStore } from '@/stores/useUserStore.ts'
 import PlayerIcon from '@/components/games/PlayerIcon.vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
-import MainButton from '@/components/ui/button/MainButton.vue'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import Dots from '@/assets/icons/dots.vue'
 import Send from '@/assets/icons/send.vue'
@@ -106,7 +116,9 @@ const openPopoverUserId = ref<string | null>(null)
 const scrollbarRef = ref<InstanceType<typeof NScrollbar> | null>(null)
 const messages = ref<ChatMessage[]>()
 const newMessage = ref<string>('')
-const typingUsers = ref<Map<string, { name: string; timer: ReturnType<typeof setTimeout> }>>(new Map())
+const typingUsers = ref<Map<string, { name: string; timer: ReturnType<typeof setTimeout> }>>(
+  new Map(),
+)
 
 let typingThrottleTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -217,7 +229,9 @@ onUnmounted(() => {
     padding: 2px;
     border-radius: $border-radius;
     color: $text-grey;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
 
     &:hover {
       color: $text-dark;

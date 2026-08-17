@@ -32,17 +32,16 @@
     gap: 24px;
   }
 
-  &__menu{
+  &__menu {
     display: flex;
     flex-direction: column;
     gap: 12px;
 
-    &-link{
+    &-link {
       @include body-1-bold;
       color: $text-dark;
       text-decoration: none;
     }
   }
-
 }
 </style>

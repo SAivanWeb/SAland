@@ -6,7 +6,20 @@
       "Bash(cat /Users/saivan/WebstormProjects/SAland/src/api/modules/types/*.ts)",
       "Bash(docker-compose up:*)",
       "Bash(git checkout:*)",
-      "Bash(sips:*)"
+      "Bash(sips:*)",
+      "Bash(grep -E '\\(^|/\\)\\(\\\\.DS_Store|node_modules|dist|\\\\.env|\\\\.claude|DEPLOY\\\\.md|saland_frontend\\\\.tar\\\\.gz\\)\\(/|$\\)')",
+      "Bash(npx eslint *)",
+      "Bash(git rm *)",
+      "Bash(rm -f saland_frontend.tar.gz DEPLOY.md)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['rules'].get\\('vue/multi-word-component-names'\\)\\)\")",
+      "Bash(git stash *)",
+      "Bash(cd *)",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(git status *)",
+      "Bash(grep -E '\\(^|/\\)\\(\\\\.DS_Store|node_modules|dist|\\\\.env$|\\\\.claude|DEPLOY\\\\.md|saland_frontend\\\\.tar\\\\.gz|game\\\\.md|spec\\\\.md|routes\\\\.md\\)\\(/|$\\)')",
+      "Bash(git add *)",
+      "Bash(git reset *)"
     ]
   }
 }

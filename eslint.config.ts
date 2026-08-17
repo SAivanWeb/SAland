@@ -19,4 +19,23 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   skipFormatting,
+
+  {
+    name: 'app/single-word-components',
+    rules: {
+      'vue/multi-word-component-names': [
+        'error',
+        { ignores: ['Chat', 'Menu', 'Notification', 'Preloader'] },
+      ],
+    },
+  },
+
+  {
+    name: 'app/icons',
+    files: ['src/assets/icons/**/*.vue'],
+    rules: {
+      // Icon components are named after the icon they render, single word by design.
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 )

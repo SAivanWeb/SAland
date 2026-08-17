@@ -1,7 +1,12 @@
 <template>
   <div class="table">
     <n-scrollbar x-scrollable class="table-scrollbar">
-      <n-data-table :columns="columns" :data="items" :bordered="false" :loading="loading">
+      <n-data-table
+        :columns="columns"
+        :data="items as Record<string, unknown>[]"
+        :bordered="false"
+        :loading="loading"
+      >
         <template #empty>
           <div class="table-empty">Нет данных</div>
         </template>
@@ -10,17 +15,16 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, h, ref } from 'vue'
+<script setup lang="ts" generic="T = Record<string, unknown>">
+import { computed, h, ref, type VNodeChild } from 'vue'
 import { NDataTable, NScrollbar, NIcon, NPopover } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
-import DeleteIcon from '@/assets/icons/delete.vue'
 import DotsIcon from '@/assets/icons/dots.vue'
+import type { TableColumn, TableColumns } from './types'
 
 interface Props {
-  headers: DataTableColumns
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  items: any[]
+  headers: TableColumns<T>
+  items: T[]
   loading?: boolean
   actionUsers?: boolean
   itemKey?: string
@@ -33,7 +37,7 @@ const props = withDefaults(defineProps<Props>(), {
   actionUsers: false,
   itemKey: 'id',
   actionGames: false,
-  actionThemes: false
+  actionThemes: false,
 })
 
 const emit = defineEmits<{
@@ -43,162 +47,110 @@ const emit = defineEmits<{
 
 const openPopoverRowId = ref<string | number | null>(null)
 
-const columns = computed<DataTableColumns>(() => {
-  const cols = [...props.headers]
+function rowId(row: T): string | number {
+  return (row as Record<string, unknown>)[props.itemKey] as string | number
+}
 
-  if (props.actionUsers) {
-    cols.push({
-      title: '',
-      key: '_actions',
-      width: 60,
-      render: (row: any) => {
-        const rowId = row[props.itemKey]
+function createActionsColumn(showEdit: boolean): TableColumn<T> {
+  return {
+    title: '',
+    key: '_actions',
+    width: 60,
+    render: (row: T) => {
+      const id = rowId(row)
 
-        return h(NPopover, {
+      return h(
+        NPopover,
+        {
           trigger: 'manual',
-          show: openPopoverRowId.value === rowId,
+          show: openPopoverRowId.value === id,
           placement: 'bottom-end',
           showArrow: false,
           style: 'padding: 8px; min-width: 180px',
-          onClickoutside: () => { openPopoverRowId.value = null },
-        }, {
-          trigger: () => h('div', {
-            class: 'table-action-trigger',
-            onClick: (e: Event) => {
-              e.stopPropagation()
-              openPopoverRowId.value = openPopoverRowId.value === rowId ? null : rowId
-            },
-          }, [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })]),
-
-          default: () => h('div', { class: 'table-popover' }, [
-            h('div', {
-              class: 'table-popover__item',
-              onClick: (e: Event) => {
-                e.stopPropagation()
-                openPopoverRowId.value = null
-                emit('action', rowId, 'edit')
+          onClickoutside: () => {
+            openPopoverRowId.value = null
+          },
+        },
+        {
+          trigger: () =>
+            h(
+              'div',
+              {
+                class: 'table-action-trigger',
+                onClick: (e: Event) => {
+                  e.stopPropagation()
+                  openPopoverRowId.value = openPopoverRowId.value === id ? null : id
+                },
               },
-            }, 'Редактировать'),
+              [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })],
+            ),
 
-            h('div', {
-              class: 'table-popover__item table-popover__item--danger',
-              onClick: (e: Event) => {
-                e.stopPropagation()
-                openPopoverRowId.value = null
-                emit('action', rowId, 'delete')
-              },
-            }, [
-              'Удалить',
+          default: () =>
+            h('div', { class: 'table-popover' }, [
+              showEdit &&
+                h(
+                  'div',
+                  {
+                    class: 'table-popover__item',
+                    onClick: (e: Event) => {
+                      e.stopPropagation()
+                      openPopoverRowId.value = null
+                      emit('action', id, 'edit')
+                    },
+                  },
+                  'Редактировать',
+                ),
+
+              h(
+                'div',
+                {
+                  class: 'table-popover__item table-popover__item--danger',
+                  onClick: (e: Event) => {
+                    e.stopPropagation()
+                    openPopoverRowId.value = null
+                    emit('action', id, 'delete')
+                  },
+                },
+                'Удалить',
+              ),
             ]),
-          ]),
-        })
-      },
-    } as any)
+        },
+      )
+    },
   }
+}
 
-  if (props.actionGames) {
-    cols.push({
-      title: '',
-      key: '_actions',
-      width: 60,
-      render: (row: any) => {
-        const rowId = row[props.itemKey]
+const columns = computed<DataTableColumns<T>>(() => {
+  const cols: TableColumns<T> = [...props.headers]
 
-        return h(NPopover, {
-          trigger: 'manual',
-          show: openPopoverRowId.value === rowId,
-          placement: 'bottom-end',
-          showArrow: false,
-          style: 'padding: 8px; min-width: 180px',
-          onClickoutside: () => { openPopoverRowId.value = null },
-        }, {
-          trigger: () => h('div', {
-            class: 'table-action-trigger',
-            onClick: (e: Event) => {
-              e.stopPropagation()
-              openPopoverRowId.value = openPopoverRowId.value === rowId ? null : rowId
-            },
-          }, [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })]),
-
-          default: () => h('div', { class: 'table-popover' }, [
-            h('div', {
-              class: 'table-popover__item table-popover__item--danger',
-              onClick: (e: Event) => {
-                e.stopPropagation()
-                openPopoverRowId.value = null
-                emit('action', rowId, 'delete')
-              },
-            }, [
-              'Удалить',
-            ]),
-          ]),
-        })
-      },
-    } as any)
-  }
-
-  if (props.actionThemes) {
-    cols.push({
-      title: '',
-      key: '_actions',
-      width: 60,
-      render: (row: any) => {
-        const rowId = row[props.itemKey]
-
-        return h(NPopover, {
-          trigger: 'manual',
-          show: openPopoverRowId.value === rowId,
-          placement: 'bottom-end',
-          showArrow: false,
-          style: 'padding: 8px; min-width: 180px',
-          onClickoutside: () => { openPopoverRowId.value = null },
-        }, {
-          trigger: () => h('div', {
-            class: 'table-action-trigger',
-            onClick: (e: Event) => {
-              e.stopPropagation()
-              openPopoverRowId.value = openPopoverRowId.value === rowId ? null : rowId
-            },
-          }, [h(NIcon, { size: 18 }, { default: () => h(DotsIcon) })]),
-
-          default: () => h('div', { class: 'table-popover' }, [
-            h('div', {
-              class: 'table-popover__item table-popover__item--danger',
-              onClick: (e: Event) => {
-                e.stopPropagation()
-                openPopoverRowId.value = null
-                emit('action', rowId, 'delete')
-              },
-            }, [
-              'Удалить',
-            ]),
-          ]),
-        })
-      },
-    } as any)
-  }
+  if (props.actionUsers) cols.push(createActionsColumn(true))
+  if (props.actionGames) cols.push(createActionsColumn(false))
+  if (props.actionThemes) cols.push(createActionsColumn(false))
 
   return cols.map((col) => {
-    if ((col as any).clickable) {
-      const originalRender = (col as any).render
-      return {
-        ...col,
-        render: (row: any) => {
-          const content = originalRender
-            ? originalRender(row, 0)
-            : row[(col as any).key]
-          return h(
-            'div',
-            {
-              class: 'table-cell-clickable',
-              onClick: () => emit('click', row[props.itemKey]),
-            },
-            [content],
-          )
-        },
-      }
+    if (!col.clickable) return col
+
+    const originalRender = 'render' in col ? col.render : undefined
+    const key = 'key' in col ? col.key : undefined
+
+    return {
+      ...col,
+      render: (row: T, index: number) => {
+        const content = (
+          originalRender
+            ? originalRender(row, index)
+            : (row as Record<string, unknown>)[key as string]
+        ) as VNodeChild
+        return h(
+          'div',
+          {
+            class: 'table-cell-clickable',
+            onClick: () => emit('click', rowId(row)),
+          },
+          [content],
+        )
+      },
     }
-    return col
   })
 })
 </script>
@@ -307,7 +259,6 @@ const columns = computed<DataTableColumns>(() => {
     }
 
     &--danger {
-
       &:hover {
         background-color: $primary-red;
       }

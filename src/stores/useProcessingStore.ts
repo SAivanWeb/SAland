@@ -1,14 +1,14 @@
-import {defineStore} from 'pinia'
+import { defineStore } from 'pinia'
 import { ref } from 'vue'
 type MessageType = 'success' | 'error' | 'warning' | 'info' | ''
 
-interface MessageAction {
+export interface MessageAction {
   label: string
   onClick: () => void
 }
 
 interface Message {
-  type: MessageType,
+  type: MessageType
   message: string
   title: string
   action?: MessageAction | null
@@ -20,8 +20,7 @@ interface ReportedUser {
 }
 
 export const useProcessingStore = defineStore('useProcessingStore', () => {
-
-  const loading = ref<boolean>(false);
+  const loading = ref<boolean>(false)
 
   const message = ref<Message>({
     type: '',
@@ -35,19 +34,19 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     name: '',
   })
 
-  const showNotification = ref<boolean>(false);
+  const showNotification = ref<boolean>(false)
 
   const activeRoomNotification = ref({
     name: '',
-    role: ''
+    role: '',
   })
 
   const startLoading = () => {
-    loading.value = true;
-  };
+    loading.value = true
+  }
 
   const stopLoading = () => {
-    loading.value = false;
+    loading.value = false
   }
 
   const setMessage = (type: MessageType, title: string, text: string, action?: MessageAction) => {
@@ -72,7 +71,7 @@ export const useProcessingStore = defineStore('useProcessingStore', () => {
     activeRoomNotification.value.role = ''
   }
 
-  const setReport = (payload: ReportedUser)=> {
+  const setReport = (payload: ReportedUser) => {
     reportedUser.value.name = payload.name
     reportedUser.value.id = payload.id
   }

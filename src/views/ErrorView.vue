@@ -44,7 +44,7 @@ const toGames = () => {
       margin-bottom: 12px;
     }
 
-    & p{
+    & p {
       margin-bottom: 24px;
     }
   }

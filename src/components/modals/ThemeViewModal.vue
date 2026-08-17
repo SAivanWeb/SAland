@@ -10,11 +10,7 @@
       <div v-if="loading" class="theme-modal__loading">Загрузка...</div>
       <template v-else-if="theme">
         <div class="theme-modal__questions">
-          <div
-            v-for="(q, index) in theme.questions"
-            :key="q.id"
-            class="theme-modal__question"
-          >
+          <div v-for="(q, index) in theme.questions" :key="q.id" class="theme-modal__question">
             <div class="theme-modal__question-title">
               <span class="theme-modal__question-num">{{ index + 1 }}</span>
               {{ q.question }}
@@ -102,7 +98,11 @@ async function toggleCheck() {
     await api.admin.themes.setCheck(theme.value.id, { check: !isChecked.value })
     isChecked.value = !isChecked.value
     emit('check-updated')
-    processingStore.setMessage('success', 'Тема', isChecked.value ? 'Тема отмечена проверенной' : 'Отметка снята')
+    processingStore.setMessage(
+      'success',
+      'Тема',
+      isChecked.value ? 'Тема отмечена проверенной' : 'Отметка снята',
+    )
   } catch {
     processingStore.setMessage('error', 'Тема', 'Ошибка обновления статуса')
   } finally {
@@ -112,6 +112,8 @@ async function toggleCheck() {
 </script>
 
 <style scoped lang="scss">
+@use 'sass:color';
+
 .theme-modal {
   &__header {
     display: flex;
@@ -199,7 +201,7 @@ async function toggleCheck() {
 
     &--correct {
       background: $primary-green;
-      border-color: darken(#a8e6cf, 15%);
+      border-color: color.adjust(#a8e6cf, $lightness: -15%);
       font-weight: 600;
     }
 

@@ -1,10 +1,14 @@
-<template></template>
+<template>
+  <div style="display: none" />
+</template>
 
 <script setup lang="ts">
 import { h, watch } from 'vue'
-import { NButton, useNotification } from 'naive-ui'
+import { type NotificationOptions, useNotification } from 'naive-ui'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import MainButton from '@/components/ui/button/MainButton.vue'
+
+type NotifyOptions = NotificationOptions & { class?: string }
 
 const messageApi = useNotification()
 const store = useProcessingStore()
@@ -15,27 +19,25 @@ watch(
   ([type, title, text, action]) => {
     if (!type) return
 
-    const options: Record<string, any> = {
+    const options: NotifyOptions = {
       title: title,
       description: text,
       duration: 3500,
       keepAliveOnHover: true,
       class: `notify--${type}`,
-    }
-
-    if (action) {
-      const actionCopy = { ...action }
-      options.action = () =>
-        h(
-          MainButton,
-          {
-            title: actionCopy.label,
-            size: 'small',
-            color: 'green',
-            onClick: () => actionCopy.onClick(),
-          },
-          { default: () => actionCopy.label },
-        )
+      action: action
+        ? () =>
+            h(
+              MainButton,
+              {
+                title: action.label,
+                size: 'small',
+                color: 'green',
+                onClick: () => action.onClick(),
+              },
+              { default: () => action.label },
+            )
+        : undefined,
     }
 
     if (type === 'success') messageApi.success(options)
@@ -87,7 +89,7 @@ watch(
     color: $text-dark !important;
   }
 
-  & .n-notification-main-footer__action{
+  & .n-notification-main-footer__action {
     margin-left: auto;
   }
 }

@@ -28,11 +28,15 @@
             <div class="profile__stats-grid">
               <div class="profile__stats-item">
                 <span class="profile__stats-item-name">Сыграно</span>
-                <div class="profile__stats-item-value">{{ formatStat(profile.stats.games_played) }}</div>
+                <div class="profile__stats-item-value">
+                  {{ formatStat(profile.stats.games_played) }}
+                </div>
               </div>
               <div class="profile__stats-item">
                 <span class="profile__stats-item-name">Победы</span>
-                <div class="profile__stats-item-value">{{ formatStat(profile.stats.games_won) }}</div>
+                <div class="profile__stats-item-value">
+                  {{ formatStat(profile.stats.games_won) }}
+                </div>
               </div>
               <div class="profile__stats-item">
                 <span class="profile__stats-item-name">% побед</span>
@@ -151,8 +155,8 @@ async function fetchProfile() {
   try {
     processingStore.startLoading()
     profile.value = await api.user.getProfile()
-  } catch (error) {
-    console.log(error)
+  } catch {
+    processingStore.setMessage('error', 'Профиль', 'Ошибка загрузки профиля')
   } finally {
     processingStore.stopLoading()
   }
@@ -162,8 +166,8 @@ async function fetchFriends() {
   try {
     processingStore.startLoading()
     friends.value = await api.friends.list()
-  } catch (error) {
-    console.log(error)
+  } catch {
+    processingStore.setMessage('error', 'Друзья', 'Ошибка загрузки списка друзей')
   } finally {
     processingStore.stopLoading()
   }
@@ -174,8 +178,8 @@ async function fetchUserProfile(id: string) {
     processingStore.startLoading()
     selectedUser.value = await api.user.getPublicProfile(id)
     showProfile.value = true
-  } catch (error) {
-    console.error(error)
+  } catch {
+    processingStore.setMessage('error', 'Профиль', 'Ошибка загрузки профиля пользователя')
   } finally {
     processingStore.stopLoading()
   }

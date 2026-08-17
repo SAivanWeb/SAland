@@ -26,18 +26,31 @@
     </div>
   </div>
 
-  <AcceptModal v-model:show="showUserDelete" :user="selectedUser" type="admin-delete" @action="fetchUsers"/>
-  <EditRowModal v-if="selectedUserFull" v-model:show="showUserEdit" :user="selectedUserFull" type="user-edit" @action="fetchUsers"/>
+  <AcceptModal
+    v-model:show="showUserDelete"
+    :user="selectedUser"
+    type="admin-delete"
+    @action="fetchUsers"
+  />
+  <EditRowModal
+    v-if="selectedUserFull"
+    v-model:show="showUserEdit"
+    :user="selectedUserFull"
+    type="user-edit"
+    @action="fetchUsers"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { logDark, NPagination } from 'naive-ui'
+import { NPagination } from 'naive-ui'
+import type { DataTableColumns } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
 import { type AdminUser, type AdminUsersParams, type AdminUsersPagination, useApi } from '@/api'
 import AcceptModal from '@/components/modals/AcceptModal.vue'
 import EditRowModal from '@/components/modals/EditRowModal.vue'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
 function formatDate(timestamp: number | null): string {
   if (!timestamp) return '—'
@@ -53,6 +66,7 @@ function formatDate(timestamp: number | null): string {
 }
 
 const api = useApi()
+const processingStore = useProcessingStore()
 
 const searchQuery = ref('')
 const loading = ref(false)
@@ -72,7 +86,7 @@ const params = ref<AdminUsersParams>({
   size: 10,
 })
 
-const usersHeaders = [
+const usersHeaders: DataTableColumns<AdminUser> = [
   { title: 'ID', key: 'id', minWidth: 280, ellipsis: { tooltip: true } },
   { title: 'Email', key: 'email', minWidth: 200, ellipsis: { tooltip: true } },
   { title: 'Имя', key: 'name', minWidth: 140 },
@@ -101,7 +115,7 @@ async function fetchUsers() {
     usersData.value = res.users
     pagination.value = res.pagination
   } catch {
-    //
+    processingStore.setMessage('error', 'Пользователи', 'Ошибка получения пользователей')
   } finally {
     loading.value = false
   }

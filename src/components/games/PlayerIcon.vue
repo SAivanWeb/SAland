@@ -20,7 +20,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const iconName = computed(() => {
-  return props.name[0].toUpperCase()
+  return props.name.charAt(0).toUpperCase()
 })
 </script>
 

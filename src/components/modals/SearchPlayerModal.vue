@@ -41,11 +41,7 @@
 <script setup lang="ts">
 import { NPopover } from 'naive-ui'
 import { computed, ref } from 'vue'
-import {
-  api,
-  type SearchUsersParams,
-  type SearchUsersResponse,
-} from '@/api'
+import { api, type SearchUsersParams, type SearchUsersResponse } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainButton from '@/components/ui/button/MainButton.vue'
@@ -79,8 +75,8 @@ async function fetchPlayers() {
   try {
     processingStore.startLoading()
     players.value = await api.user.search(searchParams.value)
-  } catch (e) {
-    console.log(e)
+  } catch {
+    processingStore.setMessage('error', 'Поиск игроков', 'Ошибка поиска игроков')
   } finally {
     processingStore.stopLoading()
   }
@@ -93,7 +89,8 @@ async function addFriend(id: string) {
     emit('update:show', false)
     processingStore.setMessage('success', 'Запрос в друзья', 'Запрос отправлен')
   } catch (e) {
-    if (isErrorMessage(e, 'Friend request already sent')) processingStore.setMessage('error', 'Запрос в друзья', 'Запрос уже был отправлен')
+    if (isErrorMessage(e, 'Friend request already sent'))
+      processingStore.setMessage('error', 'Запрос в друзья', 'Запрос уже был отправлен')
   } finally {
     processingStore.stopLoading()
   }

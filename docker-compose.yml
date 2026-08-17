@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_APP_BASE_URL: http://155.212.161.155:3001/api
-        VITE_WS_BASE_URL: ws://155.212.161.155:3001
+        VITE_APP_BASE_URL: ${VITE_APP_BASE_URL:-http://localhost:3001/api}
+        VITE_WS_BASE_URL: ${VITE_WS_BASE_URL:-ws://localhost:3001}
     container_name: saland_frontend
     restart: unless-stopped
     ports:

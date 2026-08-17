@@ -1,48 +1,63 @@
-# SAland
+# Sota Land
 
-This template should help get you started developing with Vue 3 in Vite.
+Фронтенд стратегической игры-викторины на захват территорий для 2–4 игроков. Игроки по очереди отвечают на вопросы и захватывают соседние клетки гексагонального поля; побеждает тот, кто первым захватит все территории или останется единственным игроком на карте.
 
-## Recommended IDE Setup
+## Возможности
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Создание игровой комнаты с настройкой параметров (количество игроков, время на ответ и на ход, таймер игры) и выбором или генерацией темы вопросов
+- Игра в реальном времени поверх WebSocket: ходы, вопросы, бои за территорию, таймеры, переподключение при разрыве соединения
+- Чат комнаты и игры, система друзей, жалобы на игроков
+- Личный кабинет со статистикой и историей игр
+- Админ-панель: управление пользователями, играми, темами вопросов и жалобами
 
-## Recommended Browser Setup
+## Стек
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- [Vue 3](https://vuejs.org/) (Composition API, `<script setup>`) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/) — сборка и dev-сервер
+- [Pinia](https://pinia.vuejs.org/) — состояние приложения
+- [Vue Router](https://router.vuejs.org/) — маршрутизация
+- [Socket.IO](https://socket.io/) — обмен игровыми событиями в реальном времени
+- [Naive UI](https://www.naiveui.com/) — часть базовых UI-компонентов
+- SCSS — стили
 
-## Type Support for `.vue` Imports in TS
+Бэкенд в этот репозиторий не входит: фронтенд ходит в REST API и подключается к WebSocket-серверу по адресам из переменных окружения.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Запуск
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+Требуется Node.js `^20.19.0` или `>=22.12.0`.
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+cp .env.example .env   # при необходимости поправьте адреса API и WebSocket
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### Полезные команды
 
 ```sh
-npm run build
+npm run build    # проверка типов + продакшн-сборка в dist/
+npm run preview  # локальный предпросмотр сборки
+npm run lint     # ESLint с автофиксом
+npm run format   # Prettier для src/
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Docker
 
 ```sh
-npm run lint
+docker compose up --build
+```
+
+Адреса API и WebSocket для сборки образа задаются переменными окружения `VITE_APP_BASE_URL` и `VITE_WS_BASE_URL` (см. `docker-compose.yml`).
+
+## Структура проекта
+
+```
+src/
+├── api/          # HTTP-клиент, WebSocket-клиент, типы запросов/ответов
+├── assets/       # иконки, стили
+├── components/   # переиспользуемые компоненты (UI-кит, модалки, админка и т.д.)
+├── composables/  # игровая логика (доска, таймеры, игроки, вопросы)
+├── router/       # маршруты и guard'ы
+├── stores/       # Pinia-хранилища
+└── views/        # страницы приложения
 ```

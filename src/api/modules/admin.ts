@@ -47,7 +47,10 @@ export const admin = {
      * Requires admin role
      */
     async edit(userId: string, data: AdminEditUserRequest): Promise<AdminEditUserResponse> {
-      return request<AdminEditUserResponse>(`/admin/users/${userId}`, { method: 'PATCH', body: data })
+      return request<AdminEditUserResponse>(`/admin/users/${userId}`, {
+        method: 'PATCH',
+        body: data,
+      })
     },
 
     /**
@@ -62,8 +65,14 @@ export const admin = {
      * Block or unblock user (cannot change own status)
      * Requires admin role
      */
-    async setStatus(userId: string, data: AdminSetUserStatusRequest): Promise<AdminSetUserStatusResponse> {
-      return request<AdminSetUserStatusResponse>(`/admin/users/${userId}/status`, { method: 'PATCH', body: data })
+    async setStatus(
+      userId: string,
+      data: AdminSetUserStatusRequest,
+    ): Promise<AdminSetUserStatusResponse> {
+      return request<AdminSetUserStatusResponse>(`/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        body: data,
+      })
     },
   },
 
@@ -80,8 +89,14 @@ export const admin = {
      * Resolve a report, optionally blocking the reported user
      * Requires admin role
      */
-    async resolve(reportId: string, data?: AdminResolveReportRequest): Promise<AdminResolveReportResponse> {
-      return request<AdminResolveReportResponse>(`/admin/reports/${reportId}/resolve`, { method: 'PATCH', body: data })
+    async resolve(
+      reportId: string,
+      data?: AdminResolveReportRequest,
+    ): Promise<AdminResolveReportResponse> {
+      return request<AdminResolveReportResponse>(`/admin/reports/${reportId}/resolve`, {
+        method: 'PATCH',
+        body: data,
+      })
     },
   },
 
@@ -114,8 +129,14 @@ export const admin = {
      * Set or unset theme check flag
      * Requires admin role
      */
-    async setCheck(themeId: string, data: AdminCheckThemeRequest): Promise<AdminCheckThemeResponse> {
-      return request<AdminCheckThemeResponse>(`/admin/themes/${themeId}/check`, { method: 'PATCH', body: data })
+    async setCheck(
+      themeId: string,
+      data: AdminCheckThemeRequest,
+    ): Promise<AdminCheckThemeResponse> {
+      return request<AdminCheckThemeResponse>(`/admin/themes/${themeId}/check`, {
+        method: 'PATCH',
+        body: data,
+      })
     },
 
     /**

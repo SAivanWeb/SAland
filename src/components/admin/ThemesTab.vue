@@ -27,7 +27,12 @@
     </div>
   </div>
 
-  <AcceptModal v-model:show="showThemeDelete" :theme-id="selectedThemeId" type="theme-delete" @action="fetchThemes"/>
+  <AcceptModal
+    v-model:show="showThemeDelete"
+    :theme-id="selectedThemeId"
+    type="theme-delete"
+    @action="fetchThemes"
+  />
   <ThemeViewModal
     v-model:show="showThemeView"
     :theme-id="selectedThemeId?.toString() ?? null"
@@ -41,16 +46,19 @@ import { ref, watch } from 'vue'
 import { NPagination } from 'naive-ui'
 import MainInput from '@/components/ui/input/MainInput.vue'
 import MainTable from '@/components/ui/table/MainTable.vue'
-import { type AdminUsersPagination, useApi, type AdminThemesParams, type AdminTheme } from '@/api'
+import type { TableColumns } from '@/components/ui/table/types'
+import { type AdminThemesPagination, useApi, type AdminThemesParams, type AdminTheme } from '@/api'
 import AcceptModal from '@/components/modals/AcceptModal.vue'
 import ThemeViewModal from '@/components/modals/ThemeViewModal.vue'
+import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 
 const api = useApi()
+const processingStore = useProcessingStore()
 
 const searchQuery = ref('')
 const loading = ref(false)
 const themesData = ref<AdminTheme[]>([])
-const pagination = ref<AdminUsersPagination | null>(null)
+const pagination = ref<AdminThemesPagination | null>(null)
 const showThemeDelete = ref(false)
 const showThemeView = ref(false)
 const selectedThemeId = ref<string | number>()
@@ -62,11 +70,11 @@ const params = ref<AdminThemesParams>({
   size: 10,
 })
 
-const themesHeaders = [
+const themesHeaders: TableColumns<AdminTheme> = [
   { title: 'ID', key: 'id', minWidth: 280, ellipsis: { tooltip: true } },
   { title: 'Название', key: 'name', minWidth: 280, ellipsis: { tooltip: true }, clickable: true },
-  { title: 'Кол-во вопросов', key: 'questions_count'},
-  { title: 'Проверена', key: 'check', render: (row: any) => row.check ? 'Да' : 'Нет' },
+  { title: 'Кол-во вопросов', key: 'questions_count' },
+  { title: 'Проверена', key: 'check', render: (row: AdminTheme) => (row.check ? 'Да' : 'Нет') },
 ]
 
 async function fetchThemes() {
@@ -76,7 +84,7 @@ async function fetchThemes() {
     themesData.value = res.themes
     pagination.value = res.pagination
   } catch {
-    //
+    processingStore.setMessage('error', 'Темы', 'Ошибка получения тем')
   } finally {
     loading.value = false
   }

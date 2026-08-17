@@ -286,7 +286,13 @@ export interface GameAnswerSubmittedEvent {
   waiting_for_opponent?: boolean
 }
 
-export type TurnResultType = 'solo_capture' | 'battle_won' | 'battle_lost' | 'battle_draw' | 'timeout' | 'skip'
+export type TurnResultType =
+  | 'solo_capture'
+  | 'battle_won'
+  | 'battle_lost'
+  | 'battle_draw'
+  | 'timeout'
+  | 'skip'
 
 export interface TurnResult {
   type: TurnResultType
@@ -388,9 +394,16 @@ export interface ChatMessage {
   content: string
   room_id?: string
   game_id?: string
-  system_type?: 'player_joined' | 'player_left' | 'player_kicked'
-    | 'game_starting' | 'game_started' | 'game_ended'
-    | 'player_disconnected' | 'player_reconnected' | 'player_forfeited'
+  system_type?:
+    | 'player_joined'
+    | 'player_left'
+    | 'player_kicked'
+    | 'game_starting'
+    | 'game_started'
+    | 'game_ended'
+    | 'player_disconnected'
+    | 'player_reconnected'
+    | 'player_forfeited'
   timestamp: number
 }
 

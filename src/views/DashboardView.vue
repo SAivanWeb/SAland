@@ -20,7 +20,7 @@
     <div class="games__content">
       <div class="games__active">
         <h3>Ожидают игры</h3>
-        <ActiveRoomsList/>
+        <ActiveRoomsList />
       </div>
     </div>
   </div>
@@ -38,7 +38,7 @@ import { NScrollbar } from 'naive-ui'
 import { isErrorMessage } from '@/utils/error.ts'
 import ActiveRoomsList from '@/components/rooms/ActiveRoomsList.vue'
 import { useRoomStore } from '@/stores/useRoomStore.ts'
-import {useUserStore} from '@/stores/useUserStore.ts'
+import { useUserStore } from '@/stores/useUserStore.ts'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()

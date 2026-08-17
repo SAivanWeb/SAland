@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import ModalContainer from '@/components/template/ModalContainer.vue'
-import { type AdminUser, useApi } from '@/api'
+import { type AdminUser, type UserStatus, useApi } from '@/api'
 import { useProcessingStore } from '@/stores/useProcessingStore.ts'
 import { computed, ref, watch } from 'vue'
 import MainInput from '@/components/ui/input/MainInput.vue'
@@ -53,13 +53,13 @@ const show = computed({
 })
 
 const nameValue = ref(props.user?.name ?? '')
-const statusValue = ref(props.user?.status ?? '')
+const statusValue = ref<UserStatus>(props.user?.status ?? 'active')
 
 watch(
   () => props.user,
   (user) => {
     nameValue.value = user?.name ?? ''
-    statusValue.value = user?.status ?? ''
+    statusValue.value = user?.status ?? 'active'
   },
 )
 
@@ -72,12 +72,14 @@ watch(
   },
 )
 
-const statusOptions = [
+const statusOptions: { label: string; value: UserStatus }[] = [
   { label: 'Активен', value: 'active' },
   { label: 'Заблокирован', value: 'blocked' },
 ]
 
 async function saveUser() {
+  if (!props.user) return
+
   try {
     processingStore.startLoading()
     await Promise.all([

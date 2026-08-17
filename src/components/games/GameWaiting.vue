@@ -2,16 +2,24 @@
   <div class="players">
     <h2 class="players__title">{{ room.theme?.name }}</h2>
     <div class="players__list">
-      <div v-for="player in room.players" :key="player.user_id" class="players__list-user players__list-user--filled">
+      <div
+        v-for="player in room.players"
+        :key="player.user_id"
+        class="players__list-user players__list-user--filled"
+      >
         <PlayerIcon :name="player.name" />
       </div>
-      <div v-for="n in emptySlots" :key="'empty-' + n" class="players__list-user players__list-user--empty">
+      <div
+        v-for="n in emptySlots"
+        :key="'empty-' + n"
+        class="players__list-user players__list-user--empty"
+      >
         <n-icon size="24" color="#858585">
           <AddCircle />
         </n-icon>
       </div>
     </div>
-    <MainButton title="Выйти" size="medium" @click="leave"/>
+    <MainButton title="Выйти" size="medium" @click="leave" />
   </div>
 </template>
 
@@ -54,7 +62,6 @@ const emptySlots = computed(() => {
   gap: 16px;
   transition: all 0.2s ease;
 
-
   &__title {
     color: $text-dark;
   }
@@ -78,7 +85,7 @@ const emptySlots = computed(() => {
     }
   }
 
-  & .button{
+  & .button {
     width: fit-content;
     margin-left: auto;
   }

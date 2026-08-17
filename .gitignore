@@ -35,10 +35,17 @@ coverage
 # Vitest
 __screenshots__/
 
+# Environment
 .env
+.env.*
+!.env.example
+
+# Local tooling / assistant settings
 .claude
 
+# Internal docs not meant for the public repo
 DEPLOY.md
-saland_frontend.tar.gz
-
-ai-generation-frontend.md
+game.md
+spec.md
+routes.md
+*.tar.gz
